@@ -329,7 +329,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
             <div style={{ display: "flex", alignItems: "center", gap: 10, overflow: "hidden" }}>
               <AlphaMark size={32} />
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", fontSize: 16, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1, whiteSpace: "nowrap" }}>Wraith Finance</div>
+                <div style={{ fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", fontSize: 16, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1, whiteSpace: "nowrap" }}>Lynx</div>
                 <div style={{ fontSize: 9, color: T.muted, letterSpacing: "0.04em",
                   textTransform: "uppercase", marginTop: 4, ...ui }}>Fund Analytics</div>
               </div>
@@ -377,7 +377,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
           <NavButton item={{ id: "settings", label: "Settings", icon: IconSettings }} sub={open} />
           {open && (
             <div style={{ padding: "8px 12px 4px" }}>
-              <div style={{ fontSize: 9, color: T.muted, ...mono }}>Wraith v1</div>
+              <div style={{ fontSize: 9, color: T.muted, ...mono }}>Lynx v1</div>
               <div style={{ fontSize: 9, color: T.muted, lineHeight: 1.4, ...ui }}>Research aid · verify before client use.</div>
             </div>
           )}
@@ -473,7 +473,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
                 color: T.text, textTransform: "uppercase", lineHeight: 1,
                 whiteSpace: "nowrap",
               }}>
-                Wraith Finance
+                Lynx
               </span>
             </div>
 

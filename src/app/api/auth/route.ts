@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Incorrect preview password" }, { status: 401 });
       }
       const res = NextResponse.json({ ok: true, mode: "preview" });
-      res.cookies.set("wraith_preview", "1", {
+      res.cookies.set("lynx_preview", "1", {
         httpOnly: true, secure: true, sameSite: "lax",
         maxAge: 60 * 60 * 24 * 7,
         path: "/",
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       const supabase = await createServerClient();
       await supabase.auth.signOut();
       const res = NextResponse.json({ ok: true });
-      res.cookies.set("wraith_preview", "", { maxAge: 0, path: "/" });
+      res.cookies.set("lynx_preview", "", { maxAge: 0, path: "/" });
       return res;
     }
 
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     // Check preview cookie first (doesn't need Supabase)
-    const preview = req.cookies.get("wraith_preview");
+    const preview = req.cookies.get("lynx_preview");
     if (preview?.value === "1") {
       return NextResponse.json({ mode: "preview" });
     }

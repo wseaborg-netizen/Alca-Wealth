@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Wraith Finance — Fund Analytics",
+  title: "Lynx — Fund Analytics",
   description: "Internal fund research and analytics platform",
 };
 

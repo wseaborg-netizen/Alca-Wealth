@@ -633,7 +633,7 @@ function ToolShowcase({ onNavigate }: { onNavigate: (t: DashTab) => void }) {
             The Advisor Hub
           </div>
           <div style={{ fontSize: 13, color: "var(--c-dim)", ...ui, marginTop: 6, lineHeight: 1.55, maxWidth: 520 }}>
-            Everything Wraith Finance does for your workflow — find funds, pressure-test them, and
+            Everything Lynx does for your workflow — find funds, pressure-test them, and
             stand up a recommendation. Scroll through the toolkit below; click any panel to jump straight in.
           </div>
           <div style={{ display: "flex", gap: 18, marginTop: 16 }}>

@@ -16,7 +16,7 @@ interface WatchlistTabProps {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const LS_KEY = "wraith_watchlist_v1";
+const LS_KEY = "lynx_watchlist_v1";
 
 const CHIPS: { id: FactorChip; label: string; icon: string; desc: string; action: "compare" | "analysis" }[] = [
   { id: "alpha",    label: "Increase alpha",    icon: "↑", desc: "Find higher-alpha alternatives",   action: "analysis" },

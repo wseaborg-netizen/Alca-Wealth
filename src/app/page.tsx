@@ -4,8 +4,8 @@ import { T, ui, lynx } from "@/components/tokens";
 import FundGrid from "@/components/FundGrid";
 import { AlphaMark, HeroMark } from "@/components/Brand";
 
-const ACC = "#0A0A0B";    // Wraith Finance brand — black
-const ACC_DARK = "#EFEFEF"; // Wraith Finance brand — dark mode
+const ACC = "#0A0A0B";    // Lynx brand — black
+const ACC_DARK = "#EFEFEF"; // Lynx brand — dark mode
 
 const FEATURES = [
   {
@@ -195,7 +195,7 @@ export default function Home() {
         borderBottom: scrolled ? `1px solid ${divLine}` : "1px solid transparent",
         transition: "all 0.3s",
       }}>
-        {/* Wraith Finance wordmark — nav brand */}
+        {/* Lynx wordmark — nav brand */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <AlphaMark size={30} radius={7} />
           <span style={{
@@ -203,7 +203,7 @@ export default function Home() {
             letterSpacing: "0.07em", color: T.text,
             textTransform: "uppercase", lineHeight: 1,
           }}>
-            Wraith Finance
+            Lynx
           </span>
         </div>
 
@@ -280,7 +280,7 @@ export default function Home() {
               </span>
             </div>
 
-            {/* Big Wraith Finance headline — split into two lines so it always fits */}
+            {/* Big Lynx headline — split into two lines so it always fits */}
             <h1 style={{
               ...lynx,
               fontSize: "clamp(48px, 6.5vw, 86px)",
@@ -290,7 +290,7 @@ export default function Home() {
               color: T.text, margin: "0 0 6px",
               textTransform: "uppercase",
             }}>
-              Wraith<br />Finance
+              Lynx
             </h1>
 
             {/* By The Capital Group — attribution line */}
@@ -378,7 +378,7 @@ export default function Home() {
               </div>
               <div>
                 <div style={{ ...lynx, fontSize: 22, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1 }}>
-                  Wraith Finance
+                  Lynx
                 </div>
                 <div style={{ fontSize: 9.5, color: T.muted, letterSpacing: "0.07em", textTransform: "uppercase", ...ui, marginTop: 5 }}>
                   Fund Analytics · The Capital Group
@@ -552,7 +552,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── Why Wraith section ── */}
+      {/* ── Why Lynx section ── */}
       <div style={{ background: T.bg, borderTop: `1px solid ${divLine}`, padding: "100px 40px" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "start" }}>
 
@@ -560,7 +560,7 @@ export default function Home() {
           <div>
             <div style={{ fontSize: 10, fontWeight: 500, color: T.muted, letterSpacing: "0.06em",
               textTransform: "uppercase", ...ui, marginBottom: 16 }}>
-              Why Wraith
+              Why Lynx
             </div>
             <h2 style={{
               ...lynx, fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 300,
@@ -571,7 +571,7 @@ export default function Home() {
             </h2>
             <p style={{ fontSize: 15, color: T.dim, lineHeight: 1.75, margin: "0 0 32px", ...ui }}>
               Advisors shouldn't need a Bloomberg terminal to answer basic fund research questions.
-              Wraith Finance brings institutional-quality screening, risk analytics, and comparison tools
+              Lynx brings institutional-quality screening, risk analytics, and comparison tools
               into a modern interface built for how you actually work.
             </p>
 
@@ -623,7 +623,7 @@ export default function Home() {
                 </div>
               ))}
 
-              {/* Wraith Finance card — highlighted */}
+              {/* Lynx card — highlighted */}
               <div style={{
                 background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
                 border: `1px solid ${isDark ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.12)"}`,
@@ -631,7 +631,7 @@ export default function Home() {
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                   <div style={{ ...lynx, fontSize: 18, fontWeight: 300, color: T.text, letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                    Wraith Finance
+                    Lynx
                   </div>
                   <div style={{
                     fontSize: 11, fontWeight: 600, color: T.text, ...ui,
@@ -677,7 +677,7 @@ export default function Home() {
             onMouseEnter={e => { e.currentTarget.style.opacity = "0.8"; e.currentTarget.style.transform = "translateY(-1px)"; }}
             onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "translateY(0)"; }}
           >
-            Enter Wraith →
+            Enter Lynx →
           </button>
           <p style={{ marginTop: 20, fontSize: 10.5, color: T.muted, ...ui, letterSpacing: "0.03em" }}>
             Internal research aid · Verify before client use
