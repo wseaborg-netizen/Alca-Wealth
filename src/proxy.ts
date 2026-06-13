@@ -1,7 +1,6 @@
 /**
- * Next.js middleware — runs on every request.
+ * Next.js proxy (middleware) — runs on every request.
  * Refreshes Supabase session cookies so they stay alive.
- * Does NOT enforce auth here — that's handled per-page.
  */
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
@@ -9,25 +8,29 @@ import { createServerClient } from "@supabase/ssr";
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
-  const url   = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url  = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anon) return response;
 
-  createServerClient(url, anon, {
-    cookies: {
-      get(name) { return request.cookies.get(name)?.value; },
-      set(name, value, options) {
-        request.cookies.set({ name, value, ...options });
-        response = NextResponse.next({ request });
-        response.cookies.set({ name, value, ...options });
+  try {
+    const supabase = createServerClient(url, anon, {
+      cookies: {
+        getAll() { return request.cookies.getAll(); },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          response = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
+        },
       },
-      remove(name, options) {
-        request.cookies.set({ name, value: "", ...options });
-        response = NextResponse.next({ request });
-        response.cookies.set({ name, value: "", ...options });
-      },
-    },
-  });
+    });
+
+    // Must call getUser() to trigger token refresh
+    await supabase.auth.getUser();
+  } catch {
+    // Never crash the request — just pass through
+  }
 
   return response;
 }
