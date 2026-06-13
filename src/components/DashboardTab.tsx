@@ -336,9 +336,6 @@ function ShowcaseSection({
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-            <span style={{ fontSize: 9, fontWeight: 600, color: T.muted, ...mono, letterSpacing: "0.1em" }}>
-              {String(index).padStart(2, "0")}/{String(total).padStart(2, "0")}
-            </span>
             <span style={{ fontSize: 18, fontWeight: 300, color: T.text,
               fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", letterSpacing: "0.06em" }}>{name}</span>
           </div>

@@ -79,10 +79,10 @@ const STATS = [
   { value: "Fast",  label: "Interface" },
 ];
 
-const DIFFERENCES = [
-  { them: "Bloomberg Terminal",   cost: "$2,000+/mo",        note: "Overkill for fund research. Built for trading desks." },
-  { them: "Morningstar Direct",   cost: "$200+/mo per seat", note: "Powerful data, legacy interface. Not workflow-driven." },
-  { them: "YCharts",              cost: "$300–500/mo/user",  note: "Good charts, limited screening depth. Expensive." },
+const USE_CASES = [
+  { title: "Vet a fund fast",      tag: "Analysis",   note: "Pull returns, risk, cost, and rating into one view before it goes in front of a client." },
+  { title: "Find a better fit",    tag: "Discover",   note: "Surface cheaper or lower-drawdown funds in the same category in seconds." },
+  { title: "Compare side by side", tag: "Comparison", note: "Stack funds head-to-head on performance, risk, and fee to make the call." },
 ];
 
 export default function Home() {
@@ -306,8 +306,8 @@ export default function Home() {
               fontSize: 15, color: T.muted,
               lineHeight: 1.65, margin: "0 0 40px", maxWidth: 460, ...ui,
             }}>
-              Screen 4,600+ funds by style, cost, risk, and alpha. Compare head-to-head,
-              track your watchlist, and make better decisions — without the Bloomberg price tag.
+              Screen 4,600+ funds by style, cost, risk, and alpha. Compare options head-to-head,
+              keep a watchlist, and get to a confident recommendation faster.
             </p>
 
             {/* CTA row — login card on right handles entry */}
@@ -557,12 +557,12 @@ export default function Home() {
               letterSpacing: "0.06em", color: T.text, margin: "0 0 20px",
               textTransform: "uppercase", lineHeight: 1.1,
             }}>
-              Professional grade.<br/>No price tag.
+              Built for the way<br/>advisors actually work.
             </h2>
             <p style={{ fontSize: 15, color: T.dim, lineHeight: 1.75, margin: "0 0 32px", ...ui }}>
-              Advisors shouldn't need a Bloomberg terminal to answer basic fund research questions.
-              Lynx brings institutional-quality screening, risk analytics, and comparison tools
-              into a modern interface built for how you actually work.
+              Answering a fund question usually means jumping between several tools. Lynx pulls
+              screening, risk analytics, and side-by-side comparison into one clean workspace —
+              so you can vet a fund, find a better alternative, and back up a recommendation in minutes.
             </p>
 
             {[
@@ -590,23 +590,23 @@ export default function Home() {
           <div style={{ paddingTop: 4 }}>
             <div style={{ fontSize: 10, fontWeight: 500, color: T.muted, ...ui,
               letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 16 }}>
-              vs. The alternatives
+              How advisors use it
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {DIFFERENCES.map((d, i) => (
+              {USE_CASES.map((d, i) => (
                 <div key={i} style={{
                   background: cardBg, border: `1px solid ${cardBrd}`,
                   borderRadius: 12, padding: "16px 18px",
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 600, color: T.text, ...ui }}>{d.them}</div>
+                    <div style={{ fontSize: 13.5, fontWeight: 600, color: T.text, ...ui }}>{d.title}</div>
                     <div style={{
                       fontSize: 11, fontWeight: 500, color: T.muted, ...ui,
                       background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
                       padding: "3px 9px", borderRadius: 6, letterSpacing: "0.01em",
                     }}>
-                      {d.cost}
+                      {d.tag}
                     </div>
                   </div>
                   <div style={{ fontSize: 12.5, color: T.muted, ...ui, lineHeight: 1.5 }}>{d.note}</div>
@@ -632,7 +632,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div style={{ fontSize: 12.5, color: T.dim, ...ui, lineHeight: 1.5 }}>
-                  Built specifically for this firm. Fast, modern, and gets out of the way.
+                  An in-house research aid for the firm's advisors — fast, modern, and built around real workflows.
                 </div>
               </div>
             </div>
