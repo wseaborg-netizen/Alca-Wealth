@@ -327,7 +327,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
           </button>
           {open && (
             <div style={{ display: "flex", alignItems: "center", gap: 10, overflow: "hidden" }}>
-              <AlphaMark size={32} />
+              <AlphaMark size={26} radius={5} />
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", fontSize: 16, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1, whiteSpace: "nowrap" }}>Lynx</div>
                 <div style={{ fontSize: 9, color: T.muted, letterSpacing: "0.04em",

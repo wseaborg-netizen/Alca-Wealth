@@ -365,25 +365,26 @@ export default function Home() {
               : "0 20px 60px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03)",
           }}>
             {/* Card brand */}
-            <div style={{ marginBottom: 28, display: "flex", alignItems: "center", gap: 16 }}>
-              {/* Logo mark — dark pill */}
+            <div style={{ marginBottom: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
+                <HeroMark size={38} />
+                <div>
+                  <div style={{ ...lynx, fontSize: 24, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1 }}>
+                    Lynx
+                  </div>
+                  <div style={{ fontSize: 9.5, color: T.muted, letterSpacing: "0.07em", textTransform: "uppercase", ...ui, marginTop: 5 }}>
+                    Fund Analytics · The Capital Group
+                  </div>
+                </div>
+              </div>
+              {/* Underline — professional divider */}
               <div style={{
-                width: 52, height: 52, borderRadius: 12, flexShrink: 0,
-                background: "#0A0A0B",
-                border: "1px solid rgba(255,255,255,0.08)",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <HeroMark size={42} />
-              </div>
-              <div>
-                <div style={{ ...lynx, fontSize: 22, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1 }}>
-                  Lynx
-                </div>
-                <div style={{ fontSize: 9.5, color: T.muted, letterSpacing: "0.07em", textTransform: "uppercase", ...ui, marginTop: 5 }}>
-                  Fund Analytics · The Capital Group
-                </div>
-              </div>
+                width: "100%", height: 1,
+                background: isDark
+                  ? "rgba(255,255,255,0.12)"
+                  : "rgba(0,0,0,0.14)",
+                marginBottom: 24,
+              }} />
             </div>
 
             {/* ── Tier 1: Full account login ── */}
