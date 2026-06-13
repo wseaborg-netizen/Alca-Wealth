@@ -326,8 +326,8 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
             <span style={{ width: 12, height: 1.5, background: T.dim, borderRadius: 1 }} />
           </button>
           {open && (
-            <div style={{ display: "flex", alignItems: "center", gap: 10, overflow: "hidden" }}>
-              <AlphaMark size={26} radius={5} />
+            <div style={{ display: "flex", alignItems: "center", gap: 10, overflow: "hidden", color: T.text }}>
+              <AlphaMark height={18} />
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", fontSize: 16, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1, whiteSpace: "nowrap" }}>Lynx</div>
                 <div style={{ fontSize: 9, color: T.muted, letterSpacing: "0.04em",
@@ -465,8 +465,8 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
             </button>
             {/* Brand mark + wordmark, top-right */}
             <div style={{ width: 1, height: 26, background: T.line, margin: "0 2px" }} />
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <AlphaMark size={36} />
+            <div style={{ display: "flex", alignItems: "center", gap: 10, color: T.text }}>
+              <AlphaMark height={22} />
               <span style={{
                 fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif",
                 fontSize: 17, fontWeight: 300, letterSpacing: "0.06em",

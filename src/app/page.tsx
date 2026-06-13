@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { T, ui, lynx } from "@/components/tokens";
 import FundGrid from "@/components/FundGrid";
-import { AlphaMark, HeroMark } from "@/components/Brand";
+import { AlphaMark, LynxMark } from "@/components/Brand";
 
 const ACC = "#0A0A0B";    // Lynx brand — black
 const ACC_DARK = "#EFEFEF"; // Lynx brand — dark mode
@@ -196,8 +196,8 @@ export default function Home() {
         transition: "all 0.3s",
       }}>
         {/* Lynx wordmark — nav brand */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <AlphaMark size={30} radius={7} />
+        <div style={{ display: "flex", alignItems: "center", gap: 10, color: T.text }}>
+          <LynxMark height={22} />
           <span style={{
             ...lynx, fontSize: 20, fontWeight: 300,
             letterSpacing: "0.07em", color: T.text,
@@ -364,10 +364,13 @@ export default function Home() {
               ? "0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04)"
               : "0 20px 60px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03)",
           }}>
-            {/* Card brand */}
+            {/* Card brand — lynx cat + wordmark, same line height */}
             <div style={{ marginBottom: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
-                <HeroMark size={38} />
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
+                {/* Cat silhouette — same height as the text */}
+                <div style={{ color: T.text, lineHeight: 0 }}>
+                  <LynxMark height={28} />
+                </div>
                 <div>
                   <div style={{ ...lynx, fontSize: 24, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1 }}>
                     Lynx
@@ -380,9 +383,7 @@ export default function Home() {
               {/* Underline — professional divider */}
               <div style={{
                 width: "100%", height: 1,
-                background: isDark
-                  ? "rgba(255,255,255,0.12)"
-                  : "rgba(0,0,0,0.14)",
+                background: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.14)",
                 marginBottom: 24,
               }} />
             </div>
