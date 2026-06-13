@@ -115,3 +115,8 @@ tbody tr:hover { background: rgba(10, 10, 11, 0.02); }
   0%   { transform: translateX(0); }
   100% { transform: translateX(-24px); }
 }
+
+/* ── Lynx logo image (licensed artwork: black silhouette on white) ──
+   Blend the white background out so the mark sits cleanly on any surface. */
+.lynx-logo { mix-blend-mode: multiply; }
+[data-theme="dark"] .lynx-logo { filter: invert(1); mix-blend-mode: screen; }
