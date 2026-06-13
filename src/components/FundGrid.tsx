@@ -326,13 +326,15 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
             <span style={{ width: 12, height: 1.5, background: T.dim, borderRadius: 1 }} />
           </button>
           {open && (
-            <div style={{ display: "flex", alignItems: "center", gap: 10, overflow: "hidden", color: T.text }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", fontSize: 16, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1, whiteSpace: "nowrap" }}>Lynx</div>
-                <div style={{ fontSize: 9, color: T.muted, letterSpacing: "0.04em",
-                  textTransform: "uppercase", marginTop: 4, ...ui }}>Fund Analytics</div>
+            <div style={{ position: "relative", display: "inline-block", overflow: "hidden", color: T.text }}>
+              {/* Top line: LYNX (left) + cat pinned to the right edge */}
+              <div style={{ fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", fontSize: 16, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1, whiteSpace: "nowrap" }}>Lynx</div>
+              {/* FUND ANALYTICS below — sets the block width; cat right edge matches it */}
+              <div style={{ fontSize: 9, color: T.muted, letterSpacing: "0.04em",
+                textTransform: "uppercase", marginTop: 4, whiteSpace: "nowrap", ...ui }}>Fund Analytics</div>
+              <div style={{ position: "absolute", top: 0, right: 0, lineHeight: 0 }}>
+                <AlphaMark height={16} />
               </div>
-              <AlphaMark height={18} />
             </div>
           )}
         </div>
