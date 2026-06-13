@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { T, ui, lynx } from "@/components/tokens";
 import FundGrid from "@/components/FundGrid";
-import { AlphaMark } from "@/components/Brand";
+import { AlphaMark, HeroMark } from "@/components/Brand";
 
 const ACC = "#0A0A0B";    // Wraith Finance brand — black
 const ACC_DARK = "#EFEFEF"; // Wraith Finance brand — dark mode
@@ -195,14 +195,17 @@ export default function Home() {
         borderBottom: scrolled ? `1px solid ${divLine}` : "1px solid transparent",
         transition: "all 0.3s",
       }}>
-        {/* Wraith Finance wordmark — the nav brand */}
-        <span style={{
-          ...lynx, fontSize: 22, fontWeight: 300,
-          letterSpacing: "0.08em", color: T.text,
-          textTransform: "uppercase", lineHeight: 1,
-        }}>
-          Wraith Finance
-        </span>
+        {/* Wraith Finance wordmark — nav brand */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <AlphaMark size={30} radius={7} />
+          <span style={{
+            ...lynx, fontSize: 20, fontWeight: 300,
+            letterSpacing: "0.07em", color: T.text,
+            textTransform: "uppercase", lineHeight: 1,
+          }}>
+            Wraith Finance
+          </span>
+        </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button
@@ -277,17 +280,17 @@ export default function Home() {
               </span>
             </div>
 
-            {/* Big Wraith Finance headline — Cormorant Garamond */}
+            {/* Big Wraith Finance headline — split into two lines so it always fits */}
             <h1 style={{
               ...lynx,
-              fontSize: "clamp(52px, 7vw, 88px)",
+              fontSize: "clamp(48px, 6.5vw, 86px)",
               fontWeight: 300,
               letterSpacing: "0.08em",
               lineHeight: 0.95,
               color: T.text, margin: "0 0 6px",
               textTransform: "uppercase",
             }}>
-              Wraith Finance
+              Wraith<br />Finance
             </h1>
 
             {/* By The Capital Group — attribution line */}
@@ -362,15 +365,24 @@ export default function Home() {
               : "0 20px 60px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03)",
           }}>
             {/* Card brand */}
-            <div style={{ marginBottom: 28 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-                <AlphaMark size={38} />
-                <span style={{ ...lynx, fontSize: 24, fontWeight: 300, letterSpacing: "0.04em", color: T.text, textTransform: "uppercase", lineHeight: 1 }}>
-                  Wraith Finance
-                </span>
+            <div style={{ marginBottom: 28, display: "flex", alignItems: "center", gap: 16 }}>
+              {/* Logo mark — dark pill */}
+              <div style={{
+                width: 52, height: 52, borderRadius: 12, flexShrink: 0,
+                background: "#0A0A0B",
+                border: "1px solid rgba(255,255,255,0.08)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <HeroMark size={42} />
               </div>
-              <div style={{ fontSize: 10, color: T.muted, letterSpacing: "0.06em", textTransform: "uppercase", ...ui, marginTop: 4 }}>
-                Fund Analytics
+              <div>
+                <div style={{ ...lynx, fontSize: 22, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1 }}>
+                  Wraith Finance
+                </div>
+                <div style={{ fontSize: 9.5, color: T.muted, letterSpacing: "0.07em", textTransform: "uppercase", ...ui, marginTop: 5 }}>
+                  Fund Analytics · The Capital Group
+                </div>
               </div>
             </div>
 
