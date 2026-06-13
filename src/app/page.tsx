@@ -195,9 +195,8 @@ export default function Home() {
         borderBottom: scrolled ? `1px solid ${divLine}` : "1px solid transparent",
         transition: "all 0.3s",
       }}>
-        {/* Lynx wordmark — nav brand */}
+        {/* Lynx wordmark — nav brand (logo to the right) */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, color: T.text }}>
-          <LynxMark height={22} />
           <span style={{
             ...lynx, fontSize: 20, fontWeight: 300,
             letterSpacing: "0.07em", color: T.text,
@@ -205,6 +204,7 @@ export default function Home() {
           }}>
             Lynx
           </span>
+          <LynxMark height={22} />
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -355,10 +355,6 @@ export default function Home() {
             {/* Card brand — lynx cat + wordmark, same line height */}
             <div style={{ marginBottom: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
-                {/* Cat silhouette — same height as the text */}
-                <div style={{ color: T.text, lineHeight: 0 }}>
-                  <LynxMark height={28} />
-                </div>
                 <div>
                   <div style={{ ...lynx, fontSize: 24, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1 }}>
                     Lynx
@@ -366,6 +362,10 @@ export default function Home() {
                   <div style={{ fontSize: 9.5, color: T.muted, letterSpacing: "0.07em", textTransform: "uppercase", ...ui, marginTop: 5 }}>
                     Fund Analytics · The Capital Group
                   </div>
+                </div>
+                {/* Cat silhouette — same height as the text, to the right */}
+                <div style={{ color: T.text, lineHeight: 0 }}>
+                  <LynxMark height={28} />
                 </div>
               </div>
               {/* Underline — professional divider */}

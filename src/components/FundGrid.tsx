@@ -327,12 +327,12 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
           </button>
           {open && (
             <div style={{ display: "flex", alignItems: "center", gap: 10, overflow: "hidden", color: T.text }}>
-              <AlphaMark height={18} />
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", fontSize: 16, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1, whiteSpace: "nowrap" }}>Lynx</div>
                 <div style={{ fontSize: 9, color: T.muted, letterSpacing: "0.04em",
                   textTransform: "uppercase", marginTop: 4, ...ui }}>Fund Analytics</div>
               </div>
+              <AlphaMark height={18} />
             </div>
           )}
         </div>
@@ -466,7 +466,6 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
             {/* Brand mark + wordmark, top-right */}
             <div style={{ width: 1, height: 26, background: T.line, margin: "0 2px" }} />
             <div style={{ display: "flex", alignItems: "center", gap: 10, color: T.text }}>
-              <AlphaMark height={22} />
               <span style={{
                 fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif",
                 fontSize: 17, fontWeight: 300, letterSpacing: "0.06em",
@@ -475,6 +474,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
               }}>
                 Lynx
               </span>
+              <AlphaMark height={22} />
             </div>
 
             {/* Auth status + logout */}
