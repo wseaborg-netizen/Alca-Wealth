@@ -34,7 +34,12 @@ export async function createServerClient() {
   });
 }
 
-/** Admin client — bypasses RLS, server only */
-export const supabaseAdmin = createClient(URL, SVCRL, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
+/** Admin client — bypasses RLS, server only. Lazy so it doesn't throw at build time. */
+let _admin: ReturnType<typeof createClient> | null = null;
+export function getSupabaseAdmin() {
+  if (!_admin) {
+    if (!URL || !SVCRL) throw new Error("Supabase admin env vars not set");
+    _admin = createClient(URL, SVCRL, { auth: { autoRefreshToken: false, persistSession: false } });
+  }
+  return _admin;
+}
