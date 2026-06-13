@@ -280,18 +280,23 @@ export default function Home() {
               </span>
             </div>
 
-            {/* Big Lynx headline — split into two lines so it always fits */}
-            <h1 style={{
-              ...lynx,
-              fontSize: "clamp(48px, 6.5vw, 86px)",
-              fontWeight: 300,
-              letterSpacing: "0.08em",
-              lineHeight: 0.95,
-              color: T.text, margin: "0 0 6px",
-              textTransform: "uppercase",
-            }}>
-              Lynx
-            </h1>
+            {/* Big logo + Lynx headline, side by side */}
+            <div style={{ display: "flex", alignItems: "center", gap: "clamp(14px, 1.8vw, 26px)", margin: "0 0 6px" }}>
+              <div style={{ color: T.text, lineHeight: 0, flexShrink: 0 }}>
+                <LynxMark height="clamp(56px, 7vw, 92px)" />
+              </div>
+              <h1 style={{
+                ...lynx,
+                fontSize: "clamp(48px, 6.5vw, 86px)",
+                fontWeight: 300,
+                letterSpacing: "0.08em",
+                lineHeight: 0.95,
+                color: T.text, margin: 0,
+                textTransform: "uppercase",
+              }}>
+                Lynx
+              </h1>
+            </div>
 
             {/* By The Capital Group — attribution line */}
             <div style={{
