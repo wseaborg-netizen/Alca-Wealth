@@ -13,8 +13,15 @@ export async function POST(req: NextRequest) {
     // ── Preview password login ──────────────────────────────────────────────
     if (action === "preview") {
       const { password } = body as { password: string };
-      const expected = process.env.PREVIEW_PASSWORD ?? process.env.APP_PASSWORD;
-      if (!expected || password !== expected) {
+      const expected = (process.env.PREVIEW_PASSWORD ?? process.env.APP_PASSWORD ?? "").trim();
+      // Distinguish "server not configured" from "wrong password" so the cause is obvious.
+      if (!expected) {
+        return NextResponse.json(
+          { error: "Preview access isn't set up on the server yet — add PREVIEW_PASSWORD in Vercel and redeploy." },
+          { status: 503 },
+        );
+      }
+      if ((password ?? "").trim() !== expected) {
         return NextResponse.json({ error: "Incorrect preview password" }, { status: 401 });
       }
       const res = NextResponse.json({ ok: true, mode: "preview" });

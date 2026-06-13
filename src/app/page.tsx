@@ -263,28 +263,8 @@ export default function Home() {
 
           {/* ── Left: headline ── */}
           <div>
-            {/* Live badge */}
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
-              border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)"}`,
-              borderRadius: 20, padding: "5px 14px", marginBottom: 32,
-            }}>
-              <div style={{
-                width: 6, height: 6, borderRadius: "50%", background: "#16A34A",
-                boxShadow: "0 0 6px rgba(22,163,74,0.7)",
-                animation: "lx-pulse 2s infinite",
-              }} />
-              <span style={{ fontSize: 11, fontWeight: 500, color: T.dim, ...ui, letterSpacing: "0.06em" }}>
-                LIVE · Internal Research Platform
-              </span>
-            </div>
-
-            {/* Big logo + Lynx headline, side by side */}
+            {/* Big Lynx headline + logo to the right */}
             <div style={{ display: "flex", alignItems: "center", gap: "clamp(14px, 1.8vw, 26px)", margin: "0 0 6px" }}>
-              <div style={{ color: T.text, lineHeight: 0, flexShrink: 0 }}>
-                <LynxMark height="clamp(56px, 7vw, 92px)" />
-              </div>
               <h1 style={{
                 ...lynx,
                 fontSize: "clamp(48px, 6.5vw, 86px)",
@@ -296,6 +276,9 @@ export default function Home() {
               }}>
                 Lynx
               </h1>
+              <div style={{ color: T.text, lineHeight: 0, flexShrink: 0 }}>
+                <LynxMark height="clamp(56px, 7vw, 92px)" />
+              </div>
             </div>
 
             {/* By The Capital Group — attribution line */}
