@@ -1,26 +1,117 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ── Lynx — Theme tokens (black/white brand) ── */
+:root, [data-theme="light"] {
+  --c-bg: #FFFFFF;
+  --c-panel: #FFFFFF;
+  --c-panel2: #FAFAFA;
+  --c-panel3: #F4F4F5;
+  --c-line: #E8E8EC;
+  --c-line2: #D8D8DF;
+  --c-text: #0A0A0B;
+  --c-dim: #52525B;
+  --c-muted: #A1A1AA;
+  /* Lynx brand — black */
+  --c-accent: #0A0A0B;
+  --c-accentD: #262626;
+  --c-blueL: #F0F0F2;
+  --c-data: #0E7490;
+  --c-dataD: #155E75;
+  --c-dataL: #ECFEFF;
+  --c-cyan: #0891B2;
+  --c-amber: #B45309;
+  --c-red: #DC2626;
+  --c-green: #16A34A;
+}
+[data-theme="dark"] {
+  --c-bg: #0A0A0B;
+  --c-panel: #111113;
+  --c-panel2: #1A1A1D;
+  --c-panel3: #222226;
+  --c-line: #2A2A2E;
+  --c-line2: #38383D;
+  --c-text: #F4F4F5;
+  --c-dim: #A1A1AA;
+  --c-muted: #71717A;
+  /* Lynx brand — white in dark mode */
+  --c-accent: #EFEFEF;
+  --c-accentD: #FFFFFF;
+  --c-blueL: #27272A;
+  --c-data: #2DD4BF;
+  --c-dataD: #5EEAD4;
+  --c-dataL: #10302E;
+  --c-cyan: #38BDF8;
+  --c-amber: #F59E0B;
+  --c-red: #F87171;
+  --c-green: #34D399;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+*, *::before, *::after { box-sizing: border-box; }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: -0.004em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  transition: background 0.2s, color 0.2s;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--c-bg); }
+::-webkit-scrollbar-thumb { background: var(--c-line2); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--c-muted); }
+
+select option {
+  background: var(--c-panel);
+  color: var(--c-text);
+  font-family: 'Geist', sans-serif;
+}
+
+.data {
+  font-family: 'Geist Mono', 'SF Mono', Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--c-accent) !important;
+  box-shadow: 0 0 0 3px rgba(10, 10, 11, 0.08);
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] select:focus {
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.08);
+}
+
+tbody tr:hover { background: rgba(10, 10, 11, 0.02); }
+[data-theme="dark"] tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+::selection { background: rgba(10, 10, 11, 0.1); }
+[data-theme="dark"] ::selection { background: rgba(255,255,255,0.15); }
+
+/* ── Scroll-rail train animations ── */
+@keyframes af-wheel { to { transform: rotate(360deg); } }
+@keyframes af-chug {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-1.5px); }
+}
+@keyframes af-smoke {
+  0%   { opacity: 0.55; transform: translate(0, 0) scale(0.5); }
+  100% { opacity: 0;    transform: translate(3px, -13px) scale(1.5); }
+}
+@keyframes af-surface-pan {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-24px); }
 }
