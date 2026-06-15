@@ -73,6 +73,8 @@ async function fetchLiveProfile(ticker: string, vehicle: string): Promise<{
   inceptionDate: string | null;
   source: string;
 }> {
+  const meta = FUND_META[ticker];
+
   try {
     const isMF = vehicle === "Mutual Fund" || vehicle === "MF";
     const live = isMF
@@ -80,12 +82,15 @@ async function fetchLiveProfile(ticker: string, vehicle: string): Promise<{
       : await fetchEtfInfo(ticker);
 
     if (live) {
-      const hasData = live.expenseRatio != null || live.aum != null || live.inceptionDate != null;
-      if (hasData) {
+      const liveName = (live as { name?: string | null }).name ?? null;
+      const hasLive = liveName != null || live.aum != null || live.inceptionDate != null || live.expenseRatio != null;
+      if (hasLive) {
+        // Live wins for name/AUM/inception; expense ratio isn't on this plan,
+        // so fall back to the curated static value.
         return {
-          name: (live as { name?: string | null }).name ?? null,
-          expenseRatio: live.expenseRatio,
-          aum: live.aum,
+          name: liveName,
+          expenseRatio: live.expenseRatio ?? meta?.er ?? null,
+          aum: live.aum ?? (meta ? meta.aum * 1e9 : null),
           inceptionDate: live.inceptionDate,
           source: "live",
         };
@@ -96,7 +101,6 @@ async function fetchLiveProfile(ticker: string, vehicle: string): Promise<{
   }
 
   // Static fallback
-  const meta = FUND_META[ticker];
   return {
     name: null,
     expenseRatio: meta?.er ?? null,

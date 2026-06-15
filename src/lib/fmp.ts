@@ -18,8 +18,8 @@ import { cacheGet, cacheSet } from "./cache";
 const HISTORY_TTL = 24 * 60 * 60; // 24 hours
 const INFO_TTL    = 24 * 60 * 60;
 
-const FMP_KEY  = process.env.FMP_API_KEY ?? "";
-const FMP_BASE = "https://financialmodelingprep.com/api/v3";
+const FMP_KEY = process.env.FMP_API_KEY ?? "";
+const STABLE  = "https://financialmodelingprep.com/stable";
 
 let warnedNoKey = false;
 function ensureKey(): boolean {
@@ -40,13 +40,6 @@ async function throttle() {
   const wait = MIN_GAP_MS - (Date.now() - lastCall);
   if (wait > 0) await new Promise((r) => setTimeout(r, wait));
   lastCall = Date.now();
-}
-
-/** GET helper for the legacy v3 base — returns parsed JSON or null (never throws). */
-async function fmpGet<T>(path: string, params: Record<string, string> = {}): Promise<T | null> {
-  const url = new URL(`${FMP_BASE}/${path}`);
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  return fmpFetchJson(url.toString()) as Promise<T | null>;
 }
 
 /** Fetch any FMP URL (appends apikey). Returns parsed JSON or null on any failure. */
@@ -98,19 +91,20 @@ export interface FmpDividendItem {
 export async function fetchProfile(
   ticker: string,
 ): Promise<{ name: string; mktCap: number; ipoDate: string } | null> {
-  const rows = await fmpGet<Array<{ companyName?: string; mktCap?: number; ipoDate?: string }>>(
-    `profile/${encodeURIComponent(ticker)}`,
-  );
-  const p = rows?.[0];
+  const rows = await fmpFetchJson(`${STABLE}/profile?symbol=${encodeURIComponent(ticker)}`);
+  const p = Array.isArray(rows) ? (rows[0] as Record<string, unknown>) : null;
   if (!p) return null;
   return {
-    name: p.companyName ?? ticker,
-    mktCap: p.mktCap ?? 0,
-    ipoDate: p.ipoDate ?? "",
+    name: (p.companyName as string) ?? ticker,
+    mktCap: (p.marketCap as number) ?? 0,
+    ipoDate: (p.ipoDate as string) ?? "",
   };
 }
 
 // ── ETF info ──────────────────────────────────────────────────────────────────
+// Note: this plan's etf-info endpoint is empty, so the live expense ratio isn't
+// available — it comes back null and the curated static value (FUND_META) is used
+// in fetchLiveProfile. We still pull live name + AUM (market cap) from /profile.
 
 export async function fetchEtfInfo(ticker: string): Promise<{
   expenseRatio: number | null;
@@ -122,24 +116,18 @@ export async function fetchEtfInfo(ticker: string): Promise<{
   const cached = await cacheGet<{ expenseRatio: number | null; aum: number | null; inceptionDate: string | null; name: string | null }>(cacheKey);
   if (cached) return cached;
 
-  // etf-info carries expenseRatio/AUM (may be premium → null); profile is the fallback for name.
-  const info = await fmpGet<Array<{ expenseRatio?: number; assetsUnderManagement?: number; aum?: number; inceptionDate?: string; name?: string }>>(
-    `etf-info`, { symbol: ticker },
-  );
-  const row = info?.[0];
+  const rows = await fmpFetchJson(`${STABLE}/profile?symbol=${encodeURIComponent(ticker)}`);
+  const p = Array.isArray(rows) ? (rows[0] as Record<string, unknown>) : null;
+  if (!p) return null;
 
-  let result: { expenseRatio: number | null; aum: number | null; inceptionDate: string | null; name: string | null } | null = null;
-  if (row) {
-    result = {
-      // FMP reports expense ratio as a percent (e.g. 0.03 == 0.03%); the app expects a fraction
-      expenseRatio: row.expenseRatio != null ? row.expenseRatio : null,
-      aum: row.assetsUnderManagement ?? row.aum ?? null,
-      inceptionDate: row.inceptionDate ?? null,
-      name: row.name ?? null,
-    };
-  }
+  const result = {
+    expenseRatio: null,                              // not exposed on this plan → static fallback fills it
+    aum: (p.marketCap as number) ?? null,
+    inceptionDate: (p.ipoDate as string) ?? null,
+    name: (p.companyName as string) ?? null,
+  };
 
-  if (result) await cacheSet(cacheKey, result, INFO_TTL);
+  await cacheSet(cacheKey, result, INFO_TTL);
   return result;
 }
 
@@ -186,18 +174,10 @@ export async function fetchHistory(ticker: string, range = "10y"): Promise<Histo
 
   const T = encodeURIComponent(ticker);
 
-  // 3. Prices — try FMP's current ("stable") endpoint first, then the legacy v3 one.
-  //    Free keys were migrated to /stable, which is why /api/v3/historical-price-full
-  //    returns nothing for newer accounts. Both shapes are normalized by asArray().
-  const priceUrls = [
-    `https://financialmodelingprep.com/stable/historical-price-eod/full?symbol=${T}&from=${from}`,
-    `https://financialmodelingprep.com/api/v3/historical-price-full/${T}?from=${from}`,
-  ];
-  let rawPrices: Record<string, unknown>[] = [];
-  for (const url of priceUrls) {
-    rawPrices = asArray(await fmpFetchJson(url));
-    if (rawPrices.length > 0) break;
-  }
+  // 3. Prices — FMP "stable" EOD endpoint (returns OHLCV; we use close).
+  const rawPrices = asArray(
+    await fmpFetchJson(`${STABLE}/historical-price-eod/full?symbol=${T}&from=${from}`),
+  );
   if (rawPrices.length === 0) return EMPTY_HISTORY;
 
   const prices: FmpHistoricalItem[] = rawPrices
@@ -210,16 +190,8 @@ export async function fetchHistory(ticker: string, range = "10y"): Promise<Histo
 
   if (prices.length === 0) return EMPTY_HISTORY;
 
-  // 4. Dividends — current endpoint then legacy (best-effort; powers TTM yield).
-  const divUrls = [
-    `https://financialmodelingprep.com/stable/dividends?symbol=${T}`,
-    `https://financialmodelingprep.com/api/v3/historical-price-full/stock_dividend/${T}`,
-  ];
-  let rawDivs: Record<string, unknown>[] = [];
-  for (const url of divUrls) {
-    rawDivs = asArray(await fmpFetchJson(url));
-    if (rawDivs.length > 0) break;
-  }
+  // 4. Dividends (best-effort; powers TTM yield).
+  const rawDivs = asArray(await fmpFetchJson(`${STABLE}/dividends?symbol=${T}`));
   const dividends: FmpDividendItem[] = rawDivs
     .map((d) => ({ date: String(d.date).slice(0, 10), amount: Number(d.adjDividend ?? d.dividend ?? 0) }))
     .filter((d) => d.amount > 0 && d.date >= from)
