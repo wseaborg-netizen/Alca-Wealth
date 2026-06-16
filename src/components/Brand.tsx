@@ -2,18 +2,18 @@
 import React from "react";
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  LYNX — Brand mark (licensed walking-lynx artwork, /public/lynx.png)
+//  RazorBill — Brand mark (/public/razorbill-logo.png)
 //
-//  The source is a black silhouette on white. Rather than ship two color
-//  variants, we blend the white background out via CSS:
-//    • light surfaces → mix-blend-mode: multiply  (white → transparent, cat stays black)
-//    • dark surfaces  → invert + screen           (cat → white, white bg → transparent)
+//  TEMPORARY: this is the razorbill illustration (cropped) standing in until a
+//  flat black silhouette is dropped in. White background is blended out via CSS:
+//    • light surfaces → mix-blend-mode: multiply
+//    • dark surfaces  → invert + screen
 //  (rules live in globals.css, keyed off [data-theme="dark"])
 //
-//  Asset aspect ratio: 1400 × 907  ≈ 1.543 : 1
+//  Asset aspect ratio: 496 × 600  ≈ 0.83 : 1 (taller than wide)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const LYNX_RATIO = 1400 / 907;
+const LYNX_RATIO = 496 / 600;
 
 interface LynxProps { height?: number | string; className?: string }
 
@@ -23,7 +23,7 @@ export function LynxMark({ height = 26, className }: LynxProps) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src="/lynx.png"
+      src="/razorbill-logo.png"
       alt="RazorBill"
       className={cls}
       style={

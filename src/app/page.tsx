@@ -243,12 +243,13 @@ export default function Home() {
           backgroundImage: "url(/razorbill.jpg)",
           backgroundSize: "cover", backgroundPosition: "center",
         }} />
-        {/* Readability scrim — theme-matched, heaviest on the left behind the text */}
+        {/* Readability scrim — theme-matched, heavier on the left behind the text,
+            lighter elsewhere so the razorbill reads through clearly */}
         <div style={{
           position: "absolute", inset: 0, zIndex: 1,
           background: isDark
-            ? "linear-gradient(to right, rgba(10,10,11,0.93) 0%, rgba(10,10,11,0.72) 48%, rgba(10,10,11,0.45) 100%)"
-            : "linear-gradient(to right, rgba(250,250,250,0.95) 0%, rgba(250,250,250,0.8) 48%, rgba(250,250,250,0.5) 100%)",
+            ? "linear-gradient(to right, rgba(10,10,11,0.72) 0%, rgba(10,10,11,0.5) 45%, rgba(10,10,11,0.32) 100%)"
+            : "linear-gradient(to right, rgba(250,250,250,0.78) 0%, rgba(250,250,250,0.55) 45%, rgba(250,250,250,0.34) 100%)",
         }} />
         {/* Subtle grid */}
         <div style={{
