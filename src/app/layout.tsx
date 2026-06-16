@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "RazorBill Finance — Fund Analytics",
+  title: "Alca Funds",
   description: "Internal fund research and analytics platform",
 };
 

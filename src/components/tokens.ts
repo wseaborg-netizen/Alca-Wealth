@@ -1,6 +1,6 @@
 import React from "react";
 
-// ── RazorBill — Design tokens (black/white brand, clean editorial) ──────────────
+// ── Alca Funds — Design tokens (black/white brand, clean editorial) ──────────────
 // Surface tokens are CSS variables so the whole app switches light/dark.
 export const T = {
   bg:      "var(--c-bg)",
@@ -14,7 +14,7 @@ export const T = {
   muted:   "var(--c-muted)",
   // Accents kept as HEX — composed with alpha suffixes like `${T.blue}18`
   // and used in SVG gradient ids. CSS vars cannot do this.
-  blue:    "#0A0A0B",   // RazorBill primary accent → near-black (light mode)
+  blue:    "#0A0A0B",   // Alca Funds primary accent → near-black (light mode)
   blueD:   "#262626",   // hover / active
   blueL:   "var(--c-blueL)",   // light tint for active bg (themed)
   data:    "#0E7490",   // DATA accent → teal (charts, scores)
@@ -27,7 +27,7 @@ export const T = {
   gold:    "#B45309",   // #1 rank
 } as const;
 
-// RazorBill display font — Cormorant Garamond (loaded in layout.tsx)
+// Alca Funds display font — Cormorant Garamond (loaded in layout.tsx)
 export const lynx: React.CSSProperties = {
   fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif",
 };

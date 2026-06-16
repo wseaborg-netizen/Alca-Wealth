@@ -2,7 +2,7 @@
 import React from "react";
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  RazorBill — Brand mark (/public/razorbill-logo.png)
+//  Alca Funds — Brand mark (/public/razorbill-logo.png)
 //
 //  TEMPORARY: this is the razorbill illustration (cropped) standing in until a
 //  flat black silhouette is dropped in. White background is blended out via CSS:
@@ -24,7 +24,7 @@ export function LynxMark({ height = 26, className }: LynxProps) {
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src="/razorbill-logo.png"
-      alt="RazorBill"
+      alt="Alca Funds"
       className={cls}
       style={
         isNum
@@ -56,7 +56,7 @@ export function LynxWordmark({
         fontSize: size, fontWeight: 300, letterSpacing: "0.06em",
         color, lineHeight: 1, textTransform: "uppercase",
       }}>
-        RazorBill
+        Alca Funds
       </span>
       {sub && (
         <span style={{

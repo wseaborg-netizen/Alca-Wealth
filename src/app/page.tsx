@@ -3,8 +3,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { T, ui, mono, lynx } from "@/components/tokens";
 import FundGrid from "@/components/FundGrid";
 
-const ACC = "#0A0A0B";    // RazorBill brand, black
-const ACC_DARK = "#EFEFEF"; // RazorBill brand, dark mode
+const ACC = "#0A0A0B";    // Alca Funds brand, black
+const ACC_DARK = "#EFEFEF"; // Alca Funds brand, dark mode
 
 const STATS = [
   { value: "4,607", label: "Funds" },
@@ -267,14 +267,14 @@ export default function Home() {
         borderBottom: scrolled ? `1px solid ${divLine}` : "1px solid transparent",
         transition: "all 0.3s",
       }}>
-        {/* RazorBill wordmark — nav brand */}
+        {/* Alca Funds wordmark — nav brand */}
         <div style={{ display: "flex", alignItems: "center", color: T.text }}>
           <span style={{
             ...lynx, fontSize: 20, fontWeight: 300,
             letterSpacing: "0.07em", color: T.text,
             textTransform: "uppercase", lineHeight: 1,
           }}>
-            RazorBill
+            Alca Funds
           </span>
         </div>
 
@@ -349,7 +349,7 @@ export default function Home() {
 
           {/* ── Left: headline ── */}
           <div>
-            {/* Big RazorBill headline */}
+            {/* Big Alca Funds headline */}
             <h1 style={{
               ...lynx,
               fontSize: "clamp(48px, 6.5vw, 86px)",
@@ -359,7 +359,7 @@ export default function Home() {
               color: T.text, margin: "0 0 6px",
               textTransform: "uppercase",
             }}>
-              RazorBill
+              Alca Funds
             </h1>
 
             {/* By The Capital Group — attribution line */}
@@ -430,7 +430,7 @@ export default function Home() {
             <div style={{ marginBottom: 0 }}>
               <div style={{ marginBottom: 14 }}>
                 <div style={{ ...lynx, fontSize: 24, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1 }}>
-                  RazorBill
+                  Alca Funds
                 </div>
                 <div style={{ fontSize: 9.5, color: T.muted, letterSpacing: "0.07em", textTransform: "uppercase", ...ui, marginTop: 5 }}>
                   Fund Analytics · The Capital Group
