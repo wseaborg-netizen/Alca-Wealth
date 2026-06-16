@@ -24,7 +24,7 @@ export function LynxMark({ height = 26, className }: LynxProps) {
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src="/lynx.png"
-      alt="Lynx"
+      alt="RazorBill"
       className={cls}
       style={
         isNum
@@ -56,7 +56,7 @@ export function LynxWordmark({
         fontSize: size, fontWeight: 300, letterSpacing: "0.06em",
         color, lineHeight: 1, textTransform: "uppercase",
       }}>
-        Lynx
+        RazorBill
       </span>
       {sub && (
         <span style={{

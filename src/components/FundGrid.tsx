@@ -328,7 +328,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
           {open && (
             <div style={{ position: "relative", display: "inline-block", overflow: "hidden", color: T.text }}>
               {/* Top line: LYNX (left) + cat pinned to the right edge */}
-              <div style={{ fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", fontSize: 16, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1, whiteSpace: "nowrap" }}>Lynx</div>
+              <div style={{ fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", fontSize: 16, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1, whiteSpace: "nowrap" }}>RazorBill</div>
               {/* FUND ANALYTICS below — sets the block width; cat right edge matches it */}
               <div style={{ fontSize: 9, color: T.muted, letterSpacing: "0.04em",
                 textTransform: "uppercase", marginTop: 4, whiteSpace: "nowrap", ...ui }}>Fund Analytics</div>
@@ -379,7 +379,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
           <NavButton item={{ id: "settings", label: "Settings", icon: IconSettings }} sub={open} />
           {open && (
             <div style={{ padding: "8px 12px 4px" }}>
-              <div style={{ fontSize: 9, color: T.muted, ...mono }}>Lynx v1</div>
+              <div style={{ fontSize: 9, color: T.muted, ...mono }}>RazorBill v1</div>
               <div style={{ fontSize: 9, color: T.muted, lineHeight: 1.4, ...ui }}>Research aid · verify before client use.</div>
             </div>
           )}
@@ -474,7 +474,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
                 color: T.text, textTransform: "uppercase", lineHeight: 1,
                 whiteSpace: "nowrap",
               }}>
-                Lynx
+                RazorBill
               </span>
               <AlphaMark height={22} />
             </div>

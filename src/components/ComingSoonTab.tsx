@@ -13,7 +13,7 @@ export default function ComingSoonTab({ spec }: { spec: RoadmapSpec }) {
       <div>
         <h2 style={{ fontSize: 26, fontWeight: 300, color: T.text, margin: 0,
           fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", letterSpacing: "0.04em", textTransform: "uppercase" }}>{spec.label}</h2>
-        <p style={{ fontSize: 12, color: T.dim, marginTop: 4, ...ui }}>A planned addition to Lynx — not built yet.</p>
+        <p style={{ fontSize: 12, color: T.dim, marginTop: 4, ...ui }}>A planned addition to RazorBill — not built yet.</p>
       </div>
 
       <div style={{ background: T.panel, border: `1px solid ${T.line}`, borderRadius: 14, overflow: "hidden" }}>

@@ -4,8 +4,8 @@ import { T, ui, lynx } from "@/components/tokens";
 import FundGrid from "@/components/FundGrid";
 import { AlphaMark, LynxMark } from "@/components/Brand";
 
-const ACC = "#0A0A0B";    // Lynx brand — black
-const ACC_DARK = "#EFEFEF"; // Lynx brand — dark mode
+const ACC = "#0A0A0B";    // RazorBill brand — black
+const ACC_DARK = "#EFEFEF"; // RazorBill brand — dark mode
 
 const FEATURES = [
   {
@@ -195,14 +195,14 @@ export default function Home() {
         borderBottom: scrolled ? `1px solid ${divLine}` : "1px solid transparent",
         transition: "all 0.3s",
       }}>
-        {/* Lynx wordmark — nav brand (logo to the right) */}
+        {/* RazorBill wordmark — nav brand (logo to the right) */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, color: T.text }}>
           <span style={{
             ...lynx, fontSize: 20, fontWeight: 300,
             letterSpacing: "0.07em", color: T.text,
             textTransform: "uppercase", lineHeight: 1,
           }}>
-            Lynx
+            RazorBill
           </span>
           <LynxMark height={22} />
         </div>
@@ -263,7 +263,7 @@ export default function Home() {
 
           {/* ── Left: headline ── */}
           <div>
-            {/* Big Lynx headline + logo to the right */}
+            {/* Big RazorBill headline + logo to the right */}
             <div style={{ display: "flex", alignItems: "center", gap: "clamp(14px, 1.8vw, 26px)", margin: "0 0 6px" }}>
               <h1 style={{
                 ...lynx,
@@ -274,7 +274,7 @@ export default function Home() {
                 color: T.text, margin: 0,
                 textTransform: "uppercase",
               }}>
-                Lynx
+                RazorBill
               </h1>
               <div style={{ color: T.text, lineHeight: 0, flexShrink: 0 }}>
                 <LynxMark height="clamp(56px, 7vw, 92px)" />
@@ -357,7 +357,7 @@ export default function Home() {
               <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
                 <div>
                   <div style={{ ...lynx, fontSize: 24, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1 }}>
-                    Lynx
+                    RazorBill
                   </div>
                   <div style={{ fontSize: 9.5, color: T.muted, letterSpacing: "0.07em", textTransform: "uppercase", ...ui, marginTop: 5 }}>
                     Fund Analytics · The Capital Group
@@ -542,7 +542,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── Why Lynx section ── */}
+      {/* ── Why RazorBill section ── */}
       <div style={{ background: T.bg, borderTop: `1px solid ${divLine}`, padding: "100px 40px" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "start" }}>
 
@@ -550,7 +550,7 @@ export default function Home() {
           <div>
             <div style={{ fontSize: 10, fontWeight: 500, color: T.muted, letterSpacing: "0.06em",
               textTransform: "uppercase", ...ui, marginBottom: 16 }}>
-              Why Lynx
+              Why RazorBill
             </div>
             <h2 style={{
               ...lynx, fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 300,
@@ -560,7 +560,7 @@ export default function Home() {
               Built for the way<br/>advisors actually work.
             </h2>
             <p style={{ fontSize: 15, color: T.dim, lineHeight: 1.75, margin: "0 0 32px", ...ui }}>
-              Answering a fund question usually means jumping between several tools. Lynx pulls
+              Answering a fund question usually means jumping between several tools. RazorBill pulls
               screening, risk analytics, and side-by-side comparison into one clean workspace —
               so you can vet a fund, find a better alternative, and back up a recommendation in minutes.
             </p>
@@ -613,7 +613,7 @@ export default function Home() {
                 </div>
               ))}
 
-              {/* Lynx card — highlighted */}
+              {/* RazorBill card — highlighted */}
               <div style={{
                 background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
                 border: `1px solid ${isDark ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.12)"}`,
@@ -621,7 +621,7 @@ export default function Home() {
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                   <div style={{ ...lynx, fontSize: 18, fontWeight: 300, color: T.text, letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                    Lynx
+                    RazorBill
                   </div>
                   <div style={{
                     fontSize: 11, fontWeight: 600, color: T.text, ...ui,
@@ -667,7 +667,7 @@ export default function Home() {
             onMouseEnter={e => { e.currentTarget.style.opacity = "0.8"; e.currentTarget.style.transform = "translateY(-1px)"; }}
             onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "translateY(0)"; }}
           >
-            Enter Lynx →
+            Enter RazorBill →
           </button>
           <p style={{ marginTop: 20, fontSize: 10.5, color: T.muted, ...ui, letterSpacing: "0.03em" }}>
             Internal research aid · Verify before client use
