@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { T, ui, lynx } from "@/components/tokens";
+import { T, ui, mono, lynx } from "@/components/tokens";
 import FundGrid from "@/components/FundGrid";
 
 const ACC = "#0A0A0B";    // RazorBill brand, black
@@ -12,13 +12,149 @@ const STATS = [
   { value: "Live",  label: "Data" },
 ];
 
-// Scroll-down preview: each tool shown as a static screenshot (read-only).
-// Drop the captures in /public as shot-<key>.png and they appear here.
+// ── Read-only tool mockups for the scroll-down preview ──────────────────────────
+// Static sample data, styled like the real app. Nothing interactive.
+
+function Spark({ up = true }: { up?: boolean }) {
+  const pts = up
+    ? "0,20 14,15 28,17 42,9 56,11 70,5 84,7 100,2"
+    : "0,3 14,7 28,5 42,11 56,9 70,15 84,13 100,18";
+  return (
+    <svg viewBox="0 0 100 22" width="100%" height="26" preserveAspectRatio="none" style={{ marginTop: 4 }}>
+      <polyline points={pts} fill="none" stroke={up ? T.green : T.red} strokeWidth="1.6" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function MockDashboard() {
+  const idx = [
+    { l: "S&P 500", v: "5,431.20", c: "+0.62%" },
+    { l: "Dow", v: "42,100.4", c: "+0.34%" },
+    { l: "Nasdaq", v: "17,890.6", c: "+0.81%" },
+  ];
+  return (
+    <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
+        {idx.map((x) => (
+          <div key={x.l} style={{ border: `1px solid ${T.line}`, borderRadius: 8, padding: "10px 12px", background: T.panel }}>
+            <div style={{ fontSize: 9, color: T.muted, ...ui, textTransform: "uppercase", letterSpacing: "0.08em" }}>{x.l}</div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 3 }}>
+              <span style={{ fontSize: 15, fontWeight: 600, color: T.text, ...mono }}>{x.v}</span>
+              <span style={{ fontSize: 11, color: T.green, ...mono }}>{x.c}</span>
+            </div>
+            <Spark up />
+          </div>
+        ))}
+      </div>
+      <div style={{ border: `1px solid ${T.line}`, borderRadius: 8, padding: "10px 14px", background: T.panel, display: "flex", gap: 26, fontSize: 11, ...mono, color: T.dim, flexWrap: "wrap" }}>
+        <span>10Y <b style={{ color: T.text }}>4.21%</b></span>
+        <span>2Y <b style={{ color: T.text }}>4.18%</b></span>
+        <span>Fed Funds <b style={{ color: T.text }}>5.25%</b></span>
+        <span>CPI <b style={{ color: T.text }}>3.1%</b></span>
+      </div>
+    </div>
+  );
+}
+
+function MockScreen() {
+  const rows = [
+    { t: "QQQ", e: "0.20", s: "1.34", r: "+31.2%", sc: 91 },
+    { t: "VUG", e: "0.04", s: "1.28", r: "+29.0%", sc: 88 },
+    { t: "SPY", e: "0.09", s: "1.20", r: "+24.9%", sc: 85 },
+    { t: "VTI", e: "0.03", s: "1.12", r: "+24.1%", sc: 83 },
+    { t: "SCHD", e: "0.06", s: "0.94", r: "+12.3%", sc: 76 },
+  ];
+  const cols = "56px 1fr 1fr 1fr 96px";
+  return (
+    <div style={{ padding: 18 }}>
+      <div style={{ border: `1px solid ${T.line}`, borderRadius: 8, overflow: "hidden", background: T.panel }}>
+        <div style={{ display: "grid", gridTemplateColumns: cols, gap: 8, padding: "9px 14px", borderBottom: `1px solid ${T.line}`, fontSize: 9, color: T.muted, ...ui, textTransform: "uppercase", letterSpacing: "0.07em" }}>
+          <span>Fund</span><span>Exp %</span><span>Sharpe</span><span>1Y</span><span>Score</span>
+        </div>
+        {rows.map((r, i) => (
+          <div key={r.t} style={{ display: "grid", gridTemplateColumns: cols, gap: 8, padding: "10px 14px", borderBottom: i < rows.length - 1 ? `1px solid ${T.line}` : "none", alignItems: "center", fontSize: 12, ...mono }}>
+            <span style={{ fontWeight: 600, color: T.text }}>{r.t}</span>
+            <span style={{ color: T.dim }}>{r.e}</span>
+            <span style={{ color: T.dim }}>{r.s}</span>
+            <span style={{ color: T.green }}>{r.r}</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+              <span style={{ flex: 1, height: 5, borderRadius: 3, background: T.line, overflow: "hidden" }}>
+                <span style={{ display: "block", height: "100%", width: `${r.sc}%`, background: T.text }} />
+              </span>
+              <span style={{ fontSize: 10, color: T.dim }}>{r.sc}</span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MockCompare() {
+  const funds = [
+    { t: "VTI", Expense: "0.03%", Sharpe: "1.12", "Max DD": "-18.4%", Yield: "1.3%" },
+    { t: "SPY", Expense: "0.09%", Sharpe: "1.20", "Max DD": "-18.1%", Yield: "1.2%" },
+    { t: "SCHD", Expense: "0.06%", Sharpe: "0.94", "Max DD": "-14.2%", Yield: "3.5%" },
+  ];
+  const metrics = ["Expense", "Sharpe", "Max DD", "Yield"] as const;
+  return (
+    <div style={{ padding: 18, display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
+      {funds.map((f) => (
+        <div key={f.t} style={{ border: `1px solid ${T.line}`, borderRadius: 8, background: T.panel, overflow: "hidden" }}>
+          <div style={{ padding: "9px 12px", borderBottom: `1px solid ${T.line}`, ...lynx, fontSize: 16, fontWeight: 300, color: T.text, letterSpacing: "0.04em" }}>{f.t}</div>
+          <div style={{ padding: "6px 12px 10px" }}>
+            {metrics.map((m) => (
+              <div key={m} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", fontSize: 11, ...ui }}>
+                <span style={{ color: T.muted }}>{m}</span>
+                <span style={{ color: T.text, ...mono }}>{(f as Record<string, string>)[m]}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MockAnalyze() {
+  const line = "M0,70 C22,66 32,60 46,57 C62,54 72,47 92,45 C112,43 122,37 142,31 C162,25 178,29 198,21 C218,13 232,17 250,7";
+  const tiles: [string, string, string][] = [
+    ["1Y Return", "+24.9%", T.green],
+    ["Sharpe", "1.20", T.text],
+    ["Max DD", "-18.4%", T.red],
+  ];
+  return (
+    <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", gap: 10 }}>
+        {tiles.map(([l, v, c]) => (
+          <div key={l} style={{ flex: 1, border: `1px solid ${T.line}`, borderRadius: 8, padding: "9px 12px", background: T.panel }}>
+            <div style={{ fontSize: 9, color: T.muted, ...ui, textTransform: "uppercase", letterSpacing: "0.07em" }}>{l}</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: c, ...mono, marginTop: 3 }}>{v}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ border: `1px solid ${T.line}`, borderRadius: 8, background: T.panel, padding: "12px 14px" }}>
+        <div style={{ fontSize: 9, color: T.muted, ...ui, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>Growth of $10,000</div>
+        <svg viewBox="0 0 250 80" width="100%" height="120" preserveAspectRatio="none" style={{ display: "block" }}>
+          <defs>
+            <linearGradient id="mk-area" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={T.green} stopOpacity="0.2" />
+              <stop offset="100%" stopColor={T.green} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path d={`${line} L250,80 L0,80 Z`} fill="url(#mk-area)" />
+          <path d={line} fill="none" stroke={T.green} strokeWidth="2" strokeLinejoin="round" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 const TOOLS = [
-  { name: "Dashboard", desc: "Markets, rates, and headlines in one view.", img: "/shot-dashboard.png" },
-  { name: "Screen",    desc: "Filter the fund universe by cost, risk, return, and yield.", img: "/shot-screen.png" },
-  { name: "Compare",   desc: "Funds side by side on the metrics that matter.", img: "/shot-compare.png" },
-  { name: "Analyze",   desc: "Returns, risk, and charts for a single fund.", img: "/shot-analyze.png" },
+  { name: "Dashboard", desc: "Markets, rates, and headlines in one view.", Mock: MockDashboard },
+  { name: "Screen",    desc: "Filter the fund universe by cost, risk, return, and yield.", Mock: MockScreen },
+  { name: "Compare",   desc: "Funds side by side on the metrics that matter.", Mock: MockCompare },
+  { name: "Analyze",   desc: "Returns, risk, and charts for a single fund.", Mock: MockAnalyze },
 ];
 
 export default function Home() {
@@ -441,12 +577,9 @@ export default function Home() {
                       <span key={c} style={{ width: 10, height: 10, borderRadius: "50%", background: c, opacity: 0.9 }} />
                     ))}
                   </div>
-                  <div style={{
-                    aspectRatio: "16 / 9",
-                    backgroundImage: `url(${t.img})`,
-                    backgroundSize: "cover", backgroundPosition: "top center",
-                    backgroundColor: isDark ? "#0E0E10" : "#FAFAFA",
-                  }} />
+                  <div style={{ background: isDark ? "#0E0E10" : "#FAFAFA", pointerEvents: "none" }}>
+                    <t.Mock />
+                  </div>
                 </div>
               </div>
             ))}
