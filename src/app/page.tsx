@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { T, ui, lynx } from "@/components/tokens";
 import FundGrid from "@/components/FundGrid";
-import { AlphaMark, LynxMark } from "@/components/Brand";
 
 const ACC = "#0A0A0B";    // RazorBill brand — black
 const ACC_DARK = "#EFEFEF"; // RazorBill brand — dark mode
@@ -195,8 +194,8 @@ export default function Home() {
         borderBottom: scrolled ? `1px solid ${divLine}` : "1px solid transparent",
         transition: "all 0.3s",
       }}>
-        {/* RazorBill wordmark — nav brand (logo to the right) */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, color: T.text }}>
+        {/* RazorBill wordmark — nav brand */}
+        <div style={{ display: "flex", alignItems: "center", color: T.text }}>
           <span style={{
             ...lynx, fontSize: 20, fontWeight: 300,
             letterSpacing: "0.07em", color: T.text,
@@ -204,7 +203,6 @@ export default function Home() {
           }}>
             RazorBill
           </span>
-          <LynxMark height={22} />
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -278,23 +276,18 @@ export default function Home() {
 
           {/* ── Left: headline ── */}
           <div>
-            {/* Big RazorBill headline + logo to the right */}
-            <div style={{ display: "flex", alignItems: "center", gap: "clamp(14px, 1.8vw, 26px)", margin: "0 0 6px" }}>
-              <h1 style={{
-                ...lynx,
-                fontSize: "clamp(48px, 6.5vw, 86px)",
-                fontWeight: 300,
-                letterSpacing: "0.08em",
-                lineHeight: 0.95,
-                color: T.text, margin: 0,
-                textTransform: "uppercase",
-              }}>
-                RazorBill
-              </h1>
-              <div style={{ color: T.text, lineHeight: 0, flexShrink: 0 }}>
-                <LynxMark height="clamp(56px, 7vw, 92px)" />
-              </div>
-            </div>
+            {/* Big RazorBill headline */}
+            <h1 style={{
+              ...lynx,
+              fontSize: "clamp(48px, 6.5vw, 86px)",
+              fontWeight: 300,
+              letterSpacing: "0.08em",
+              lineHeight: 0.95,
+              color: T.text, margin: "0 0 6px",
+              textTransform: "uppercase",
+            }}>
+              RazorBill
+            </h1>
 
             {/* By The Capital Group — attribution line */}
             <div style={{
@@ -367,20 +360,14 @@ export default function Home() {
               ? "0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04)"
               : "0 20px 60px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03)",
           }}>
-            {/* Card brand — lynx cat + wordmark, same line height */}
+            {/* Card brand — wordmark */}
             <div style={{ marginBottom: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
-                <div>
-                  <div style={{ ...lynx, fontSize: 24, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1 }}>
-                    RazorBill
-                  </div>
-                  <div style={{ fontSize: 9.5, color: T.muted, letterSpacing: "0.07em", textTransform: "uppercase", ...ui, marginTop: 5 }}>
-                    Fund Analytics · The Capital Group
-                  </div>
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ ...lynx, fontSize: 24, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1 }}>
+                  RazorBill
                 </div>
-                {/* Cat silhouette — same height as the text, to the right */}
-                <div style={{ color: T.text, lineHeight: 0 }}>
-                  <LynxMark height={28} />
+                <div style={{ fontSize: 9.5, color: T.muted, letterSpacing: "0.07em", textTransform: "uppercase", ...ui, marginTop: 5 }}>
+                  Fund Analytics · The Capital Group
                 </div>
               </div>
               {/* Underline — professional divider */}
