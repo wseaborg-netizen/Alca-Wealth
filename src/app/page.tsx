@@ -237,6 +237,19 @@ export default function Home() {
         minHeight: "100vh", display: "flex", alignItems: "center",
         position: "relative", overflow: "hidden", paddingTop: 58,
       }}>
+        {/* Razorbill photo background */}
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 0,
+          backgroundImage: "url(/razorbill.jpg)",
+          backgroundSize: "cover", backgroundPosition: "center",
+        }} />
+        {/* Readability scrim — theme-matched, heaviest on the left behind the text */}
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 1,
+          background: isDark
+            ? "linear-gradient(to right, rgba(10,10,11,0.93) 0%, rgba(10,10,11,0.72) 48%, rgba(10,10,11,0.45) 100%)"
+            : "linear-gradient(to right, rgba(250,250,250,0.95) 0%, rgba(250,250,250,0.8) 48%, rgba(250,250,250,0.5) 100%)",
+        }} />
         {/* Subtle grid */}
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none", opacity: 0.35,
@@ -259,6 +272,7 @@ export default function Home() {
           maxWidth: 1200, margin: "0 auto", padding: "80px 40px",
           width: "100%", display: "grid",
           gridTemplateColumns: "1fr 420px", gap: 80, alignItems: "center",
+          position: "relative", zIndex: 2,
         }}>
 
           {/* ── Left: headline ── */}
