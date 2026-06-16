@@ -151,7 +151,7 @@ export default function Home() {
             onMouseEnter={e => (e.currentTarget.style.color = T.text)}
             onMouseLeave={e => (e.currentTarget.style.color = T.dim)}
           >
-            Features
+            Preview
           </button>
           <button
             onClick={() => document.getElementById("login-card")?.scrollIntoView({ behavior: "smooth", block: "center" })}
