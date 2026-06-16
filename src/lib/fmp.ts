@@ -18,8 +18,9 @@ import { cacheGet, cacheSet } from "./cache";
 const HISTORY_TTL = 24 * 60 * 60; // 24 hours
 const INFO_TTL    = 24 * 60 * 60;
 
-const FMP_KEY = process.env.FMP_API_KEY ?? "";
-const STABLE  = "https://financialmodelingprep.com/stable";
+const FMP_KEY    = process.env.FMP_API_KEY ?? "";
+const STABLE     = "https://financialmodelingprep.com/stable";
+const TIINGO_KEY = process.env.TIINGO_API_KEY ?? "";
 
 let warnedNoKey = false;
 function ensureKey(): boolean {
@@ -161,6 +162,39 @@ function yearsAgoISO(years: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+/**
+ * Tiingo — one EOD endpoint returns adjusted prices AND dividends (divCash),
+ * and covers ETFs + mutual funds. Used first when TIINGO_API_KEY is set.
+ */
+async function fetchHistoryTiingo(ticker: string, from: string): Promise<HistoryResult> {
+  const url = `https://api.tiingo.com/tiingo/daily/${encodeURIComponent(ticker)}/prices?startDate=${from}&format=json&token=${TIINGO_KEY}`;
+  let rows: Record<string, unknown>[] = [];
+  try {
+    await throttle();
+    const res = await fetch(url, { headers: { "Content-Type": "application/json" }, next: { revalidate: 0 } });
+    if (!res.ok) { console.warn(`[tiingo] ${ticker} → HTTP ${res.status}`); return EMPTY_HISTORY; }
+    const data = await res.json();
+    rows = Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
+  } catch (e) {
+    console.warn(`[tiingo] ${ticker} → ${e instanceof Error ? e.message : "error"}`);
+    return EMPTY_HISTORY;
+  }
+  if (rows.length === 0) return EMPTY_HISTORY;
+
+  const prices: FmpHistoricalItem[] = rows
+    .map((r) => ({ date: String(r.date).slice(0, 10), adjClose: Number(r.adjClose ?? r.close ?? 0) }))
+    .filter((p) => p.adjClose > 0 && p.date)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const dividends: FmpDividendItem[] = rows
+    .map((r) => ({ date: String(r.date).slice(0, 10), amount: Number(r.divCash ?? 0) }))
+    .filter((d) => d.amount > 0)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const currentPrice = prices.at(-1)?.adjClose ?? 0;
+  return { prices, dividends, currentPrice, chartName: null };
+}
+
 export async function fetchHistory(ticker: string, range = "10y"): Promise<HistoryResult> {
   const cacheKey = `hist:${ticker}:${range}`;
 
@@ -171,6 +205,16 @@ export async function fetchHistory(ticker: string, range = "10y"): Promise<Histo
   // 2. Resolve the "from" date from the requested range (e.g. "10y", "5y", "1y")
   const yrs = parseInt(range) || 10;
   const from = yearsAgoISO(yrs);
+
+  // 2a. Tiingo first when configured (covers funds; prices + dividends in one call)
+  if (TIINGO_KEY) {
+    const t = await fetchHistoryTiingo(ticker, from);
+    if (t.prices.length > 0) {
+      await cacheSet(cacheKey, t, HISTORY_TTL);
+      return t;
+    }
+    // else fall through to FMP
+  }
 
   const T = encodeURIComponent(ticker);
 
