@@ -3,85 +3,22 @@ import React, { useState, useEffect, useRef } from "react";
 import { T, ui, lynx } from "@/components/tokens";
 import FundGrid from "@/components/FundGrid";
 
-const ACC = "#0A0A0B";    // RazorBill brand — black
-const ACC_DARK = "#EFEFEF"; // RazorBill brand — dark mode
-
-const FEATURES = [
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
-        <rect x="2" y="2" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="1.4"/>
-        <rect x="12" y="2" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="1.4"/>
-        <rect x="2" y="12" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="1.4"/>
-        <rect x="12" y="12" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="1.4"/>
-      </svg>
-    ),
-    title: "4,600+ Fund Universe",
-    desc: "Screen every major ETF and mutual fund in one place. Style box, sector, fixed income — the full market, instantly accessible.",
-  },
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
-        <polyline points="3,16 8,10 12,13 19,5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-        <circle cx="19" cy="5" r="2" fill="currentColor"/>
-      </svg>
-    ),
-    title: "Live Market Data",
-    desc: "Real-time prices, 1/3/5-year returns, Sharpe ratio, max drawdown, alpha, beta — all fetched live, nothing stale.",
-  },
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
-        <path d="M4 6h14M4 11h10M4 16h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-        <circle cx="17" cy="15" r="3.5" stroke="currentColor" strokeWidth="1.4"/>
-        <path d="M19.5 17.5l2 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-      </svg>
-    ),
-    title: "Multi-Factor Screening",
-    desc: "Filter by expense ratio, Sharpe, alpha, dividend yield, track record, and style box simultaneously. Screen like an analyst.",
-  },
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
-        <rect x="2" y="5" width="8" height="14" rx="2" stroke="currentColor" strokeWidth="1.4"/>
-        <rect x="12" y="5" width="8" height="14" rx="2" stroke="currentColor" strokeWidth="1.4"/>
-        <path d="M10 12h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-      </svg>
-    ),
-    title: "Head-to-Head Comparison",
-    desc: "Stack any two funds side by side. Performance charts, risk metrics, cost — everything to make the call.",
-  },
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
-        <path d="M11 2L13.5 8.5H20L14.5 12.5L16.5 19L11 15L5.5 19L7.5 12.5L2 8.5H8.5L11 2Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
-      </svg>
-    ),
-    title: "Advisor Hub",
-    desc: "Curated workflows for advisory work — discovery, analysis, replacements, and comparisons in one hub.",
-  },
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
-        <path d="M3 3h16v4H3zM3 10h7v9H3zM12 10h7v4h-7zM12 17h7v2h-7z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
-      </svg>
-    ),
-    title: "Analytics Suite",
-    desc: "Correlation matrix, peer rankings, performance attribution — institutional tools, advisor-ready.",
-  },
-];
+const ACC = "#0A0A0B";    // RazorBill brand, black
+const ACC_DARK = "#EFEFEF"; // RazorBill brand, dark mode
 
 const STATS = [
   { value: "4,607", label: "Funds" },
   { value: "15+",   label: "Metrics" },
   { value: "Live",  label: "Data" },
-  { value: "Fast",  label: "Interface" },
 ];
 
-const USE_CASES = [
-  { title: "Vet a fund fast",      tag: "Analysis",   note: "Pull returns, risk, cost, and rating into one view before it goes in front of a client." },
-  { title: "Find a better fit",    tag: "Discover",   note: "Surface cheaper or lower-drawdown funds in the same category in seconds." },
-  { title: "Compare side by side", tag: "Comparison", note: "Stack funds head-to-head on performance, risk, and fee to make the call." },
+// Scroll-down preview: each tool shown as a static screenshot (read-only).
+// Drop the captures in /public as shot-<key>.png and they appear here.
+const TOOLS = [
+  { name: "Dashboard", desc: "Markets, rates, and headlines in one view.", img: "/shot-dashboard.png" },
+  { name: "Screen",    desc: "Filter the fund universe by cost, risk, return, and yield.", img: "/shot-screen.png" },
+  { name: "Compare",   desc: "Funds side by side on the metrics that matter.", img: "/shot-compare.png" },
+  { name: "Analyze",   desc: "Returns, risk, and charts for a single fund.", img: "/shot-analyze.png" },
 ];
 
 export default function Home() {
@@ -138,7 +75,7 @@ export default function Home() {
       const d = await res.json();
       if (!res.ok) { setLoginErr(d.error ?? "Login failed."); }
       else { setAuthMode("full"); setAuthUser(d.user); }
-    } catch { setLoginErr("Network error — try again."); }
+    } catch { setLoginErr("Network error. Try again."); }
     setLoading(false);
   };
 
@@ -154,7 +91,7 @@ export default function Home() {
       const d = await res.json();
       if (!res.ok) { setPreviewErr(d.error ?? "Incorrect password."); }
       else { setAuthMode("preview"); }
-    } catch { setPreviewErr("Network error — try again."); }
+    } catch { setPreviewErr("Network error. Try again."); }
     setPreviewLoading(false);
   };
 
@@ -302,20 +239,13 @@ export default function Home() {
               By The Capital Group
             </div>
 
-            {/* Sub-headline — Geist */}
+            {/* Sub-headline */}
             <p style={{
               fontSize: "clamp(16px, 2vw, 19px)", color: T.dim,
-              lineHeight: 1.6, margin: "0 0 14px", maxWidth: 480, ...ui,
+              lineHeight: 1.6, margin: "0 0 36px", maxWidth: 480, ...ui,
               fontWeight: 400,
             }}>
-              Fund research &amp; analytics, built for advisors.
-            </p>
-            <p style={{
-              fontSize: 15, color: T.muted,
-              lineHeight: 1.65, margin: "0 0 40px", maxWidth: 460, ...ui,
-            }}>
-              Screen 4,600+ funds by style, cost, risk, and alpha. Compare options head-to-head,
-              keep a watchlist, and get to a confident recommendation faster.
+              Fund research and analytics for advisors.
             </p>
 
             {/* CTA row — login card on right handles entry */}
@@ -332,7 +262,7 @@ export default function Home() {
                 onMouseEnter={e => { e.currentTarget.style.color = T.text; e.currentTarget.style.borderColor = isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.25)"; }}
                 onMouseLeave={e => { e.currentTarget.style.color = T.dim; e.currentTarget.style.borderColor = isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)"; }}
               >
-                See features ↓
+                See it in action ↓
               </button>
             </div>
 
@@ -485,194 +415,45 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── Features section ── */}
-      <div ref={featuresRef} style={{ background: sectionBg, borderTop: `1px solid ${divLine}`, padding: "100px 40px" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 70 }}>
-            <div style={{ fontSize: 10, fontWeight: 500, color: T.muted, letterSpacing: "0.06em",
-              textTransform: "uppercase", ...ui, marginBottom: 16 }}>
-              Platform
-            </div>
-            <h2 style={{
-              ...lynx, fontSize: "clamp(32px, 5vw, 52px)", fontWeight: 300,
-              letterSpacing: "0.08em", color: T.text, margin: "0 0 16px",
-              textTransform: "uppercase",
-            }}>
-              Everything in one place
-            </h2>
-            <p style={{ fontSize: 15, color: T.dim, maxWidth: 480, margin: "0 auto", lineHeight: 1.7, ...ui }}>
-              Built by an advisor who got tired of switching between six tools to answer one client question.
-            </p>
+      {/* ── Tool preview (read-only screenshots) ── */}
+      <div ref={featuresRef} style={{ background: sectionBg, borderTop: `1px solid ${divLine}`, padding: "80px 40px 100px" }}>
+        <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+          <div style={{ fontSize: 10, fontWeight: 500, color: T.muted, letterSpacing: "0.08em",
+            textTransform: "uppercase", ...ui, marginBottom: 52, textAlign: "center" }}>
+            A look inside
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(310px, 1fr))", gap: 18 }}>
-            {FEATURES.map((f, i) => (
-              <div key={i} style={{
-                background: cardBg,
-                border: `1px solid ${cardBrd}`,
-                borderRadius: 14, padding: "26px 26px 22px",
-                transition: "transform 0.2s, box-shadow 0.2s",
-              }}
-                onMouseEnter={e => {
-                  (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
-                  (e.currentTarget as HTMLDivElement).style.boxShadow = isDark
-                    ? "0 12px 40px rgba(0,0,0,0.35)"
-                    : "0 8px 32px rgba(0,0,0,0.06)";
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
-                  (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
-                }}
-              >
+          <div style={{ display: "flex", flexDirection: "column", gap: 60 }}>
+            {TOOLS.map((t) => (
+              <div key={t.name}>
+                <div style={{ ...lynx, fontSize: 22, fontWeight: 300, color: T.text, letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>
+                  {t.name}
+                </div>
+                <div style={{ fontSize: 14, color: T.dim, ...ui, marginTop: 8, marginBottom: 16 }}>{t.desc}</div>
                 <div style={{
-                  width: 40, height: 40, borderRadius: 10, marginBottom: 16,
-                  background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  color: T.text,
+                  borderRadius: 12, overflow: "hidden",
+                  border: `1px solid ${cardBrd}`,
+                  boxShadow: isDark ? "0 16px 50px rgba(0,0,0,0.4)" : "0 16px 50px rgba(0,0,0,0.08)",
                 }}>
-                  {f.icon}
-                </div>
-                <div style={{ fontSize: 14.5, fontWeight: 600, color: T.text, ...ui, marginBottom: 7, letterSpacing: "-0.01em" }}>
-                  {f.title}
-                </div>
-                <div style={{ fontSize: 13, color: T.dim, lineHeight: 1.65, ...ui }}>
-                  {f.desc}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Why RazorBill section ── */}
-      <div style={{ background: T.bg, borderTop: `1px solid ${divLine}`, padding: "100px 40px" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "start" }}>
-
-          {/* Left */}
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 500, color: T.muted, letterSpacing: "0.06em",
-              textTransform: "uppercase", ...ui, marginBottom: 16 }}>
-              Why RazorBill
-            </div>
-            <h2 style={{
-              ...lynx, fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 300,
-              letterSpacing: "0.06em", color: T.text, margin: "0 0 20px",
-              textTransform: "uppercase", lineHeight: 1.1,
-            }}>
-              Built for the way<br/>advisors actually work.
-            </h2>
-            <p style={{ fontSize: 15, color: T.dim, lineHeight: 1.75, margin: "0 0 32px", ...ui }}>
-              Answering a fund question usually means jumping between several tools. RazorBill pulls
-              screening, risk analytics, and side-by-side comparison into one clean workspace —
-              so you can vet a fund, find a better alternative, and back up a recommendation in minutes.
-            </p>
-
-            {[
-              "Morningstar + fi360 data integration (coming)",
-              "Built by an advisor, for advisors",
-              "Modern interface — nothing legacy",
-              "Internal tool — no client data, ever",
-            ].map((item, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 13 }}>
-                <div style={{
-                  width: 16, height: 16, borderRadius: "50%", flexShrink: 0,
-                  background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
-                    <path d="M2 5l2.5 2.5L8 2.5" stroke={T.text} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-                <span style={{ fontSize: 13.5, color: T.dim, ...ui }}>{item}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Right — comparison */}
-          <div style={{ paddingTop: 4 }}>
-            <div style={{ fontSize: 10, fontWeight: 500, color: T.muted, ...ui,
-              letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 16 }}>
-              How advisors use it
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {USE_CASES.map((d, i) => (
-                <div key={i} style={{
-                  background: cardBg, border: `1px solid ${cardBrd}`,
-                  borderRadius: 12, padding: "16px 18px",
-                }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 600, color: T.text, ...ui }}>{d.title}</div>
-                    <div style={{
-                      fontSize: 11, fontWeight: 500, color: T.muted, ...ui,
-                      background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
-                      padding: "3px 9px", borderRadius: 6, letterSpacing: "0.01em",
-                    }}>
-                      {d.tag}
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 12.5, color: T.muted, ...ui, lineHeight: 1.5 }}>{d.note}</div>
-                </div>
-              ))}
-
-              {/* RazorBill card — highlighted */}
-              <div style={{
-                background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
-                border: `1px solid ${isDark ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.12)"}`,
-                borderRadius: 12, padding: "16px 18px",
-              }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                  <div style={{ ...lynx, fontSize: 18, fontWeight: 300, color: T.text, letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                    RazorBill
+                  <div style={{ height: 34, display: "flex", alignItems: "center", gap: 7, padding: "0 14px",
+                    borderBottom: `1px solid ${cardBrd}`, background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)" }}>
+                    {["#FF5F57", "#FEBC2E", "#28C840"].map((c) => (
+                      <span key={c} style={{ width: 10, height: 10, borderRadius: "50%", background: c, opacity: 0.9 }} />
+                    ))}
                   </div>
                   <div style={{
-                    fontSize: 11, fontWeight: 600, color: T.text, ...ui,
-                    background: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.07)",
-                    padding: "3px 9px", borderRadius: 6,
-                  }}>
-                    Internal tool
-                  </div>
-                </div>
-                <div style={{ fontSize: 12.5, color: T.dim, ...ui, lineHeight: 1.5 }}>
-                  An in-house research aid for the firm's advisors — fast, modern, and built around real workflows.
+                    aspectRatio: "16 / 9",
+                    backgroundImage: `url(${t.img})`,
+                    backgroundSize: "cover", backgroundPosition: "top center",
+                    backgroundColor: isDark ? "#0E0E10" : "#FAFAFA",
+                  }} />
                 </div>
               </div>
-            </div>
+            ))}
           </div>
-        </div>
-      </div>
 
-      {/* ── Bottom CTA ── */}
-      <div style={{
-        background: sectionBg, borderTop: `1px solid ${divLine}`,
-        padding: "90px 40px", textAlign: "center",
-      }}>
-        <div style={{ maxWidth: 520, margin: "0 auto" }}>
-          <h2 style={{
-            ...lynx, fontSize: "clamp(28px, 5vw, 48px)", fontWeight: 300,
-            letterSpacing: "0.1em", color: T.text, margin: "0 0 18px",
-            textTransform: "uppercase",
-          }}>
-            Start researching.
-          </h2>
-          <p style={{ fontSize: 15, color: T.dim, lineHeight: 1.65, margin: "0 0 34px", ...ui }}>
-            No login required to explore. Sign in when you're ready to save watchlists and preferences across devices.
-          </p>
-          <button
-            onClick={() => document.getElementById("login-card")?.scrollIntoView({ behavior: "smooth", block: "center" })}
-            style={{
-              background: acc, color: isDark ? "#0A0A0B" : "#FFFFFF",
-              border: "none", borderRadius: 12, padding: "15px 40px",
-              fontSize: 14.5, fontWeight: 600, ...ui, cursor: "pointer",
-              transition: "all 0.2s", letterSpacing: "0.01em",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.opacity = "0.8"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "translateY(0)"; }}
-          >
-            Enter RazorBill →
-          </button>
-          <p style={{ marginTop: 20, fontSize: 10.5, color: T.muted, ...ui, letterSpacing: "0.03em" }}>
-            Internal research aid · Verify before client use
+          <p style={{ textAlign: "center", marginTop: 60, fontSize: 10.5, color: T.muted, ...ui, letterSpacing: "0.03em" }}>
+            Internal research aid. Verify before client use.
           </p>
         </div>
       </div>
