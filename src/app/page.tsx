@@ -68,7 +68,7 @@ function FindPreview() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 4 }}>
           {cells.map((on, i) => (
             <div key={i} style={{ aspectRatio: "1.5/1", borderRadius: 4,
-              background: on ? T.data : "#fff", border: `1px solid ${on ? T.data : T.line2}` }} />
+              background: on ? T.data : T.panel3, border: `1px solid ${on ? T.data : T.line2}` }} />
           ))}
         </div>
         <div style={{ marginTop: 10, fontSize: 22, fontWeight: 600, color: T.data, ...mono, lineHeight: 1 }}>{UNIVERSE_COUNT}</div>
@@ -101,7 +101,7 @@ function AnalysisPreview() {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <div style={{ background: "#F0FDF4", border: `1px solid ${T.green}44`, borderRadius: 10, padding: "12px 14px" }}>
+        <div style={{ background: "rgba(22,163,74,0.10)", border: `1px solid ${T.green}44`, borderRadius: 10, padding: "12px 14px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 14, fontWeight: 600, color: T.text, ...mono }}>SCHD</span>
             <span style={{ fontSize: 9, fontWeight: 600, color: "#fff", background: T.green, borderRadius: 4, padding: "2px 7px", ...ui }}>STRONG</span>
@@ -240,7 +240,7 @@ function LockShowcaseSection({
   tab: string; name: string; tagline: string; onLoginScroll: () => void; children: React.ReactNode;
 }) {
   const [hover, setHover] = useState(false);
-  const accent = T.blue;
+  const accent = "#EDEDEA"; // near-white accent — reads on the black splash
   return (
     <div
       onClick={onLoginScroll}
@@ -268,7 +268,7 @@ function LockShowcaseSection({
         <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0,
           background: hover ? accent : accent + "12",
           border: `1px solid ${hover ? accent : accent + "33"}`,
-          color: hover ? "#fff" : accent,
+          color: hover ? "#0A0A0B" : accent,
           borderRadius: 8, padding: "8px 14px", transition: "all 0.18s" }}>
           <span style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: "nowrap", ...ui }}>Sign in to use →</span>
         </div>
@@ -367,11 +367,11 @@ export default function Home() {
 
   // ── On mount: check existing session ─────────────────────────────────────
   useEffect(() => {
-    const saved = localStorage.getItem("gf_theme");
-    if (saved === "dark" || saved === "light") {
-      setThemeLocal(saved);
-      document.documentElement.setAttribute("data-theme", saved);
-    }
+    // The lock screen is always a fully black splash — force dark tokens
+    // regardless of the saved theme. (FundGrid restores the user's real theme
+    // on its own mount after sign-in.)
+    setThemeLocal("dark");
+    document.documentElement.setAttribute("data-theme", "dark");
     // Check Supabase session
     fetch("/api/auth").then(r => r.json()).then(d => {
       if (d.mode === "full") { setAuthMode("full"); setAuthUser(d.user); }
@@ -427,13 +427,13 @@ export default function Home() {
     }} />;
   }
 
-  // Still checking session — show nothing to avoid flash
-  if (authMode === null) return <div style={{ minHeight: "100vh", background: "var(--c-bg)" }} />;
+  // Still checking session — black to match the splash, no flash
+  if (authMode === null) return <div style={{ minHeight: "100vh", background: "#000000" }} />;
 
   const isDark    = theme === "dark";
   const acc       = isDark ? ACC_DARK : ACC;
-  const sectionBg = isDark ? "#111113"         : "#F7F7F8";
-  const divLine   = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
+  const sectionBg = "#000000";
+  const divLine   = "rgba(255,255,255,0.06)";
 
   // ── Cinematic dark hero palette ──────────────────────────────────────────
   // The lock screen is always a dark splash, independent of the app theme, so
