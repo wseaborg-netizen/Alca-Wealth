@@ -67,7 +67,7 @@ export default function SettingsTab({ theme, setTheme }: { theme: Theme; setThem
         <h2 style={{ fontSize: 26, fontWeight: 300, color: T.text, margin: 0,
           fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", letterSpacing: "0.04em", textTransform: "uppercase" }}>Settings</h2>
         <p style={{ fontSize: 12, color: T.dim, marginTop: 4, ...ui }}>
-          Personalize how Alca Funds looks and behaves on this device.
+          Personalize how Alca looks and behaves on this device.
         </p>
       </div>
 
@@ -88,7 +88,7 @@ export default function SettingsTab({ theme, setTheme }: { theme: Theme; setThem
         <div style={{ fontSize: 11, fontWeight: 300, letterSpacing: "0.07em", textTransform: "uppercase",
           color: T.muted, fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", padding: "16px 0 4px" }}>About</div>
         <Row label="Application" sub="Internal research aid — verify in your firm's system before client use.">
-          <span style={{ fontSize: 12, color: T.dim, ...mono }}>Alca Funds v1</span>
+          <span style={{ fontSize: 12, color: T.dim, ...mono }}>Alca v1</span>
         </Row>
         <Row label="Fund universe" sub="Funds available to screen, compare and analyze.">
           <span style={{ fontSize: 14, fontWeight: 600, color: T.data, ...mono }}>{UNIVERSE_COUNT.toLocaleString()}</span>
@@ -97,7 +97,7 @@ export default function SettingsTab({ theme, setTheme }: { theme: Theme; setThem
           <span style={{ fontSize: 12, color: T.dim, ...ui }}>Yahoo Finance · FRED</span>
         </Row>
         <div style={{ paddingTop: 14, fontSize: 11.5, color: T.muted, ...ui, lineHeight: 1.55 }}>
-          Alca Funds · Fund Analytics. Research tool only — not investment advice.
+          Alca · Fund Analytics. Research tool only — not investment advice.
         </div>
       </Card>
     </div>

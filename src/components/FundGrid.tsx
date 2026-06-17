@@ -326,7 +326,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
           </button>
           {open && (
             <div style={{ overflow: "hidden", color: T.text }}>
-              <div style={{ fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", fontSize: 16, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1, whiteSpace: "nowrap" }}>Alca Funds</div>
+              <div style={{ fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", fontSize: 16, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1, whiteSpace: "nowrap" }}>Alca</div>
               <div style={{ fontSize: 9, color: T.muted, letterSpacing: "0.04em",
                 textTransform: "uppercase", marginTop: 4, whiteSpace: "nowrap", ...ui }}>Fund Analytics</div>
             </div>
@@ -373,7 +373,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
           <NavButton item={{ id: "settings", label: "Settings", icon: IconSettings }} sub={open} />
           {open && (
             <div style={{ padding: "8px 12px 4px" }}>
-              <div style={{ fontSize: 9, color: T.muted, ...mono }}>Alca Funds v1</div>
+              <div style={{ fontSize: 9, color: T.muted, ...mono }}>Alca v1</div>
               <div style={{ fontSize: 9, color: T.muted, lineHeight: 1.4, ...ui }}>Research aid · verify before client use.</div>
             </div>
           )}
@@ -427,38 +427,6 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {/* Single Advisor Hub CTA — scrolls to the showcase on dashboard */}
-            <button
-              onClick={() => {
-                if (tab !== "dashboard") switchTab("dashboard");
-                // Scroll to showcase after a tick so the dashboard panel is visible
-                setTimeout(() => {
-                  const el = document.getElementById("af-showcase");
-                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-                }, tab !== "dashboard" ? 120 : 0);
-              }}
-              style={{
-                display: "flex", alignItems: "center", gap: 9, padding: "9px 18px",
-                borderRadius: 9, cursor: "pointer",
-                background: "var(--c-accent)", color: "var(--c-bg)",
-                border: "1px solid var(--c-accentD)",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
-                transition: "all 0.15s",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.2)"; e.currentTarget.style.opacity = "0.88"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.12)"; e.currentTarget.style.opacity = "1"; }}
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                <rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" stroke="currentColor" strokeWidth="1.4"/>
-                <rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" stroke="currentColor" strokeWidth="1.4"/>
-                <rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" stroke="currentColor" strokeWidth="1.4"/>
-                <rect x="9" y="9" width="5.5" height="5.5" rx="1.2" stroke="currentColor" strokeWidth="1.4"/>
-              </svg>
-              <span style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: "nowrap", ...ui }}>Advisor Hub</span>
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                <path d="M3 8h9M8.5 4l4 4-4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
             {/* Brand mark + wordmark, top-right */}
             <div style={{ width: 1, height: 26, background: T.line, margin: "0 2px" }} />
             <div style={{ display: "flex", alignItems: "center", gap: 10, color: T.text }}>
@@ -468,7 +436,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
                 color: T.text, textTransform: "uppercase", lineHeight: 1,
                 whiteSpace: "nowrap",
               }}>
-                Alca Funds
+                Alca
               </span>
             </div>
 
