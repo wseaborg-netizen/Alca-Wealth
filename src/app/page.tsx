@@ -458,7 +458,7 @@ export default function Home() {
   const navAccText = scrolled ? (isDark ? "#0A0A0B" : "#FFFFFF") : H.accText;
 
   return (
-    <div style={{ background: "#08080A", minHeight: "100vh", overflowX: "hidden" }}>
+    <div style={{ background: "#000000", minHeight: "100vh", overflowX: "hidden" }}>
 
       {/* ── Sticky nav ── */}
       <nav style={{
@@ -508,11 +508,11 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* ── Hero — cinematic dark lock screen ── */}
+      {/* ── Hero — cinematic black lock screen ── */}
       <div style={{
         minHeight: "100vh", display: "flex", alignItems: "center",
         position: "relative", overflow: "hidden", paddingTop: 58,
-        background: "#08080A",
+        background: "#000000",
       }}>
         {/* Razorbill photo — emerging from black, edges feathered so it has no seam */}
         <div style={{
@@ -520,23 +520,28 @@ export default function Home() {
           backgroundImage: "url(/razorbill.jpg)",
           backgroundSize: "82%", backgroundPosition: "38% 24%",
           backgroundRepeat: "no-repeat",
-          maskImage: "radial-gradient(115% 110% at 45% 42%, #000 46%, transparent 76%)",
-          WebkitMaskImage: "radial-gradient(115% 110% at 45% 42%, #000 46%, transparent 76%)",
+          maskImage: "radial-gradient(112% 108% at 43% 42%, #000 42%, transparent 72%)",
+          WebkitMaskImage: "radial-gradient(112% 108% at 43% 42%, #000 42%, transparent 72%)",
         }} />
-        {/* Cinematic vignette — keeps the bird luminous, sinks the edges to black */}
+        {/* Cinematic vignette — keeps the bird luminous, sinks the edges to pure black */}
         <div style={{
           position: "absolute", inset: 0, zIndex: 1,
-          background: "radial-gradient(115% 130% at 64% 40%, transparent 0%, transparent 30%, rgba(8,8,10,0.45) 62%, rgba(8,8,10,0.88) 100%)",
+          background: "radial-gradient(110% 125% at 56% 42%, transparent 0%, transparent 26%, rgba(0,0,0,0.5) 58%, rgba(0,0,0,1) 92%)",
         }} />
         {/* Left-edge fade — anchors the wordmark without washing the bird out */}
         <div style={{
           position: "absolute", inset: 0, zIndex: 1,
-          background: "linear-gradient(to right, rgba(8,8,10,0.94) 0%, rgba(8,8,10,0.62) 24%, rgba(8,8,10,0.12) 46%, transparent 60%)",
+          background: "linear-gradient(to right, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.66) 22%, rgba(0,0,0,0.14) 44%, transparent 58%)",
+        }} />
+        {/* Right-edge fade — pulls the black across the login card so it floats on black */}
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 1,
+          background: "linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.94) 18%, rgba(0,0,0,0.55) 34%, transparent 52%)",
         }} />
         {/* Bottom grounding gradient */}
         <div style={{
           position: "absolute", left: 0, right: 0, bottom: 0, height: "42%", zIndex: 1,
-          background: "linear-gradient(to top, rgba(8,8,10,0.82) 0%, transparent 100%)",
+          background: "linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%)",
         }} />
         {/* Fine film grain for richness */}
         <div style={{
