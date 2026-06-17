@@ -45,3 +45,7 @@ next-env.d.ts
 
 # Local env
 .env.local
+
+# local universe backup (git history is the real backup)
+data/universe.backup.json
+files.zip

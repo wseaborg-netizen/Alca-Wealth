@@ -11,15 +11,16 @@ import universeData from "@/../data/universe.json";
 const ACC = "#0A0A0B";    // Alca brand, black
 const ACC_DARK = "#EFEFEF"; // Alca brand, dark mode
 
+// Live fund count — derived from the universe so the stat never goes stale.
+const UNIVERSE_COUNT = (universeData as unknown[]).length;
+
 const STATS = [
-  { value: "4,607", label: "Funds" },
+  { value: UNIVERSE_COUNT.toLocaleString("en-US"), label: "Funds" },
   { value: "15+",   label: "Metrics" },
   { value: "Live",  label: "Data" },
 ];
 
 // ── Advisor Hub showcase for the lock screen ────────────────────────────────
-
-const UNIVERSE_COUNT = (universeData as unknown[]).length;
 
 const MOCK_FIND = [
   { ticker: "SCHD", name: "Schwab US Dividend Equity", score: 94 },

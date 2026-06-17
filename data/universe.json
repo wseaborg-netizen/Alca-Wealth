@@ -385,6 +385,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "AMUN",
+    "name": "abrdn Ultra Short Municipal Income Active ETF",
+    "category": "Muni National Intermediate",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "AMYY",
     "name": "GraniteShares YieldBOOST AMD ETF",
     "category": "US Equity Large Blend",
@@ -938,6 +945,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "AUSM",
+    "name": "Allspring Exchange-Traded Funds Trust Allspring Ultra Short Mu",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "AVDE",
     "name": "Avantis International Equity ETF",
     "category": "International Equity",
@@ -1300,6 +1314,13 @@
     "category": "US Equity Large Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "BAMU",
+    "name": "Brookstone Ultra-Short Bond ETF",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "BAMV",
@@ -1974,6 +1995,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "BILZ",
+    "name": "PIMCO U.S. Treasury Index Fund PIMCO Ultra Short Government Ac",
+    "category": "Intermediate Government",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
     "ticker": "BINC",
     "name": "iShares Flexible Income Active ETF",
     "category": "US Equity Large Blend",
@@ -1995,13 +2023,6 @@
     "benchmark": "VXUS"
   },
   {
-    "ticker": "BIS",
-    "name": "ProShares UltraShort Nasdaq Biotechnology",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
-  },
-  {
     "ticker": "BITB",
     "name": "Bitwise Bitcoin ETF Common Shares of Beneficial Interest",
     "category": "Sector / Thematic",
@@ -2011,6 +2032,13 @@
   {
     "ticker": "BITC",
     "name": "Bitwise Trendwise Bitcoin and Treasuries Rotation Strategy ETF",
+    "category": "Sector / Thematic",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
+    "ticker": "BITI",
+    "name": "ProShares Short Bitcoin ETF",
     "category": "Sector / Thematic",
     "vehicle": "ETF",
     "benchmark": "SPY"
@@ -2191,11 +2219,25 @@
     "benchmark": "AGG"
   },
   {
+    "ticker": "BKMS",
+    "name": "BNY Mellon Municipal Short Duration ETF",
+    "category": "Muni National Intermediate",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "BKSE",
     "name": "BNY Mellon US Small Cap Core Equity ETF",
     "category": "US Equity Small Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "BKUI",
+    "name": "BNY Mellon Ultra Short Income ETF",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "BLCN",
@@ -2252,6 +2294,13 @@
     "category": "Sector / Thematic",
     "vehicle": "ETF",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "BLST",
+    "name": "Exchange Traded Concepts Trust Bluemonte Short Term Bond ETF",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "BLTD",
@@ -2390,13 +2439,6 @@
     "ticker": "BNGE",
     "name": "First Trust S-Network Streaming and Gaming ETF",
     "category": "Sector / Thematic",
-    "vehicle": "ETF",
-    "benchmark": "SPY"
-  },
-  {
-    "ticker": "BNKU",
-    "name": "Bank Of Montreal MicroSectors  U.S. Big Banks 3  Leveraged ETN",
-    "category": "Sector Financials",
     "vehicle": "ETF",
     "benchmark": "SPY"
   },
@@ -3136,6 +3178,13 @@
     "benchmark": "AGG"
   },
   {
+    "ticker": "BWZ",
+    "name": "State Street SPDR Bloomberg Short Term International Treasury",
+    "category": "Intermediate Government",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
     "ticker": "BYLD",
     "name": "iShares Yield Optimized Bond ETF",
     "category": "Intermediate Core Bond",
@@ -3148,13 +3197,6 @@
     "category": "Sector Real Estate",
     "vehicle": "ETF",
     "benchmark": "SPY"
-  },
-  {
-    "ticker": "BZQ",
-    "name": "ProShares UltraShort MSCI Brazil Capped",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
   },
   {
     "ticker": "CAAA",
@@ -3458,6 +3500,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "CCSB",
+    "name": "Carbon Collective Short Duration Green Bond ETF",
+    "category": "Intermediate Core Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "CCSO",
     "name": "Carbon Collective Climate Solutions U.S. Equity ETF",
     "category": "US Equity Large Blend",
@@ -3736,6 +3785,27 @@
     "category": "International Equity",
     "vehicle": "ETF",
     "benchmark": "VXUS"
+  },
+  {
+    "ticker": "CGSD",
+    "name": "Capital Group Short Duration Income ETF",
+    "category": "Intermediate Core Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
+    "ticker": "CGSM",
+    "name": "Capital Group Short Duration Municipal Income ETF",
+    "category": "Muni National Intermediate",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
+    "ticker": "CGUI",
+    "name": "Capital Group Ultra Short Income ETF",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "CGUS",
@@ -4424,6 +4494,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "CRSH",
+    "name": "Tidal Trust II YieldMax Short TSLA Option Income Strategy ETF",
+    "category": "Covered Call / Income",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "CRTC",
     "name": "DBX ETF Trust Xtrackers US National Critical Technologies ETF",
     "category": "Sector Technology",
@@ -4550,6 +4627,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "CUSD",
+    "name": "CrossingBridge Ultra-Short Duration ETF",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "CUT",
     "name": "Invesco MSCI Global Timber ETF",
     "category": "Sector / Thematic",
@@ -4611,6 +4695,13 @@
     "category": "US Equity Large Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "CVSB",
+    "name": "Morgan Stanley ETF Trust Calvert Ultra-Short Investment Grade",
+    "category": "Corporate Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "CVSIX",
@@ -4840,7 +4931,7 @@
     "ticker": "DBLTX",
     "name": "DoubleLine Total Return Bond N",
     "category": "Intermediate Core Bond",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "AGG"
   },
   {
@@ -5677,6 +5768,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "DGZ",
+    "name": "PowerShares DB Gold Short ETN",
+    "category": "Sector Materials",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
     "ticker": "DHDG",
     "name": "First Trust Exchange-Traded Fund VIII FT Vest U.S. Equity Quar",
     "category": "US Equity Large Blend",
@@ -5759,6 +5857,13 @@
     "category": "International Equity",
     "vehicle": "ETF",
     "benchmark": "VXUS"
+  },
+  {
+    "ticker": "DIPS",
+    "name": "Tidal Trust II YieldMax Short NVDA Option Income Strategy ETF",
+    "category": "Covered Call / Income",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "DISO",
@@ -6251,13 +6356,6 @@
     "benchmark": "SPY"
   },
   {
-    "ticker": "DUG",
-    "name": "ProShares UltraShort Energy",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
-  },
-  {
     "ticker": "DUHP",
     "name": "Dimensional ETF Trust Dimensional US High Profitability ETF",
     "category": "US Equity Large Blend",
@@ -6524,13 +6622,6 @@
     "benchmark": "VXUS"
   },
   {
-    "ticker": "DXD",
-    "name": "ProShares UltraShort Dow30",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
-  },
-  {
     "ticker": "DXIV",
     "name": "Dimensional ETF Trust Dimensional International Vector Equity",
     "category": "International Equity",
@@ -6590,6 +6681,13 @@
     "ticker": "DYTA",
     "name": "SGI Dynamic Tactical ETF",
     "category": "US Equity Large Blend",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
+    "ticker": "DZZ",
+    "name": "PowerShares DB Gold Double Short ETN",
+    "category": "Sector Materials",
     "vehicle": "ETF",
     "benchmark": "SPY"
   },
@@ -6895,13 +6993,6 @@
     "benchmark": "SPY"
   },
   {
-    "ticker": "EEV",
-    "name": "ProShares UltraShort MSCI Emerging Markets",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
-  },
-  {
     "ticker": "EFA",
     "name": "iShares MSCI EAFE ETF",
     "category": "International Equity",
@@ -6986,15 +7077,15 @@
     "benchmark": "SPY"
   },
   {
-    "ticker": "EFU",
-    "name": "ProShares UltraShort MSCI EAFE",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
-  },
-  {
     "ticker": "EFV",
     "name": "iShares MSCI EAFE Value ETF",
+    "category": "International Equity",
+    "vehicle": "ETF",
+    "benchmark": "VXUS"
+  },
+  {
+    "ticker": "EFZ",
+    "name": "ProShares Short MSCI EAFE",
     "category": "International Equity",
     "vehicle": "ETF",
     "benchmark": "VXUS"
@@ -7280,6 +7371,13 @@
     "benchmark": "VXUS"
   },
   {
+    "ticker": "EMNT",
+    "name": "PIMCO Enhanced Short Maturity Active ESG Exchange-Traded Fund",
+    "category": "US Equity Large Blend",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
     "ticker": "EMOP",
     "name": "AB Active ETFs Inc. AB Emerging Markets Opportunities ETF",
     "category": "Emerging Markets",
@@ -7481,13 +7579,6 @@
     "category": "US Equity Large Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
-  },
-  {
-    "ticker": "EPV",
-    "name": "ProShares UltraShort FTSE Europe ETF",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
   },
   {
     "ticker": "EQAL",
@@ -7693,13 +7784,6 @@
     "benchmark": "SPY"
   },
   {
-    "ticker": "ETHD",
-    "name": "ProShares Trust ProShares UltraShort Ether ETF",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
-  },
-  {
     "ticker": "ETHE",
     "name": "Grayscale Ethereum Staking ETF Shares",
     "category": "Sector / Thematic",
@@ -7763,11 +7847,11 @@
     "benchmark": "AGG"
   },
   {
-    "ticker": "EUO",
-    "name": "ProShares UltraShort Euro",
-    "category": "Ultrashort Bond",
+    "ticker": "EUM",
+    "name": "ProShares Short MSCI Emerging Markets",
+    "category": "Emerging Markets",
     "vehicle": "ETF",
-    "benchmark": "AGG"
+    "benchmark": "VXUS"
   },
   {
     "ticker": "EUSA",
@@ -7843,6 +7927,27 @@
     "ticker": "EVPF",
     "name": "Eaton Vance Preferred Securities and Income ETF",
     "category": "Preferred Stock",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
+    "ticker": "EVSB",
+    "name": "Morgan Stanley ETF Trust Eaton Vance Ultra-Short Income ETF",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
+    "ticker": "EVSD",
+    "name": "Eaton Vance Short Duration Income ETF",
+    "category": "Intermediate Core Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
+    "ticker": "EVSM",
+    "name": "Morgan Stanley ETF Trust Eaton Vance Short Duration Municipal",
+    "category": "Muni National Intermediate",
     "vehicle": "ETF",
     "benchmark": "AGG"
   },
@@ -8013,13 +8118,6 @@
     "category": "US Equity Small Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
-  },
-  {
-    "ticker": "EWV",
-    "name": "ProShares UltraShort MSCI Japan",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
   },
   {
     "ticker": "EWW",
@@ -8235,7 +8333,7 @@
     "ticker": "FBALX",
     "name": "Fidelity Balanced Fund",
     "category": "Allocation 50-70% Equity",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
@@ -8249,7 +8347,7 @@
     "ticker": "FBCGX",
     "name": "Fidelity Blue Chip Growth Fund",
     "category": "Sector Technology",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
@@ -8557,7 +8655,7 @@
     "ticker": "FDGRX",
     "name": "Fidelity Growth Company Fund",
     "category": "US Equity Large Growth",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
@@ -8998,42 +9096,42 @@
     "ticker": "FFFDX",
     "name": "Fidelity Freedom 2025 Fund",
     "category": "Target Date 2021-2025",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
     "ticker": "FFFEX",
     "name": "Fidelity Freedom 2020 Fund",
     "category": "US Equity Large Blend",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
     "ticker": "FFFFX",
     "name": "Fidelity Freedom 2040 Fund",
     "category": "Target Date 2036-2040",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
     "ticker": "FFFGX",
     "name": "Fidelity Freedom 2030 Fund",
     "category": "Target Date 2026-2030",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
     "ticker": "FFFHX",
     "name": "Fidelity Freedom 2045 Fund",
     "category": "Target Date 2041-2045",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
     "ticker": "FFFKX",
     "name": "Fidelity Freedom 2050 Fund",
     "category": "Target Date 2046-2050",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
@@ -9237,6 +9335,13 @@
     "name": "Federated Hermes Total Return Bond Inst",
     "category": "Intermediate Core Bond",
     "vehicle": "Mutual Fund",
+    "benchmark": "AGG"
+  },
+  {
+    "ticker": "FIAT",
+    "name": "Tidal Trust II YieldMax Short COIN Option Income Strategy ETF",
+    "category": "Covered Call / Income",
+    "vehicle": "ETF",
     "benchmark": "AGG"
   },
   {
@@ -9849,17 +9954,17 @@
     "benchmark": "VXUS"
   },
   {
+    "ticker": "FLUD",
+    "name": "Franklin Ultra Short Bond ETF",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "FLV",
     "name": "American Century Focused Large Cap Value ETF",
     "category": "US Equity Large Value",
     "vehicle": "ETF",
-    "benchmark": "SPY"
-  },
-  {
-    "ticker": "FLVCX",
-    "name": "Fidelity Leveraged Company Stock",
-    "category": "US Equity Mid Growth",
-    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
@@ -10181,7 +10286,7 @@
     "ticker": "FOCPX",
     "name": "Fidelity OTC Portfolio",
     "category": "US Equity Large Blend",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
@@ -10521,6 +10626,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "FSMB",
+    "name": "First Trust Short Duration Managed Municipal ETF",
+    "category": "Muni National Intermediate",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "FSMD",
     "name": "Fidelity Small-Mid Multifactor ETF",
     "category": "US Equity Small Blend",
@@ -10531,14 +10643,14 @@
     "ticker": "FSMDX",
     "name": "Fidelity Mid Cap Index Fund",
     "category": "US Equity Mid Blend",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
     "ticker": "FSPHX",
     "name": "Fidelity Select Health Care Portfolio",
     "category": "Sector Healthcare",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
@@ -10552,7 +10664,7 @@
     "ticker": "FSPTX",
     "name": "Fidelity Select Technology Portfolio",
     "category": "Sector Technology",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
@@ -10573,7 +10685,7 @@
     "ticker": "FSSNX",
     "name": "Fidelity Small Cap Index Fund",
     "category": "US Equity Small Blend",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
@@ -10857,6 +10969,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "FUMB",
+    "name": "First Trust Ultra Short Duration Municipal ETF",
+    "category": "Muni National Intermediate",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "FUMBX",
     "name": "Fidelity US Bond Index",
     "category": "Intermediate Core Bond",
@@ -11030,13 +11149,6 @@
     "category": "US Equity Large Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
-  },
-  {
-    "ticker": "FXP",
-    "name": "ProShares UltraShort FTSE China 50",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
   },
   {
     "ticker": "FXR",
@@ -11648,13 +11760,6 @@
     "benchmark": "VXUS"
   },
   {
-    "ticker": "GLL",
-    "name": "ProShares UltraShort Gold",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
-  },
-  {
     "ticker": "GLNK",
     "name": "Grayscale Chainlink Trust ETF Grayscale Chainlink Trust ETF",
     "category": "US Equity Large Blend",
@@ -12131,6 +12236,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "GSST",
+    "name": "Goldman Sachs Ultra Short Bond ETF",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "GSUI",
     "name": "Grayscale Sui Staking ETF Common Units of Fractional Undivided",
     "category": "US Equity Large Blend",
@@ -12150,6 +12262,13 @@
     "category": "International Equity",
     "vehicle": "ETF",
     "benchmark": "VXUS"
+  },
+  {
+    "ticker": "GSY",
+    "name": "Invesco Ultra Short Duration ETF",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "GTEAX",
@@ -12201,6 +12320,13 @@
     "benchmark": "AGG"
   },
   {
+    "ticker": "GTOS",
+    "name": "Invesco Short Duration Total Return Bond ETF",
+    "category": "Intermediate Core Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "GTPE",
     "name": "Goldman Sachs MSCI World Private Equity Return Tracker ETF",
     "category": "US Equity Large Blend",
@@ -12213,6 +12339,13 @@
     "category": "US Equity Large Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "GUMI",
+    "name": "Goldman Sachs ETF Trust Goldman Sachs Ultra Short Municipal In",
+    "category": "Muni National Intermediate",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "GUNR",
@@ -13167,6 +13300,13 @@
     "benchmark": "AGG"
   },
   {
+    "ticker": "HYSD",
+    "name": "Columbia Short Duration High Yield ETF",
+    "category": "High Yield Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "HYTI",
     "name": "First Trust Exchange-Traded Fund IV FT Vest High Yield & Targe",
     "category": "High Yield Bond",
@@ -13746,6 +13886,13 @@
     "category": "International Equity",
     "vehicle": "ETF",
     "benchmark": "VXUS"
+  },
+  {
+    "ticker": "ICSH",
+    "name": "iShares Ultra Short Duration Bond Active ETF",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "ICVT",
@@ -15946,6 +16093,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "JMST",
+    "name": "JPMorgan Ultra-Short Municipal Income ETF",
+    "category": "Muni National Intermediate",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "JMTG",
     "name": "J.P. Morgan Exchange-Traded Fund Trust JPMorgan Mortgage-Backe",
     "category": "Intermediate Core Bond",
@@ -16112,6 +16266,13 @@
     "category": "US Equity Small Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "JPST",
+    "name": "JPMorgan Ultra-Short Income ETF",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "JPSV",
@@ -16436,6 +16597,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "KCSH",
+    "name": "KraneShares Trust KraneShares Sustainable Ultra Short Duration",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "KDEC",
     "name": "Innovator ETFs Trust Innovator U.S. Small Cap Power Buffer ETF",
     "category": "US Equity Small Blend",
@@ -16672,13 +16840,6 @@
     "category": "US Equity Large Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
-  },
-  {
-    "ticker": "KOLD",
-    "name": "ProShares UltraShort Bloomberg Natural Gas",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
   },
   {
     "ticker": "KOMP",
@@ -17475,7 +17636,7 @@
     "ticker": "LSBRX",
     "name": "Loomis Sayles Bond Retail",
     "category": "Intermediate Core Bond",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "AGG"
   },
   {
@@ -17932,6 +18093,13 @@
     "category": "US Equity Mid Value",
     "vehicle": "ETF",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "MEAR",
+    "name": "iShares Short Maturity Municipal Bond Active ETF",
+    "category": "Muni National Intermediate",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "MEDI",
@@ -18753,6 +18921,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "MSTI",
+    "name": "Madison ETFs Trust Madison Short Term Strategic Income ETF",
+    "category": "Intermediate Core Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "MSTQ",
     "name": "ETF Series Solutions LHA Market State Tactical Q ETF",
     "category": "US Equity Large Blend",
@@ -18928,13 +19103,6 @@
     "benchmark": "SPY"
   },
   {
-    "ticker": "MVRL",
-    "name": "ETRACS Monthly Pay 1.5X Leveraged Mortgage REIT ETN",
-    "category": "Intermediate Core Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
-  },
-  {
     "ticker": "MWHYX",
     "name": "Metropolitan West High Yield Bond M",
     "category": "High Yield Bond",
@@ -18952,7 +19120,7 @@
     "ticker": "MWNIX",
     "name": "Metropolitan West Total Return Bond Instl",
     "category": "Intermediate Core Bond",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "AGG"
   },
   {
@@ -19131,11 +19299,11 @@
     "benchmark": "AGG"
   },
   {
-    "ticker": "MZZ",
-    "name": "ProShares UltraShort MidCap400",
-    "category": "Ultrashort Bond",
+    "ticker": "MYY",
+    "name": "ProShares Short MidCap400",
+    "category": "US Equity Mid Blend",
     "vehicle": "ETF",
-    "benchmark": "AGG"
+    "benchmark": "SPY"
   },
   {
     "ticker": "NACP",
@@ -19257,6 +19425,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "NBSD",
+    "name": "Neuberger Short Duration Income ETF",
+    "category": "Intermediate Core Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "NBSM",
     "name": "Neuberger Small-Mid Cap ETF",
     "category": "US Equity Mid Blend",
@@ -19325,6 +19500,13 @@
     "category": "US Equity Large Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "NEAR",
+    "name": "iShares Short Duration Bond Active ETF",
+    "category": "Intermediate Core Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "NECOX",
@@ -19607,13 +19789,6 @@
     "benchmark": "SPY"
   },
   {
-    "ticker": "NRGU",
-    "name": "Bank Of Montreal MicroSectors U.S. Big Oil 3 Leveraged ETNs du",
-    "category": "Sector Energy",
-    "vehicle": "ETF",
-    "benchmark": "SPY"
-  },
-  {
     "ticker": "NRSH",
     "name": "Aztlan North America Nearshoring Stock Selection ETF",
     "category": "US Equity Large Blend",
@@ -19785,6 +19960,13 @@
     "ticker": "NUSA",
     "name": "Nuveen ESG 1-5 Year U.S. Aggregate Bond ETF",
     "category": "Intermediate Core Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
+    "ticker": "NUSB",
+    "name": "Nuveen Ultra Short Income ETF",
+    "category": "Short-Term Bond",
     "vehicle": "ETF",
     "benchmark": "AGG"
   },
@@ -20279,6 +20461,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "OPER",
+    "name": "ETF Series Solutions ETF ClearShares Ultra-Short Maturity ETF",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "OPGIX",
     "name": "Invesco International Growth A",
     "category": "International Equity",
@@ -20417,6 +20606,13 @@
     "category": "US Equity Small Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "OVT",
+    "name": "Overlay Shares Short Term Bond ETF",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "OWNB",
@@ -22043,6 +22239,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "PSDM",
+    "name": "PGIM ETF Trust PGIM Short Duration Multi-Sector Bond ETF",
+    "category": "Intermediate Core Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "PSEP",
     "name": "Innovator U.S. Equity Power Buffer ETF - September",
     "category": "US Equity Large Blend",
@@ -22090,6 +22293,13 @@
     "category": "US Equity Large Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "PSH",
+    "name": "PGIM ETF Trust PGIM Short Duration High Yield ETF",
+    "category": "High Yield Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "PSI",
@@ -22188,13 +22398,6 @@
     "category": "Sector Real Estate",
     "vehicle": "ETF",
     "benchmark": "SPY"
-  },
-  {
-    "ticker": "PST",
-    "name": "ProShares UltraShort Lehman 7-10 Year Treasury",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
   },
   {
     "ticker": "PSTIX",
@@ -22321,6 +22524,20 @@
     "category": "Sector Utilities",
     "vehicle": "ETF",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "PULS",
+    "name": "PGIM Ultra Short Bond ETF",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
+    "ticker": "PUSH",
+    "name": "PGIM ETF Trust PGIM Ultra Short Municipal Bond ETF",
+    "category": "Muni National Intermediate",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "PVAL",
@@ -22715,13 +22932,6 @@
     "benchmark": "AGG"
   },
   {
-    "ticker": "QID",
-    "name": "ProShares UltraShort QQQ",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
-  },
-  {
     "ticker": "QIDX",
     "name": "Spinnaker ETF Series Indexperts Quality Earnings Focused ETF",
     "category": "US Equity Large Blend",
@@ -22890,13 +23100,6 @@
     "benchmark": "SPY"
   },
   {
-    "ticker": "QQDN",
-    "name": "ProShares UltraShort QQQ Mega",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
-  },
-  {
     "ticker": "QQEW",
     "name": "First Trust Nasdaq-100 Select Equal Weight ETF",
     "category": "US Equity Large Blend",
@@ -23035,6 +23238,13 @@
     "category": "US Equity Large Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "QSIG",
+    "name": "WisdomTree U.S. Short Term Corporate Bond Fund",
+    "category": "Corporate Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "QSIX",
@@ -23268,6 +23478,13 @@
     "benchmark": "VXUS"
   },
   {
+    "ticker": "RAVI",
+    "name": "FlexShares Ultra-Short Income Fund",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "RAYJ",
     "name": "The Advisors' Inner Circle Fund III Rayliant SMDAM Japan Equit",
     "category": "International Equity",
@@ -23336,6 +23553,13 @@
     "category": "Intermediate Core Bond",
     "vehicle": "ETF",
     "benchmark": "AGG"
+  },
+  {
+    "ticker": "RDIV",
+    "name": "Invesco Exchange-Traded Fund Trust II Invesco S&P Ultra Divide",
+    "category": "US Equity Large Blend",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
   },
   {
     "ticker": "RDOG",
@@ -23415,6 +23639,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "REK",
+    "name": "ProShares Short Real Estate",
+    "category": "Sector Real Estate",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
     "ticker": "REM",
     "name": "iShares Trust iShares Mortgage Real Estate ETF",
     "category": "Intermediate Core Bond",
@@ -23448,13 +23679,6 @@
     "category": "US Equity Large Value",
     "vehicle": "ETF",
     "benchmark": "SPY"
-  },
-  {
-    "ticker": "REW",
-    "name": "ProShares UltraShort Technology",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
   },
   {
     "ticker": "REZ",
@@ -23504,6 +23728,13 @@
     "category": "US Equity Mid Growth",
     "vehicle": "ETF",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "RFIX",
+    "name": "Simplify Bond Bull ETF",
+    "category": "Intermediate Core Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "RFLR",
@@ -24206,13 +24437,6 @@
     "benchmark": "VXUS"
   },
   {
-    "ticker": "RXD",
-    "name": "ProShares UltraShort Health Care",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
-  },
-  {
     "ticker": "RXI",
     "name": "iShares Global Consumer Discretionary ETF",
     "category": "Sector Consumer Discretionary",
@@ -24353,6 +24577,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "SBB",
+    "name": "ProShares Short SmallCap600",
+    "category": "US Equity Small Blend",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
     "ticker": "SBIL",
     "name": "Simplify Exchange Traded Funds Simplify Government Money Marke",
     "category": "US Equity Large Blend",
@@ -24367,9 +24598,9 @@
     "benchmark": "SPY"
   },
   {
-    "ticker": "SBIT",
-    "name": "ProShares Trust ProShares UltraShort Bitcoin ETF",
-    "category": "Ultrashort Bond",
+    "ticker": "SBND",
+    "name": "Columbia Short Duration Bond ETF",
+    "category": "Intermediate Core Bond",
     "vehicle": "ETF",
     "benchmark": "AGG"
   },
@@ -24386,13 +24617,6 @@
     "category": "Sector Industrials",
     "vehicle": "ETF",
     "benchmark": "SPY"
-  },
-  {
-    "ticker": "SCC",
-    "name": "ProShares UltraShort Consumer Discretionary",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
   },
   {
     "ticker": "SCCR",
@@ -24591,13 +24815,6 @@
     "benchmark": "AGG"
   },
   {
-    "ticker": "SCO",
-    "name": "ProShares UltraShort Bloomberg Crude Oil",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
-  },
-  {
     "ticker": "SCOW",
     "name": "Pacer Funds Trust Pacer S&P SmallCap 600 Quality FCF Aristocra",
     "category": "US Equity Small Blend",
@@ -24610,6 +24827,13 @@
     "category": "US Equity Small Blend",
     "vehicle": "Mutual Fund",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "SCUS",
+    "name": "Schwab Strategic Trust Schwab Ultra-Short Income ETF",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "SCYB",
@@ -24633,18 +24857,18 @@
     "benchmark": "SPY"
   },
   {
-    "ticker": "SDD",
-    "name": "ProShares UltraShort SmallCap600",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
-  },
-  {
     "ticker": "SDEM",
     "name": "Global X MSCI SuperDividend Emerging Markets ETF",
     "category": "Emerging Markets",
     "vehicle": "ETF",
     "benchmark": "VXUS"
+  },
+  {
+    "ticker": "SDFI",
+    "name": "AB Active ETFs Inc. AB Short Duration Income ETF",
+    "category": "Intermediate Core Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "SDG",
@@ -24668,9 +24892,9 @@
     "benchmark": "SPY"
   },
   {
-    "ticker": "SDP",
-    "name": "ProShares UltraShort Utilities",
-    "category": "Ultrashort Bond",
+    "ticker": "SDSI",
+    "name": "American Century Short Duration Strategic Income ETF",
+    "category": "Intermediate Core Bond",
     "vehicle": "ETF",
     "benchmark": "AGG"
   },
@@ -24729,6 +24953,13 @@
     "category": "Emerging Markets",
     "vehicle": "ETF",
     "benchmark": "VXUS"
+  },
+  {
+    "ticker": "SEF",
+    "name": "ProShares Short Financials",
+    "category": "Sector Financials",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
   },
   {
     "ticker": "SEIBX",
@@ -25067,6 +25298,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "SHM",
+    "name": "State Street SPDR Nuveen ICE Short Term Municipal Bond ETF",
+    "category": "Muni National Intermediate",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "SHOC",
     "name": "EA Series Trust Strive U.S. Semiconductor ETF",
     "category": "Sector Technology",
@@ -25109,8 +25347,29 @@
     "benchmark": "AGG"
   },
   {
+    "ticker": "SHYD",
+    "name": "VanEck ETF Trust VanEck Short High Yield Muni ETF",
+    "category": "High Yield Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "SHYG",
     "name": "iShares 0-5 Year High Yield Corporate Bond ETF",
+    "category": "High Yield Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
+    "ticker": "SHYL",
+    "name": "Xtrackers Short Duration High Yield Bond ETF",
+    "category": "High Yield Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
+    "ticker": "SHYM",
+    "name": "iShares Short Duration High Yield Muni Active ETF",
     "category": "High Yield Bond",
     "vehicle": "ETF",
     "benchmark": "AGG"
@@ -25126,13 +25385,6 @@
     "ticker": "SIHY",
     "name": "Harbor Ares Systematic High Yield ETF",
     "category": "High Yield Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
-  },
-  {
-    "ticker": "SIJ",
-    "name": "ProShares UltraShort Industrials",
-    "category": "Ultrashort Bond",
     "vehicle": "ETF",
     "benchmark": "AGG"
   },
@@ -25249,6 +25501,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "SJB",
+    "name": "ProShares Short High Yield",
+    "category": "High Yield Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "SJCP",
     "name": "SanJac Alpha Core Plus Bond ETF",
     "category": "Intermediate Core Bond",
@@ -25263,9 +25522,9 @@
     "benchmark": "SPY"
   },
   {
-    "ticker": "SKF",
-    "name": "ProShares UltraShort Financials",
-    "category": "Ultrashort Bond",
+    "ticker": "SJNK",
+    "name": "State Street SPDR Bloomberg Short Term High Yield Bond ETF",
+    "category": "High Yield Bond",
     "vehicle": "ETF",
     "benchmark": "AGG"
   },
@@ -25315,6 +25574,13 @@
     "ticker": "SLQD",
     "name": "iShares 0-5 Year Investment Grade Corporate Bond ETF",
     "category": "Corporate Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
+    "ticker": "SLTY",
+    "name": "Tidal Trust II YieldMax Ultra Short Option Income Strategy ETF",
+    "category": "Short-Term Bond",
     "vehicle": "ETF",
     "benchmark": "AGG"
   },
@@ -25387,6 +25653,13 @@
     "category": "US Equity Small Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "SMB",
+    "name": "VanEck ETF Trust VanEck Short Muni ETF",
+    "category": "Muni National Intermediate",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "SMBS",
@@ -25515,18 +25788,18 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "SMMU",
+    "name": "Short Term Municipal Bond Active Exchange-Traded Fund",
+    "category": "Muni National Intermediate",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "SMMV",
     "name": "iShares MSCI USA Small-Cap Min Vol Factor ETF",
     "category": "US Equity Small Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
-  },
-  {
-    "ticker": "SMN",
-    "name": "ProShares UltraShort Materials",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
   },
   {
     "ticker": "SMOG",
@@ -25984,6 +26257,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "SPSB",
+    "name": "State Street SPDR Portfolio Short Term Corporate Bond ETF",
+    "category": "Corporate Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "SPSK",
     "name": "SP Funds Dow Jones Global Sukuk ETF",
     "category": "US Equity Large Blend",
@@ -26033,6 +26313,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "SPTS",
+    "name": "State Street SPDR Portfolio Short Term Treasury ETF",
+    "category": "Intermediate Government",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
     "ticker": "SPUC",
     "name": "Simplify Exchange Traded Funds Simplify US Equity PLUS Upside",
     "category": "US Equity Large Blend",
@@ -26042,6 +26329,13 @@
   {
     "ticker": "SPUS",
     "name": "SP Funds S&P 500 Sharia Industry Exclusions ETF",
+    "category": "US Equity Large Blend",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
+    "ticker": "SPUT",
+    "name": "Innovator ETFs Trust Innovator Equity Premium Income - Daily P",
     "category": "US Equity Large Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
@@ -26159,13 +26453,6 @@
     "benchmark": "SPY"
   },
   {
-    "ticker": "SPYU",
-    "name": "Bank Of Montreal MAX S&P 500 4X Leveraged ETNs due October 30",
-    "category": "Sector Financials",
-    "vehicle": "ETF",
-    "benchmark": "SPY"
-  },
-  {
     "ticker": "SPYV",
     "name": "SPDR Portfolio S&P 500 Value ETF",
     "category": "US Equity Large Value",
@@ -26236,13 +26523,6 @@
     "benchmark": "SPY"
   },
   {
-    "ticker": "SRS",
-    "name": "ProShares UltraShort Real Estate",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
-  },
-  {
     "ticker": "SRVR",
     "name": "Pacer Data & Infrastructure Real Estate ETF",
     "category": "Sector Real Estate",
@@ -26253,13 +26533,6 @@
     "ticker": "SSFI",
     "name": "Day Hagan Smart Sector Fixed Income ETF",
     "category": "Intermediate Core Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
-  },
-  {
-    "ticker": "SSG",
-    "name": "ProShares UltraShort Semiconductors",
-    "category": "Ultrashort Bond",
     "vehicle": "ETF",
     "benchmark": "AGG"
   },
@@ -26586,6 +26859,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "SYFI",
+    "name": "AB Active ETFs Inc. AB Short Duration High Yield ETF",
+    "category": "High Yield Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "SYLD",
     "name": "Cambria Shareholder Yield ETF",
     "category": "US Equity Large Blend",
@@ -26605,13 +26885,6 @@
     "category": "US Equity Small Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
-  },
-  {
-    "ticker": "SZK",
-    "name": "ProShares UltraShort Consumer Staples",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
   },
   {
     "ticker": "TAAAX",
@@ -26640,6 +26913,13 @@
     "category": "US Equity Large Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "TAFI",
+    "name": "AB Active ETFs Inc. AB Tax-Aware Short Duration Municipal ETF",
+    "category": "Muni National Intermediate",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "TAFL",
@@ -26754,6 +27034,20 @@
     "benchmark": "AGG"
   },
   {
+    "ticker": "TAXX",
+    "name": "BondBloxx ETF Trust BondBloxx IR+M Tax-Aware Short Duration ET",
+    "category": "Intermediate Core Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
+    "ticker": "TBF",
+    "name": "ProShares Short 20+ Year Treasury",
+    "category": "Intermediate Government",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
     "ticker": "TBFC",
     "name": "ETF Series Solutions The Brinsmere Fund  Conservative ETF",
     "category": "US Equity Large Blend",
@@ -26789,6 +27083,13 @@
     "benchmark": "AGG"
   },
   {
+    "ticker": "TBLL",
+    "name": "Invesco Short Term Treasury ETF",
+    "category": "Intermediate Government",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
     "ticker": "TBLU",
     "name": "Tortoise Global Water ETF",
     "category": "Sector / Thematic",
@@ -26796,11 +27097,18 @@
     "benchmark": "SPY"
   },
   {
-    "ticker": "TBT",
-    "name": "ProShares UltraShort Lehman 20  Year Treasury",
-    "category": "Ultrashort Bond",
+    "ticker": "TBUX",
+    "name": "T. Rowe Price Ultra Short-Term Bond ETF",
+    "category": "Short-Term Bond",
     "vehicle": "ETF",
     "benchmark": "AGG"
+  },
+  {
+    "ticker": "TBX",
+    "name": "ProShares Short 7 10 Year Treasury",
+    "category": "Intermediate Government",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
   },
   {
     "ticker": "TCAF",
@@ -27636,6 +27944,13 @@
     "benchmark": "AGG"
   },
   {
+    "ticker": "TMNS",
+    "name": "T. Rowe Price Short Municipal Income ETF",
+    "category": "Muni National Intermediate",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "TMSF",
     "name": "T. Rowe Price Multi-Sector Income ETF",
     "category": "US Equity Large Blend",
@@ -27905,7 +28220,7 @@
     "ticker": "TRPSX",
     "name": "T. Rowe Price Retirement 2050 Fund",
     "category": "Target Date 2046-2050",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
@@ -27926,14 +28241,14 @@
     "ticker": "TRRBX",
     "name": "T. Rowe Price Retirement 2035 Fund",
     "category": "Target Date 2031-2035",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
     "ticker": "TRRDX",
     "name": "T. Rowe Price Retirement 2040 Fund",
     "category": "Target Date 2036-2040",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
@@ -27982,7 +28297,7 @@
     "ticker": "TRRJX",
     "name": "T. Rowe Price Retirement 2025 Fund",
     "category": "Target Date 2021-2025",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
@@ -27996,14 +28311,14 @@
     "ticker": "TRRMX",
     "name": "T. Rowe Price Retirement 2045 Fund",
     "category": "Target Date 2041-2045",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
     "ticker": "TRROX",
     "name": "T. Rowe Price Retirement 2030 Fund",
     "category": "Target Date 2026-2030",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
@@ -28112,6 +28427,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "TSL",
+    "name": "GraniteShares 1.25x Long TSLA Daily ETF",
+    "category": "US Equity Large Blend",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
     "ticker": "TSLP",
     "name": "Kurv Yield Premium Strategy Tesla (TSLA) ETF",
     "category": "US Equity Large Blend",
@@ -28161,6 +28483,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "TSPY",
+    "name": "TappAlpha S&P 500 Growth & Daily Income ETF",
+    "category": "Intermediate Core Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "TSUI",
     "name": "21Shares Sui ETF",
     "category": "US Equity Large Blend",
@@ -28196,6 +28525,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "TUA",
+    "name": "Simplify Exchange Traded Funds Simplify Short Term Treasury Fu",
+    "category": "Intermediate Government",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
     "ticker": "TUG",
     "name": "STF Tactical Growth ETF",
     "category": "US Equity Large Growth",
@@ -28222,6 +28558,20 @@
     "category": "US Equity Large Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "TUSB",
+    "name": "Thrivent ETF Trust Thrivent Ultra Short Bond ETF",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
+    "ticker": "TUSI",
+    "name": "Touchstone ETF Trust Touchstone Ultra Short Income ETF",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "TVAL",
@@ -28264,13 +28614,6 @@
     "category": "US Equity Large Value",
     "vehicle": "Mutual Fund",
     "benchmark": "SPY"
-  },
-  {
-    "ticker": "TWM",
-    "name": "ProShares UltraShort Russell2000",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
   },
   {
     "ticker": "TWOX",
@@ -28364,11 +28707,32 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "UAPR",
+    "name": "Innovator U.S. Equity Ultra Buffer ETF - April",
+    "category": "US Equity Large Blend",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
+    "ticker": "UAUG",
+    "name": "Innovator U.S. Equity Ultra Buffer ETF - August",
+    "category": "US Equity Large Blend",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
     "ticker": "UBND",
     "name": "VictoryShares Core Plus Bond ETF",
     "category": "Intermediate Core Bond",
     "vehicle": "ETF",
     "benchmark": "AGG"
+  },
+  {
+    "ticker": "UBOT",
+    "name": "Direxion Daily Robotics Artificial Intelligence & Automation",
+    "category": "Sector Technology",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
   },
   {
     "ticker": "UCIB",
@@ -28392,6 +28756,13 @@
     "benchmark": "AGG"
   },
   {
+    "ticker": "UDEC",
+    "name": "Innovator U.S. Equity Ultra Buffer ETF - December",
+    "category": "US Equity Large Blend",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
     "ticker": "UDI",
     "name": "USCF ETF Trust USCF Dividend Income Fund",
     "category": "US Equity Large Value",
@@ -28411,6 +28782,13 @@
     "category": "Emerging Markets",
     "vehicle": "ETF",
     "benchmark": "VXUS"
+  },
+  {
+    "ticker": "UFEB",
+    "name": "Innovator U.S. Equity Ultra Buffer ETF - February",
+    "category": "US Equity Large Blend",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
   },
   {
     "ticker": "UFIV",
@@ -28455,11 +28833,46 @@
     "benchmark": "VXUS"
   },
   {
+    "ticker": "UJAN",
+    "name": "Innovator U.S. Equity Ultra Buffer ETF - January",
+    "category": "US Equity Large Blend",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
+    "ticker": "UJUL",
+    "name": "Innovator U.S. Equity Ultra Buffer ETF - July",
+    "category": "US Equity Large Blend",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
+    "ticker": "UJUN",
+    "name": "Innovator U.S. Equity Ultra Buffer ETF - June",
+    "category": "US Equity Large Blend",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
+    "ticker": "ULST",
+    "name": "State Street Ultra Short Term Bond ETF",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "ULTI",
     "name": "REX IncomeMax Option Strategy ETF",
     "category": "US Equity Large Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "ULTY",
+    "name": "Tidal Trust II YieldMax Ultra Option Income Strategy ETF",
+    "category": "Covered Call / Income",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "ULVM",
@@ -28469,8 +28882,15 @@
     "benchmark": "SPY"
   },
   {
-    "ticker": "UMDD",
-    "name": "UltraPro MidCap400",
+    "ticker": "UMAR",
+    "name": "Innovator U.S. Equity Ultra Buffer ETF - March",
+    "category": "US Equity Large Blend",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
+    "ticker": "UMAY",
+    "name": "Innovator U.S. Equity Ultra Buffer ETF - May",
     "category": "US Equity Large Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
@@ -28507,6 +28927,27 @@
     "ticker": "UNL",
     "name": "United States 12 Month Natural Gas Fund",
     "category": "Commodities",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
+    "ticker": "UNOV",
+    "name": "Innovator U.S. Equity Ultra Buffer ETF - November",
+    "category": "US Equity Large Blend",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
+    "ticker": "UOCT",
+    "name": "Innovator U.S. Equity Ultra Buffer ETF - October",
+    "category": "US Equity Large Blend",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
+    "ticker": "UPAR",
+    "name": "UPAR Ultra Risk Parity ETF",
+    "category": "US Equity Large Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
   },
@@ -28567,13 +29008,6 @@
     "benchmark": "SPY"
   },
   {
-    "ticker": "URTY",
-    "name": "ProShares UltraPro Russell2000",
-    "category": "US Equity Large Blend",
-    "vehicle": "ETF",
-    "benchmark": "SPY"
-  },
-  {
     "ticker": "USAF",
     "name": "Atlas America Fund",
     "category": "US Equity Large Blend",
@@ -28619,6 +29053,13 @@
     "ticker": "USE",
     "name": "USCF ETF Trust USCF Energy Commodity Strategy Absolute Return",
     "category": "Commodities",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
+  },
+  {
+    "ticker": "USEP",
+    "name": "Innovator U.S. Equity Ultra Buffer ETF - September",
+    "category": "US Equity Large Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
   },
@@ -29347,7 +29788,7 @@
     "ticker": "VFFVX",
     "name": "Vanguard Target Retirement 2050",
     "category": "Target Date 2046-2050",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
@@ -29431,7 +29872,7 @@
     "ticker": "VFORX",
     "name": "Vanguard Target Retirement 2040",
     "category": "Target Date 2036-2040",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
@@ -29566,6 +30007,13 @@
     "category": "International Equity",
     "vehicle": "Mutual Fund",
     "benchmark": "VXUS"
+  },
+  {
+    "ticker": "VGUS",
+    "name": "Vanguard Ultra-Short Treasury ETF",
+    "category": "Intermediate Government",
+    "vehicle": "ETF",
+    "benchmark": "SPY"
   },
   {
     "ticker": "VGVT",
@@ -29841,6 +30289,13 @@
     "benchmark": "AGG"
   },
   {
+    "ticker": "VNLA",
+    "name": "Janus Henderson Short Duration Income ETF",
+    "category": "Intermediate Core Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "VNM",
     "name": "VanEck Vietnam ETF",
     "category": "US Equity Large Blend",
@@ -30065,6 +30520,20 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "VSDB",
+    "name": "Vanguard Malvern Funds Vanguard Short Duration Bond ETF",
+    "category": "Intermediate Core Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
+    "ticker": "VSDM",
+    "name": "Vanguard Tax-Managed Funds Vanguard Short Duration Tax-Exempt",
+    "category": "Muni National Intermediate",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "VSEAX",
     "name": "JPMorgan Small Cap Growth A",
     "category": "US Equity Small Growth",
@@ -30091,6 +30560,13 @@
     "category": "International Equity",
     "vehicle": "ETF",
     "benchmark": "VXUS"
+  },
+  {
+    "ticker": "VSHY",
+    "name": "Virtus Newfleet Short Duration High Yield Bond ETF",
+    "category": "High Yield Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "VSIAX",
@@ -30292,14 +30768,14 @@
     "ticker": "VTTHX",
     "name": "Vanguard Target Retirement 2035",
     "category": "Target Date 2031-2035",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
     "ticker": "VTTSX",
     "name": "Vanguard Target Retirement 2060",
     "category": "Target Date 2056-2060",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
@@ -30327,7 +30803,7 @@
     "ticker": "VTWNX",
     "name": "Vanguard Target Retirement 2020",
     "category": "US Equity Large Blend",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
@@ -30348,7 +30824,7 @@
     "ticker": "VTXVX",
     "name": "Vanguard Target Retirement 2025",
     "category": "Target Date 2021-2025",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
@@ -30357,6 +30833,13 @@
     "category": "US Equity Large Growth",
     "vehicle": "ETF",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "VUSB",
+    "name": "Vanguard Ultra-Short Bond ETF",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "VUSE",
@@ -30453,7 +30936,7 @@
     "ticker": "VWINX",
     "name": "Vanguard Wellesley Income Fund",
     "category": "US Equity Large Blend",
-    "vehicle": "MF",
+    "vehicle": "Mutual Fund",
     "benchmark": "SPY"
   },
   {
@@ -30805,6 +31288,13 @@
     "category": "US Equity Large Growth",
     "vehicle": "ETF",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "WNTR",
+    "name": "Tidal Trust II YieldMax  MSTR Short Option Income Strategy ETF",
+    "category": "Covered Call / Income",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "WOMN",
@@ -31920,18 +32410,18 @@
     "benchmark": "SPY"
   },
   {
-    "ticker": "YCS",
-    "name": "ProShares UltraShort Yen New",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
-  },
-  {
     "ticker": "YDEC",
     "name": "FT Vest International Equity Moderate Buffer ETF - December",
     "category": "International Equity",
     "vehicle": "ETF",
     "benchmark": "VXUS"
+  },
+  {
+    "ticker": "YEAR",
+    "name": "AB Active ETFs Inc. AB Ultra Short Income ETF",
+    "category": "Short-Term Bond",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
   },
   {
     "ticker": "YETH",
@@ -32025,6 +32515,13 @@
     "benchmark": "SPY"
   },
   {
+    "ticker": "YQQQ",
+    "name": "YieldMax Short N100 Option Income Strategy ETF",
+    "category": "Covered Call / Income",
+    "vehicle": "ETF",
+    "benchmark": "AGG"
+  },
+  {
     "ticker": "YSEP",
     "name": "FT Vest International Equity Buffer ETF - September",
     "category": "International Equity",
@@ -32037,6 +32534,13 @@
     "category": "US Equity Large Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
+  },
+  {
+    "ticker": "YXI",
+    "name": "ProShares Short FTSE China 50",
+    "category": "International Equity",
+    "vehicle": "ETF",
+    "benchmark": "VXUS"
   },
   {
     "ticker": "YYY",
@@ -32198,13 +32702,6 @@
     "category": "US Equity Large Blend",
     "vehicle": "ETF",
     "benchmark": "SPY"
-  },
-  {
-    "ticker": "ZSL",
-    "name": "ProShares UltraShort Silver",
-    "category": "Ultrashort Bond",
-    "vehicle": "ETF",
-    "benchmark": "AGG"
   },
   {
     "ticker": "ZTAX",
