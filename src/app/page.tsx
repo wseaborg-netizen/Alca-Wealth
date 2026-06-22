@@ -8,8 +8,14 @@ import {
 } from "recharts";
 import universeData from "@/../data/universe.json";
 
-const ACC = "#0A0A0B";    // Alca brand, black
-const ACC_DARK = "#EFEFEF"; // Alca brand, dark mode
+const ACC = "#0A0A0B";    // Tool brand, black
+const ACC_DARK = "#EFEFEF"; // Tool brand, dark mode
+
+// ── TEMP: demo mode ─────────────────────────────────────────────────────────
+// When true, the lock screen / homepage is skipped and the app opens straight
+// into the tool (guest "preview" mode) — for showing coworkers without login.
+// Set back to `false` to restore the normal lock screen. Nothing is deleted.
+const SHOW_TOOL_DIRECTLY = true;
 
 // Live fund count — derived from the universe so the stat never goes stale.
 const UNIVERSE_COUNT = (universeData as unknown[]).length;
@@ -317,7 +323,7 @@ function LockShowcase({ onLoginScroll }: { onLoginScroll: () => void }) {
             The Advisor Hub
           </div>
           <div style={{ fontSize: 13, color: "var(--c-dim)", ...ui, marginTop: 6, lineHeight: 1.55, maxWidth: 520 }}>
-            Everything Alca does for your workflow — find funds, pressure-test them, and
+            Everything Tool does for your workflow — find funds, pressure-test them, and
             build a recommendation. Sign in to get started.
           </div>
           <div style={{ display: "flex", gap: 18, marginTop: 16 }}>
@@ -348,7 +354,7 @@ function LockShowcase({ onLoginScroll }: { onLoginScroll: () => void }) {
 export default function Home() {
   // ── Auth state ────────────────────────────────────────────────────────────
   // mode: null=checking, "none"=public, "preview"=guest, "full"=logged in
-  const [authMode, setAuthMode]   = useState<null | "none" | "preview" | "full">(null);
+  const [authMode, setAuthMode]   = useState<null | "none" | "preview" | "full">(SHOW_TOOL_DIRECTLY ? "preview" : null);
   const [authUser, setAuthUser]   = useState<string | null>(null);
 
   // ── Form state ────────────────────────────────────────────────────────────
@@ -368,6 +374,8 @@ export default function Home() {
 
   // ── On mount: check existing session ─────────────────────────────────────
   useEffect(() => {
+    // Demo mode: skip the lock screen entirely, go straight to the tool.
+    if (SHOW_TOOL_DIRECTLY) return;
     // The lock screen is always a fully black splash — force dark tokens
     // regardless of the saved theme. (FundGrid restores the user's real theme
     // on its own mount after sign-in.)
@@ -422,6 +430,8 @@ export default function Home() {
   // ── Render app if authed ──────────────────────────────────────────────────
   if (authMode === "full" || authMode === "preview") {
     return <FundGrid authMode={authMode} authUser={authUser} onLogout={async () => {
+      // In demo mode, keep coworkers inside the tool (don't drop to the hidden lock screen).
+      if (SHOW_TOOL_DIRECTLY) return;
       await fetch("/api/auth", { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "logout" }) });
       setAuthMode("none"); setAuthUser(null); setEmail(""); setPassword(""); setPreviewPw("");
@@ -473,14 +483,14 @@ export default function Home() {
         borderBottom: scrolled ? `1px solid ${divLine}` : "1px solid transparent",
         transition: "all 0.3s",
       }}>
-        {/* Alca wordmark — nav brand */}
+        {/* Tool wordmark — nav brand */}
         <div style={{ display: "flex", alignItems: "center" }}>
           <span style={{
             ...lynx, fontSize: 20, fontWeight: 300,
             letterSpacing: "0.07em", color: navText,
             textTransform: "uppercase", lineHeight: 1, transition: "color 0.3s",
           }}>
-            Alca
+            Tool
           </span>
         </div>
 
@@ -559,7 +569,7 @@ export default function Home() {
 
           {/* ── Left: headline ── */}
           <div>
-            {/* Big Alca headline */}
+            {/* Big Tool headline */}
             <h1 style={{
               ...lynx,
               fontSize: "clamp(52px, 7vw, 96px)",
@@ -570,7 +580,7 @@ export default function Home() {
               textTransform: "uppercase",
               textShadow: "0 2px 40px rgba(0,0,0,0.5)",
             }}>
-              Alca
+              Tool
             </h1>
 
             {/* By The Capital Group — attribution line */}
@@ -642,7 +652,7 @@ export default function Home() {
             <div style={{ marginBottom: 0 }}>
               <div style={{ marginBottom: 14 }}>
                 <div style={{ ...lynx, fontSize: 24, fontWeight: 300, letterSpacing: "0.05em", color: H.text, textTransform: "uppercase", lineHeight: 1 }}>
-                  Alca
+                  Tool
                 </div>
                 <div style={{ fontSize: 9.5, color: H.muted, letterSpacing: "0.07em", textTransform: "uppercase", ...ui, marginTop: 5 }}>
                   Fund Analytics · The Capital Group
