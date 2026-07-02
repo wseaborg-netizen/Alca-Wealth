@@ -10,6 +10,7 @@ import SettingsTab, { type Theme } from "./SettingsTab";
 import ComingSoonTab, { type RoadmapSpec } from "./ComingSoonTab";
 import WatchlistTab from "./WatchlistTab";
 import PortfolioBuilderTab from "./PortfolioBuilderTab";
+import ComparePortfolioTab from "./ComparePortfolioTab";
 
 // ── Roadmap / idea tabs (placeholders - not built yet) ──────────────────────────
 const mk = (paths: React.ReactNode) => (
@@ -85,7 +86,7 @@ const IconSettings = (
 // ── Nav model ───────────────────────────────────────────────────────────────────
 
 type TabId = "dashboard" | "news" | "ideas" | "analysis" | "comparison" | "settings"
-  | "portfolio" | "watchlist" | "backtest" | "correlation" | "peers" | "alerts" | "tax" | "assistant";
+  | "portfolio" | "compare-portfolio" | "watchlist" | "backtest" | "correlation" | "peers" | "alerts" | "tax" | "assistant";
 
 interface NavItem { id: TabId; label: string; icon: React.ReactNode; }
 interface NavGroup { id: string; title: string; items: NavItem[]; }
@@ -110,6 +111,7 @@ const GROUPS: NavGroup[] = [
     id: "clienttools", title: "Client Tools",
     items: [
       { id: "portfolio", label: "Portfolio Builder", icon: mk(<><path d="M8 1.8V8l5.4 3.1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><circle cx="8" cy="8" r="6.3" stroke="currentColor" strokeWidth="1.4"/></>) },
+      { id: "compare-portfolio", label: "Portfolio Compare", icon: mk(<><path d="M8 2v12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><rect x="2" y="5" width="4.5" height="6" rx="1" stroke="currentColor" strokeWidth="1.3"/><rect x="9.5" y="3" width="4.5" height="9" rx="1" stroke="currentColor" strokeWidth="1.3"/></>) },
     ],
   },
   {
@@ -534,6 +536,11 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
           {mounted.has("portfolio") && (
             <div style={{ display: tab === "portfolio" ? "block" : "none" }}>
               <PortfolioBuilderTab />
+            </div>
+          )}
+          {mounted.has("compare-portfolio") && (
+            <div style={{ display: tab === "compare-portfolio" ? "block" : "none" }}>
+              <ComparePortfolioTab />
             </div>
           )}
           {/* Roadmap tabs - placeholders */}
