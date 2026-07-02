@@ -1,6 +1,6 @@
 import React from "react";
 
-// ── Tool — Design tokens (black/white brand, clean editorial) ──────────────
+// ── Tool - Design tokens (black/white brand, clean editorial) ──────────────
 // Surface tokens are CSS variables so the whole app switches light/dark.
 export const T = {
   bg:      "var(--c-bg)",
@@ -12,7 +12,7 @@ export const T = {
   text:    "var(--c-text)",
   dim:     "var(--c-dim)",
   muted:   "var(--c-muted)",
-  // Accents kept as HEX — composed with alpha suffixes like `${T.blue}18`
+  // Accents kept as HEX - composed with alpha suffixes like `${T.blue}18`
   // and used in SVG gradient ids. CSS vars cannot do this.
   blue:    "#0A0A0B",   // Tool primary accent → near-black (light mode)
   blueD:   "#262626",   // hover / active
@@ -27,17 +27,17 @@ export const T = {
   gold:    "#B45309",   // #1 rank
 } as const;
 
-// Tool display font — Cormorant Garamond (loaded in layout.tsx)
+// Tool display font - Cormorant Garamond (loaded in layout.tsx)
 export const lynx: React.CSSProperties = {
   fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif",
 };
 
-// UI / prose — Geist (sharp, technical)
+// UI / prose - Geist (sharp, technical)
 export const ui: React.CSSProperties = {
   fontFamily: "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
 };
 
-// Data / numbers / tickers — Geist Mono with tabular figures
+// Data / numbers / tickers - Geist Mono with tabular figures
 export const mono: React.CSSProperties = {
   fontFamily: "'Geist Mono', 'SF Mono', Consolas, monospace",
   fontVariantNumeric: "tabular-nums",

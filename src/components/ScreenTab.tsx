@@ -328,7 +328,7 @@ export default function ScreenTab({ onAddToCompare, onAnalyze, onFindSimilar }: 
   }));
 
   function fmt(v: number | null, dec = 2, suffix = ""): string {
-    if (v == null) return "—";
+    if (v == null) return "-";
     return v.toFixed(dec) + suffix;
   }
 
@@ -373,7 +373,7 @@ export default function ScreenTab({ onAddToCompare, onAnalyze, onFindSimilar }: 
         {/* Style boxes */}
         <div style={{ marginBottom: 18 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-            <Label>Style Box — click one or more cells (selections combine)</Label>
+            <Label>Style Box - click one or more cells (selections combine)</Label>
             {selectedCategories.length > 0 && (
               <button onClick={clearBoxes} style={{ fontSize: 10, color: T.blue, background: "none",
                 border: "none", cursor: "pointer", ...ui }}>
@@ -451,13 +451,13 @@ export default function ScreenTab({ onAddToCompare, onAnalyze, onFindSimilar }: 
         <div className="mb-4">
           <Label>Search</Label>
           <input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && run()}
-            placeholder="Ticker, fund name, or category — e.g. dividend growth, SCHD"
+            placeholder="Ticker, fund name, or category - e.g. dividend growth, SCHD"
             className="w-full"
             style={{ background: T.panel, color: T.text, border: `1px solid ${T.line2}`, borderRadius: 6,
               outline: "none", padding: "7px 12px", fontSize: 13, ...ui }} />
         </div>
         <div className="mb-5">
-          <Label>Scoring priorities — selected factors weight the composite score</Label>
+          <Label>Scoring priorities - selected factors weight the composite score</Label>
           <div className="flex flex-wrap gap-2 mt-2">
             {PRIORITIES.map((p) => (
               <PriorityChip key={p} label={p} active={prio.includes(p)} onClick={() => togglePrio(p)} />
@@ -482,7 +482,7 @@ export default function ScreenTab({ onAddToCompare, onAnalyze, onFindSimilar }: 
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
             <Card style={{ padding: 16 }}>
-              <Label>Composite score — top 10</Label>
+              <Label>Composite score - top 10</Label>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={scoreData} layout="vertical" margin={{ left: 4, right: 20, top: 4 }}>
                   <CartesianGrid stroke={T.line} horizontal={false} strokeDasharray="0" />
@@ -494,7 +494,7 @@ export default function ScreenTab({ onAddToCompare, onAnalyze, onFindSimilar }: 
               </ResponsiveContainer>
             </Card>
             <Card style={{ padding: 16 }}>
-              <Label>Capture ratios — up &gt;100 good, down &lt;100 good</Label>
+              <Label>Capture ratios - up &gt;100 good, down &lt;100 good</Label>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={captureData} margin={{ right: 8, top: 4 }}>
                   <CartesianGrid stroke={T.line} vertical={false} strokeDasharray="0" />
@@ -533,7 +533,7 @@ export default function ScreenTab({ onAddToCompare, onAnalyze, onFindSimilar }: 
                           border: `1px solid ${T.line}`, borderRadius: 3, padding: "1px 6px", ...ui }}>
                           {f.vehicle}
                         </span>
-                        {/* Style chip — value / blend / growth */}
+                        {/* Style chip - value / blend / growth */}
                         {eqs && (
                           <span style={{ fontSize: 10, fontWeight: 600, color: "#fff",
                             background: STYLE_COLOR[eqs.style], borderRadius: 3, padding: "1px 7px", ...ui }}>
@@ -555,7 +555,7 @@ export default function ScreenTab({ onAddToCompare, onAnalyze, onFindSimilar }: 
 
                 {/* KPI grid */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "16px 12px", padding: "16px 20px" }}>
-                  <KPI label="Expense %" value={f.expenseRatio != null ? fmt(f.expenseRatio, 2, "%") : "—"} good={f.expenseRatio != null ? f.expenseRatio <= 0.5 : null} />
+                  <KPI label="Expense %" value={f.expenseRatio != null ? fmt(f.expenseRatio, 2, "%") : "-"} good={f.expenseRatio != null ? f.expenseRatio <= 0.5 : null} />
                   <KPI label="TTM Yield" value={fmt(f.kpi.ttmYield, 2, "%")} good={f.kpi.ttmYield != null ? f.kpi.ttmYield > 0 : null} />
                   <KPI label="Sharpe 3y" value={fmt(f.kpi.sharpe3y, 2)} good={f.kpi.sharpe3y != null ? f.kpi.sharpe3y >= 1 : null} />
                   <KPI label="Sortino 3y" value={fmt(f.kpi.sortino3y, 2)} good={f.kpi.sortino3y != null ? f.kpi.sortino3y >= 1 : null} />
@@ -614,7 +614,7 @@ export default function ScreenTab({ onAddToCompare, onAnalyze, onFindSimilar }: 
                       <KPI label="Div growth 3y" value={fmt(f.kpi.divGrowth3y, 1, "%")} good={f.kpi.divGrowth3y != null ? f.kpi.divGrowth3y > 0 : null} />
                       <KPI label="3y return" value={fmt(f.kpi.return3y, 2, "%")} />
                       <KPI label="AUM" value={f.aumFormatted} />
-                      <KPI label="Fund age" value={f.fundAge != null ? fmt(f.fundAge, 1, " yrs") : "—"} good={f.fundAge != null ? f.fundAge >= 5 : null} />
+                      <KPI label="Fund age" value={f.fundAge != null ? fmt(f.fundAge, 1, " yrs") : "-"} good={f.fundAge != null ? f.fundAge >= 5 : null} />
                     </div>
                     {stressTests.length > 0 && (
                       <div>
@@ -630,7 +630,7 @@ export default function ScreenTab({ onAddToCompare, onAnalyze, onFindSimilar }: 
                                 letterSpacing: "0.08em", ...ui }}>{st.label}</div>
                               <div style={{ fontSize: 15, fontWeight: 600, ...mono,
                                 color: st.fundReturn == null ? T.dim : st.fundReturn >= 0 ? T.green : T.red }}>
-                                {st.fundReturn != null ? `${st.fundReturn > 0 ? "+" : ""}${st.fundReturn.toFixed(1)}%` : "—"}
+                                {st.fundReturn != null ? `${st.fundReturn > 0 ? "+" : ""}${st.fundReturn.toFixed(1)}%` : "-"}
                               </div>
                               {st.benchReturn != null && (
                                 <div style={{ fontSize: 10, color: T.muted, marginTop: 3, ...mono }}>

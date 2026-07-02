@@ -17,8 +17,8 @@ const COLORS = ["#4B87FF","#2EC4B6","#E9A23A","#EF4565","#10C87A","#C9913A","#A7
 
 // ── helpers ────────────────────────────────────────────────────────────────
 const fmt = (v: number | null, decimals = 2, suffix = "") =>
-  v == null ? "—" : `${v.toFixed(decimals)}${suffix}`;
-const fmtPct = (v: number | null) => v == null ? "—" : `${(v * 100).toFixed(2)}%`;
+  v == null ? "-" : `${v.toFixed(decimals)}${suffix}`;
+const fmtPct = (v: number | null) => v == null ? "-" : `${(v * 100).toFixed(2)}%`;
 const colorVal = (v: number | null, positiveGood = true) => {
   if (v == null) return T.dim;
   return positiveGood ? (v >= 0 ? T.green : T.red) : (v <= 0 ? T.green : T.red);
@@ -371,7 +371,7 @@ export default function PortfolioTab() {
           {stressData.length > 0 && (
             <Card>
               <div style={{ padding: "16px 20px" }}>
-                <Label>Stress Test — Portfolio vs Benchmark</Label>
+                <Label>Stress Test - Portfolio vs Benchmark</Label>
                 <div style={{ marginTop: 12, overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>

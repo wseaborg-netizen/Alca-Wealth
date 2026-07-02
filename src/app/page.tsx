@@ -13,11 +13,11 @@ const ACC_DARK = "#EFEFEF"; // Tool brand, dark mode
 
 // ── TEMP: demo mode ─────────────────────────────────────────────────────────
 // When true, the lock screen / homepage is skipped and the app opens straight
-// into the tool (guest "preview" mode) — for showing coworkers without login.
+// into the tool (guest "preview" mode) - for showing coworkers without login.
 // Set back to `false` to restore the normal lock screen. Nothing is deleted.
 const SHOW_TOOL_DIRECTLY = true;
 
-// Live fund count — derived from the universe so the stat never goes stale.
+// Live fund count - derived from the universe so the stat never goes stale.
 const UNIVERSE_COUNT = (universeData as unknown[]).length;
 
 const STATS = [
@@ -118,7 +118,7 @@ function AnalysisPreview() {
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-          {[["▲", T.green, "0.06% expense — cheaper than 96% of peers"],
+          {[["▲", T.green, "0.06% expense - cheaper than 96% of peers"],
             ["▲", T.green, "Sharpe 1.18 · downside capture 84%"],
             ["▼", T.amber, "Yield trails high-income alternatives"]].map(([sym, c, txt], i) => (
             <div key={i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -247,7 +247,7 @@ function LockShowcaseSection({
   tab: string; name: string; tagline: string; onLoginScroll: () => void; children: React.ReactNode;
 }) {
   const [hover, setHover] = useState(false);
-  const accent = "#EDEDEA"; // near-white accent — reads on the black splash
+  const accent = "#EDEDEA"; // near-white accent - reads on the black splash
   return (
     <div
       onClick={onLoginScroll}
@@ -290,13 +290,13 @@ function LockShowcaseSection({
 function LockShowcase({ onLoginScroll }: { onLoginScroll: () => void }) {
   const sections = [
     { tab: "discover", name: "Discover",
-      tagline: `Source funds for clients — screen ${UNIVERSE_COUNT} funds by cost, risk, return, and yield.`,
+      tagline: `Source funds for clients - screen ${UNIVERSE_COUNT} funds by cost, risk, return, and yield.`,
       body: <FindPreview /> },
     { tab: "comparison", name: "Comparison",
       tagline: "Put up to 4 funds head-to-head across every factor, percentile, and tax angle.",
       body: <ComparisonPreview /> },
     { tab: "analysis", name: "Analysis",
-      tagline: "A plain-English verdict on any fund — strengths, watch-outs, growth vs benchmark.",
+      tagline: "A plain-English verdict on any fund - strengths, watch-outs, growth vs benchmark.",
       body: <AnalysisPreview /> },
   ];
   return (
@@ -323,7 +323,7 @@ function LockShowcase({ onLoginScroll }: { onLoginScroll: () => void }) {
             The Advisor Hub
           </div>
           <div style={{ fontSize: 13, color: "var(--c-dim)", ...ui, marginTop: 6, lineHeight: 1.55, maxWidth: 520 }}>
-            Everything Tool does for your workflow — find funds, pressure-test them, and
+            Everything Tool does for your workflow - find funds, pressure-test them, and
             build a recommendation. Sign in to get started.
           </div>
           <div style={{ display: "flex", gap: 18, marginTop: 16 }}>
@@ -376,7 +376,7 @@ export default function Home() {
   useEffect(() => {
     // Demo mode: skip the lock screen entirely, go straight to the tool.
     if (SHOW_TOOL_DIRECTLY) return;
-    // The lock screen is always a fully black splash — force dark tokens
+    // The lock screen is always a fully black splash - force dark tokens
     // regardless of the saved theme. (FundGrid restores the user's real theme
     // on its own mount after sign-in.)
     setThemeLocal("dark");
@@ -438,7 +438,7 @@ export default function Home() {
     }} />;
   }
 
-  // Still checking session — black to match the splash, no flash
+  // Still checking session - black to match the splash, no flash
   if (authMode === null) return <div style={{ minHeight: "100vh", background: "#000000" }} />;
 
   const isDark    = theme === "dark";
@@ -483,7 +483,7 @@ export default function Home() {
         borderBottom: scrolled ? `1px solid ${divLine}` : "1px solid transparent",
         transition: "all 0.3s",
       }}>
-        {/* Tool wordmark — nav brand */}
+        {/* Tool wordmark - nav brand */}
         <div style={{ display: "flex", alignItems: "center" }}>
           <span style={{
             ...lynx, fontSize: 20, fontWeight: 300,
@@ -519,13 +519,13 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* ── Hero — cinematic black lock screen ── */}
+      {/* ── Hero - cinematic black lock screen ── */}
       <div style={{
         minHeight: "100vh", display: "flex", alignItems: "center",
         position: "relative", overflow: "hidden", paddingTop: 58,
         background: "#000000",
       }}>
-        {/* Razorbill photo — emerging from black, edges feathered so it has no seam */}
+        {/* Razorbill photo - emerging from black, edges feathered so it has no seam */}
         <div style={{
           position: "absolute", inset: 0, zIndex: 0,
           backgroundImage: "url(/razorbill.jpg)",
@@ -534,17 +534,17 @@ export default function Home() {
           maskImage: "radial-gradient(112% 108% at 43% 42%, #000 42%, transparent 72%)",
           WebkitMaskImage: "radial-gradient(112% 108% at 43% 42%, #000 42%, transparent 72%)",
         }} />
-        {/* Cinematic vignette — keeps the bird luminous, sinks the edges to pure black */}
+        {/* Cinematic vignette - keeps the bird luminous, sinks the edges to pure black */}
         <div style={{
           position: "absolute", inset: 0, zIndex: 1,
           background: "radial-gradient(110% 125% at 56% 42%, transparent 0%, transparent 26%, rgba(0,0,0,0.5) 58%, rgba(0,0,0,1) 92%)",
         }} />
-        {/* Left-edge fade — anchors the wordmark without washing the bird out */}
+        {/* Left-edge fade - anchors the wordmark without washing the bird out */}
         <div style={{
           position: "absolute", inset: 0, zIndex: 1,
           background: "linear-gradient(to right, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.66) 22%, rgba(0,0,0,0.14) 44%, transparent 58%)",
         }} />
-        {/* Right-edge fade — pulls the black across the login card so it floats on black */}
+        {/* Right-edge fade - pulls the black across the login card so it floats on black */}
         <div style={{
           position: "absolute", inset: 0, zIndex: 1,
           background: "linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.94) 18%, rgba(0,0,0,0.55) 34%, transparent 52%)",
@@ -583,7 +583,7 @@ export default function Home() {
               Tool
             </h1>
 
-            {/* By The Capital Group — attribution line */}
+            {/* By The Capital Group - attribution line */}
             <div style={{
               ...lynx,
               fontSize: "clamp(12px, 1.3vw, 15px)",
@@ -606,7 +606,7 @@ export default function Home() {
               Fund research and analytics for advisors.
             </p>
 
-            {/* CTA row — login card on right handles entry */}
+            {/* CTA row - login card on right handles entry */}
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <button
                 onClick={() => featuresRef.current?.scrollIntoView({ behavior: "smooth" })}
@@ -639,7 +639,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* ── Right: login card — frosted glass over the bird ── */}
+          {/* ── Right: login card - frosted glass over the bird ── */}
           <div id="login-card" style={{
             background: H.cardBg,
             border: `1px solid ${H.cardBrd}`,
@@ -648,7 +648,7 @@ export default function Home() {
             WebkitBackdropFilter: "blur(26px) saturate(135%)",
             boxShadow: "0 40px 100px rgba(0,0,0,0.62), inset 0 1px 0 rgba(255,255,255,0.07)",
           }}>
-            {/* Card brand — wordmark */}
+            {/* Card brand - wordmark */}
             <div style={{ marginBottom: 0 }}>
               <div style={{ marginBottom: 14 }}>
                 <div style={{ ...lynx, fontSize: 24, fontWeight: 300, letterSpacing: "0.05em", color: H.text, textTransform: "uppercase", lineHeight: 1 }}>
@@ -658,7 +658,7 @@ export default function Home() {
                   Fund Analytics · The Capital Group
                 </div>
               </div>
-              {/* Underline — professional divider */}
+              {/* Underline - professional divider */}
               <div style={{
                 width: "100%", height: 1,
                 background: "rgba(255,255,255,0.12)",

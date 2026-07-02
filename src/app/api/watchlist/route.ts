@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
 
-/** GET /api/watchlist — fetch user's saved tickers */
+/** GET /api/watchlist - fetch user's saved tickers */
 export async function GET() {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -17,7 +17,7 @@ export async function GET() {
   return NextResponse.json({ tickers: (data ?? []).map((r) => r.ticker) });
 }
 
-/** POST /api/watchlist — add a ticker */
+/** POST /api/watchlist - add a ticker */
 export async function POST(req: NextRequest) {
   const { ticker } = await req.json() as { ticker: string };
   const supabase = await createServerClient();
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-/** DELETE /api/watchlist — remove a ticker */
+/** DELETE /api/watchlist - remove a ticker */
 export async function DELETE(req: NextRequest) {
   const { ticker } = await req.json() as { ticker: string };
   const supabase = await createServerClient();

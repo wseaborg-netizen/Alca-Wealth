@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* ── Lynx — Theme tokens (black/white brand) ── */
+/* ── Lynx - Theme tokens (black/white brand) ── */
 :root, [data-theme="light"] {
   --c-bg: #FFFFFF;
   --c-panel: #FFFFFF;
@@ -11,7 +11,7 @@
   --c-text: #0A0A0B;
   --c-dim: #52525B;
   --c-muted: #A1A1AA;
-  /* Lynx brand — black */
+  /* Lynx brand - black */
   --c-accent: #0A0A0B;
   --c-accentD: #262626;
   --c-blueL: #F0F0F2;
@@ -33,7 +33,7 @@
   --c-text: #F4F4F5;
   --c-dim: #A1A1AA;
   --c-muted: #71717A;
-  /* Lynx brand — white in dark mode */
+  /* Lynx brand - white in dark mode */
   --c-accent: #EFEFEF;
   --c-accentD: #FFFFFF;
   --c-blueL: #27272A;

@@ -1,5 +1,5 @@
 /**
- * Financial news — parses Yahoo Finance RSS feed for titles + summaries.
+ * Financial news - parses Yahoo Finance RSS feed for titles + summaries.
  * Cached 30 minutes.
  */
 import { NextResponse } from "next/server";
@@ -86,7 +86,7 @@ function parseRSS(xml: string): NewsItem[] {
 }
 
 async function fetchNewsRSS(): Promise<NewsItem[]> {
-  // Yahoo Finance markets RSS — includes article summaries
+  // Yahoo Finance markets RSS - includes article summaries
   const feeds = [
     "https://finance.yahoo.com/news/rssindex",
     "https://feeds.finance.yahoo.com/rss/2.0/headline?s=^GSPC&region=US&lang=en-US",

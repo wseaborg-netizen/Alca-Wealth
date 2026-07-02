@@ -13,7 +13,7 @@ export default function ComingSoonTab({ spec }: { spec: RoadmapSpec }) {
       <div>
         <h2 style={{ fontSize: 26, fontWeight: 300, color: T.text, margin: 0,
           fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", letterSpacing: "0.04em", textTransform: "uppercase" }}>{spec.label}</h2>
-        <p style={{ fontSize: 12, color: T.dim, marginTop: 4, ...ui }}>A planned addition to Tool — not built yet.</p>
+        <p style={{ fontSize: 12, color: T.dim, marginTop: 4, ...ui }}>A planned addition to Tool - not built yet.</p>
       </div>
 
       <div style={{ background: T.panel, border: `1px solid ${T.line}`, borderRadius: 14, overflow: "hidden" }}>
@@ -58,7 +58,7 @@ export default function ComingSoonTab({ spec }: { spec: RoadmapSpec }) {
           </div>
           <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${T.line}`,
             fontSize: 11.5, color: T.muted, ...ui }}>
-            💡 Idea placeholder — tell me to build this out and it becomes a real tool.
+            💡 Idea placeholder - tell me to build this out and it becomes a real tool.
           </div>
         </div>
       </div>

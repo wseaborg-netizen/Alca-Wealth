@@ -1,5 +1,5 @@
 /**
- * Next.js proxy (middleware) — runs on every request.
+ * Next.js proxy (middleware) - runs on every request.
  * Refreshes Supabase session cookies so they stay alive.
  */
 import { type NextRequest, NextResponse } from "next/server";
@@ -29,7 +29,7 @@ export async function proxy(request: NextRequest) {
     // Must call getUser() to trigger token refresh
     await supabase.auth.getUser();
   } catch {
-    // Never crash the request — just pass through
+    // Never crash the request - just pass through
   }
 
   return response;

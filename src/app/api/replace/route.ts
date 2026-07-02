@@ -1,5 +1,5 @@
 /**
- * Fund Replacement Engine — given a fund a client holds + a reason to switch,
+ * Fund Replacement Engine - given a fund a client holds + a reason to switch,
  * returns ranked alternatives in the same category.
  */
 import { NextRequest, NextResponse } from "next/server";

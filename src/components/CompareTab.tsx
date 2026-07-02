@@ -42,7 +42,7 @@ interface FundData {
 }
 
 function fmt(v: number | null, dec = 2, suffix = "") {
-  if (v == null) return "—";
+  if (v == null) return "-";
   return v.toFixed(dec) + suffix;
 }
 
@@ -84,7 +84,7 @@ function pctColor(v: number): string {
   return T.red;
 }
 
-/** Scorecard — grouped horizontal bars per metric, one bar per fund */
+/** Scorecard - grouped horizontal bars per metric, one bar per fund */
 function PercentileScorecard({ funds }: { funds: FundData[] }) {
   const PCT_KEYS = Object.keys(PCT_LABELS) as (keyof FundData["percentiles"])[];
   // Build recharts data: one row per metric, each fund is a property
@@ -96,7 +96,7 @@ function PercentileScorecard({ funds }: { funds: FundData[] }) {
 
   return (
     <Card style={{ padding: "18px 20px" }}>
-      <Label>Percentile Scorecard — vs. all funds in category (higher = better)</Label>
+      <Label>Percentile Scorecard - vs. all funds in category (higher = better)</Label>
       <div style={{ marginTop: 16 }}>
         <ResponsiveContainer width="100%" height={280}>
           <BarChart
@@ -254,7 +254,7 @@ export default function CompareTab({
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
           <input value={input} onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === "Enter" && add()}
-            placeholder="Ticker (max 6) — press Enter to add"
+            placeholder="Ticker (max 6) - press Enter to add"
             style={{ flex: 1, background: T.panel2, color: T.text,
               border: `1px solid ${T.line}`, borderRadius: 6, outline: "none",
               padding: "8px 12px", fontSize: 13, ...ui }} />
@@ -279,7 +279,7 @@ export default function CompareTab({
           ))}
           {!tickers.length && (
             <span style={{ fontSize: 12, color: T.muted, ...ui }}>
-              Add tickers to compare — up to 6 funds side by side.
+              Add tickers to compare - up to 6 funds side by side.
             </span>
           )}
         </div>
@@ -288,7 +288,7 @@ export default function CompareTab({
       {loading && <Spinner label="LOADING FUND DATA…" />}
       <ErrBanner msg={err} />
 
-      {/* Empty-state preview — shows what you'll get before adding funds */}
+      {/* Empty-state preview - shows what you'll get before adding funds */}
       {!funds && !loading && !err && (
         <Card style={{ padding: "20px 22px" }}>
           <Label>What you&apos;ll be able to compare</Label>
@@ -296,7 +296,7 @@ export default function CompareTab({
             {[
               { icon: "🛡", title: "Profile Radar", desc: "Percentile profile across cost, risk-adjusted return, downside, alpha, consistency & yield." },
               { icon: "📈", title: "Cumulative Return", desc: "3-year growth of each fund vs. its benchmark, rebased to 0%." },
-              { icon: "⚖️", title: "Sharpe vs. Sortino", desc: "Risk-adjusted return side by side — ≥ 1.0 is strong." },
+              { icon: "⚖️", title: "Sharpe vs. Sortino", desc: "Risk-adjusted return side by side - ≥ 1.0 is strong." },
               { icon: "◎", title: "Tax Efficiency", desc: "An A–D grade and best account type (taxable vs. IRA/401k) for each fund." },
               { icon: "📊", title: "Percentile Scorecard", desc: "How each fund ranks vs. its category on every factor." },
               { icon: "🌊", title: "Stress Tests", desc: "How each held up in past selloffs vs. the benchmark." },
@@ -322,7 +322,7 @@ export default function CompareTab({
 
             {/* Radar */}
             <Card style={{ padding: "16px 18px" }}>
-              <Label>Profile Overview — percentile by category</Label>
+              <Label>Profile Overview - percentile by category</Label>
               <ResponsiveContainer width="100%" height={280}>
                 <RadarChart data={radarData} margin={{ top: 10, right: 24, bottom: 10, left: 24 }}>
                   <PolarGrid stroke={T.line} />
@@ -357,7 +357,7 @@ export default function CompareTab({
 
             {/* Sharpe vs Sortino */}
             <Card style={{ padding: "16px 18px" }}>
-              <Label>Sharpe vs. Sortino (3Y) — ≥ 1.0 is strong</Label>
+              <Label>Sharpe vs. Sortino (3Y) - ≥ 1.0 is strong</Label>
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart
                   data={funds.map(f => ({ name: f.ticker, Sharpe: f.kpi.sharpe3y, Sortino: f.kpi.sortino3y }))}
@@ -380,7 +380,7 @@ export default function CompareTab({
 
           {/* ── Tax efficiency (folded in from the old Tax tool) ── */}
           <Card style={{ padding: "16px 20px" }}>
-            <Label>Tax Efficiency — suitability for a taxable account</Label>
+            <Label>Tax Efficiency - suitability for a taxable account</Label>
             <div style={{ display: "grid", gridTemplateColumns: `repeat(${funds.length}, 1fr)`, gap: 12, marginTop: 12 }}>
               {funds.map((f, i) => {
                 const tax = computeTaxEfficiency(f);
@@ -520,14 +520,14 @@ export default function CompareTab({
                           <td key={f.ticker} style={{ padding: "9px 14px", textAlign: "right",
                             fontSize: 12, fontWeight: 600, ...mono,
                             color: v == null ? T.dim : v >= 0 ? T.green : T.red }}>
-                            {v != null ? `${v > 0 ? "+" : ""}${v.toFixed(1)}%` : "—"}
+                            {v != null ? `${v > 0 ? "+" : ""}${v.toFixed(1)}%` : "-"}
                           </td>
                         );
                       })}
                       <td style={{ padding: "9px 14px", textAlign: "right", fontSize: 11, ...mono, color: T.dim }}>
                         {(() => {
                           const v = funds[0]?.kpi.stressTests.find(s => s.label === label)?.benchReturn ?? null;
-                          return v != null ? `${v > 0 ? "+" : ""}${v.toFixed(1)}%` : "—";
+                          return v != null ? `${v > 0 ? "+" : ""}${v.toFixed(1)}%` : "-";
                         })()}
                       </td>
                     </tr>

@@ -1,5 +1,5 @@
 /**
- * Client recommendation engine — takes a client profile and returns top fund matches.
+ * Client recommendation engine - takes a client profile and returns top fund matches.
  * Uses the existing screen + scoring infrastructure, tuned to the profile.
  */
 import { NextRequest, NextResponse } from "next/server";
@@ -34,7 +34,7 @@ function profileToPriorities(p: ClientProfile): string[] {
 }
 
 // NOTE: expenseRatio and ttmYield are stored in PERCENT units
-// (e.g. 0.0945 = 0.0945%, 1.5 = 1.5%) — thresholds must match that scale.
+// (e.g. 0.0945 = 0.0945%, 1.5 = 1.5%) - thresholds must match that scale.
 function profileToMaxER(p: ClientProfile): number | null {
   if (p.costSensitivity === "high") return 0.30;   // ≤ 0.30%
   if (p.costSensitivity === "medium") return 1.00; // ≤ 1.00%

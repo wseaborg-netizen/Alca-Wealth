@@ -21,9 +21,9 @@ interface ReplaceResult {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-// expenseRatio + kpi values are already in PERCENT units — do NOT multiply by 100
-const fmtPct = (v: number | null) => v == null ? "—" : v.toFixed(2) + "%";
-const fmtNum = (v: number | null, d = 2) => v == null ? "—" : v.toFixed(d);
+// expenseRatio + kpi values are already in PERCENT units - do NOT multiply by 100
+const fmtPct = (v: number | null) => v == null ? "-" : v.toFixed(2) + "%";
+const fmtNum = (v: number | null, d = 2) => v == null ? "-" : v.toFixed(d);
 const fmtDollar = (v: number) => {
   if (Math.abs(v) >= 1000) return `$${(v / 1000).toFixed(1)}k`;
   return `$${Math.abs(v).toFixed(0)}`;
@@ -60,7 +60,7 @@ function computeTaxEfficiency(fund: FundRecord): TaxResult {
   // Category base
   if (cat.includes("muni")) {
     score = 90;
-    reasons.push("Municipal bonds produce federally tax-exempt income — highly efficient for taxable accounts.");
+    reasons.push("Municipal bonds produce federally tax-exempt income - highly efficient for taxable accounts.");
   } else if (cat.includes("bond") || cat.includes("fixed") || cat.includes("income") || cat.includes("treasury") || cat.includes("credit")) {
     score -= 25;
     reasons.push("Fixed income generates ordinary income taxed at full marginal rates.");
@@ -93,7 +93,7 @@ function computeTaxEfficiency(fund: FundRecord): TaxResult {
     reasons.push("Higher expense ratio suggests active management with potentially higher turnover.");
   }
 
-  // Yield (high distributions = more taxable events) — ttmYield is in percent units
+  // Yield (high distributions = more taxable events) - ttmYield is in percent units
   if (yield_ > 5) {
     score -= 15;
     reasons.push(`High yield (${yield_.toFixed(1)}%) means frequent large distributions that are taxable in the year received.`);
@@ -102,13 +102,13 @@ function computeTaxEfficiency(fund: FundRecord): TaxResult {
     reasons.push(`Moderate yield (${yield_.toFixed(1)}%) creates regular taxable distributions.`);
   } else if (yield_ < 1 && yield_ >= 0) {
     score += 8;
-    reasons.push("Low yield means fewer taxable distributions — gains deferred until sale.");
+    reasons.push("Low yield means fewer taxable distributions - gains deferred until sale.");
   }
 
   // Special name signals
   if (name.includes("tax-managed") || name.includes("tax managed")) {
     score += 15;
-    reasons.push("Explicitly tax-managed strategy — designed to minimize shareholder tax burden.");
+    reasons.push("Explicitly tax-managed strategy - designed to minimize shareholder tax burden.");
   }
   if (name.includes("growth") && isETF && er < 0.2) {
     score += 5;
@@ -126,7 +126,7 @@ function computeTaxEfficiency(fund: FundRecord): TaxResult {
   const drags = { A: "~0.1–0.3%/yr", B: "~0.3–0.6%/yr", C: "~0.6–1.0%/yr", D: ">1.0%/yr" };
   const recs = {
     A: "Taxable Account OK",
-    B: "Either — slight preference for tax-advantaged",
+    B: "Either - slight preference for tax-advantaged",
     C: "Prefer Tax-Advantaged (IRA/401k)",
     D: "Tax-Advantaged Account (IRA/401k/529)",
   };
@@ -194,7 +194,7 @@ function DeltaBadge({ current, alt, key_, positiveGood = true }: {
 }) {
   const cv = key_ === "expenseRatio" ? current.expenseRatio : current.kpi[key_ as keyof typeof current.kpi] as number | null;
   const av = key_ === "expenseRatio" ? alt.expenseRatio : alt.kpi[key_ as keyof typeof alt.kpi] as number | null;
-  if (cv == null || av == null) return <span style={{ color: T.muted, fontSize: 11, ...mono }}>—</span>;
+  if (cv == null || av == null) return <span style={{ color: T.muted, fontSize: 11, ...mono }}>-</span>;
   const diff = av - cv;
   const better = positiveGood ? diff > 0 : diff < 0;
   const neutral = Math.abs(diff) < 0.001;
@@ -306,7 +306,7 @@ function ReplacementTool() {
               </div>
               <div style={{ display: "flex", gap: 20 }}>
                 {[
-                  ["Expense", cur.expenseRatio != null ? fmtPct(cur.expenseRatio) : "—"],
+                  ["Expense", cur.expenseRatio != null ? fmtPct(cur.expenseRatio) : "-"],
                   ["Sharpe 3Y", fmtNum(cur.kpi.sharpe3y)],
                   ["TTM Yield", fmtPct(cur.kpi.ttmYield)],
                   ["Score", String(cur.compositeScore)],
@@ -318,7 +318,7 @@ function ReplacementTool() {
           {/* Alternatives */}
           <div style={{ fontSize: 10, color: T.muted, textTransform: "uppercase",
             letterSpacing: "0.1em", ...ui, marginTop: 4 }}>
-            {result.alternatives.length} Ranked Alternatives — scored by {result.priorities.join(", ")}
+            {result.alternatives.length} Ranked Alternatives - scored by {result.priorities.join(", ")}
           </div>
 
           {result.alternatives.map((alt, i) => {
@@ -532,7 +532,7 @@ function TaxEfficiencyTool() {
             <div style={{ display: "flex", gap: 20, marginTop: 16,
               paddingTop: 14, borderTop: `1px solid ${T.line}` }}>
               <KPI label="Vehicle" value={fund.vehicle} />
-              <KPI label="Expense %" value={fund.expenseRatio != null ? fmtPct(fund.expenseRatio) : "—"} />
+              <KPI label="Expense %" value={fund.expenseRatio != null ? fmtPct(fund.expenseRatio) : "-"} />
               <KPI label="TTM Yield" value={fmtPct(fund.kpi.ttmYield)} />
               <KPI label="Category" value={fund.category} />
             </div>
@@ -571,7 +571,7 @@ export function AdvisorTaxPage({ onBack }: { onBack?: () => void }) {
   );
 }
 
-// ── Overview — grid of tool cards ─────────────────────────────────────────────
+// ── Overview - grid of tool cards ─────────────────────────────────────────────
 
 const TOOL_CARDS = [
   {
@@ -585,7 +585,7 @@ const TOOL_CARDS = [
     id: "advisor-tax" as const,
     icon: "◎",
     title: "Tax Efficiency Analyzer",
-    desc: "Score any fund's tax efficiency (A–D) based on structure, turnover, and distributions. Get a recommended account location — taxable vs. IRA/401k.",
+    desc: "Score any fund's tax efficiency (A–D) based on structure, turnover, and distributions. Get a recommended account location - taxable vs. IRA/401k.",
     tag: "Tax Planning",
   },
 ];

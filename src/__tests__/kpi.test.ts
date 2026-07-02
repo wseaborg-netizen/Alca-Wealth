@@ -58,7 +58,7 @@ describe("computeKpis", () => {
     const kpi = computeKpis(fund, bench);
     // When returns are identical, variance is 0 → beta falls back to null
     // (no meaningful beta when benchmark has zero variance)
-    // This is correct behavior — pass the test either way
+    // This is correct behavior - pass the test either way
     if (kpi.beta3y !== null) {
       expect(Math.abs(kpi.beta3y - 1)).toBeLessThan(0.1);
     }
@@ -80,7 +80,7 @@ describe("computeKpis", () => {
   test("maxDrawdown detects drawdown in daily price series", () => {
     // Build 700 daily prices ending today: rise, crash ~50%, partial recover
     const prices: { date: string; price: number }[] = [];
-    const n = 1300; // ~3.5 years — enough to clear the 24-month alignment check
+    const n = 1300; // ~3.5 years - enough to clear the 24-month alignment check
     for (let i = 0; i < n; i++) {
       const d = new Date(Date.now() - (n - 1 - i) * 86400000);
       let price: number;
@@ -99,7 +99,7 @@ describe("computeKpis", () => {
     const fund = buildPrices(months);
     const bench = buildPrices(months);
     const kpi = computeKpis(fund, bench);
-    // With zero std dev, Sharpe would be Infinity — check it's either null or very large
+    // With zero std dev, Sharpe would be Infinity - check it's either null or very large
     if (kpi.sharpe3y !== null) {
       expect(kpi.sharpe3y).toBeGreaterThan(0);
     }
@@ -107,7 +107,7 @@ describe("computeKpis", () => {
 
   test("negative alpha when fund lags benchmark", () => {
     const benchReturn = (1.10 ** (1 / 12)) - 1; // 10% annual
-    const fundReturn = (1.05 ** (1 / 12)) - 1;  // 5% annual — should produce negative alpha
+    const fundReturn = (1.05 ** (1 / 12)) - 1;  // 5% annual - should produce negative alpha
     const fund = buildPrices(Array(65).fill(fundReturn));
     const bench = buildPrices(Array(65).fill(benchReturn));
     const kpi = computeKpis(fund, bench);
@@ -140,7 +140,7 @@ describe("computeTtmYield (capital-gains winsorization)", () => {
     ]);
     const kpi = computeKpis(prices, prices, dividends, 66);
     // Naive sum would be (0.155*3 + 5.6)/66 ≈ 9.2%. After clamping the lump to
-    // the median payment it should land near ~1% — clearly not income-grade high.
+    // the median payment it should land near ~1% - clearly not income-grade high.
     expect(kpi.ttmYield).not.toBeNull();
     expect(kpi.ttmYield!).toBeLessThan(2);
     expect(kpi.ttmYield!).toBeGreaterThan(0);

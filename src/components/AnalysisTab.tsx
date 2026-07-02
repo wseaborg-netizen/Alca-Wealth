@@ -9,8 +9,8 @@ import type { FundRecord } from "../lib/funds";
 import { analyzeFund } from "../lib/analysis";
 import { computeTaxEfficiency } from "../lib/tax";
 
-const pct = (v: number | null, d = 2) => (v == null ? "—" : `${v.toFixed(d)}%`);
-const num = (v: number | null, d = 2) => (v == null ? "—" : v.toFixed(d));
+const pct = (v: number | null, d = 2) => (v == null ? "-" : `${v.toFixed(d)}%`);
+const num = (v: number | null, d = 2) => (v == null ? "-" : v.toFixed(d));
 
 interface TickerNews { uuid: string; title: string; publisher: string; link: string; publishedAt: number; image: string }
 
@@ -28,11 +28,11 @@ function overallRating(net: number): { score: number; grade: string; color: stri
   const grade = score >= 80 ? "A" : score >= 67 ? "B" : score >= 52 ? "C" : score >= 38 ? "D" : "E";
   const color = score >= 67 ? T.green : score >= 52 ? T.amber : T.red;
   const worth =
-    net >= 3 ? "Worth it — strong across the numbers."
-    : net >= 1 ? "Worth a look — more strengths than watch-outs."
-    : net <= -3 ? "Hard to justify — the watch-outs outweigh."
-    : net <= -1 ? "Be selective — mixed signals here."
-    : "Neutral — depends on the role it plays.";
+    net >= 3 ? "Worth it - strong across the numbers."
+    : net >= 1 ? "Worth a look - more strengths than watch-outs."
+    : net <= -3 ? "Hard to justify - the watch-outs outweigh."
+    : net <= -1 ? "Be selective - mixed signals here."
+    : "Neutral - depends on the role it plays.";
   return { score, grade, color, worth };
 }
 
@@ -109,9 +109,9 @@ export default function AnalysisTab({
     { label: "Up Capture", value: num(k.upsideCapture3y, 1), good: k.upsideCapture3y != null ? k.upsideCapture3y >= 100 : null },
     { label: "Down Capture", value: num(k.downsideCapture3y, 1), good: k.downsideCapture3y != null ? k.downsideCapture3y < 100 : null },
     { label: "TTM Yield", value: pct(k.ttmYield), good: k.ttmYield != null ? k.ttmYield > 0 : null },
-    { label: "Expense", value: record.expenseRatio != null ? pct(record.expenseRatio) : "—", good: record.expenseRatio != null ? record.expenseRatio <= 0.5 : null },
+    { label: "Expense", value: record.expenseRatio != null ? pct(record.expenseRatio) : "-", good: record.expenseRatio != null ? record.expenseRatio <= 0.5 : null },
     { label: "AUM", value: record.aumFormatted, good: null },
-    { label: "Fund Age", value: record.fundAge != null ? `${record.fundAge.toFixed(1)} yr` : "—", good: record.fundAge != null ? record.fundAge >= 5 : null },
+    { label: "Fund Age", value: record.fundAge != null ? `${record.fundAge.toFixed(1)} yr` : "-", good: record.fundAge != null ? record.fundAge >= 5 : null },
     { label: "Batting Avg", value: pct(k.battingAvg3y, 0), good: k.battingAvg3y != null ? k.battingAvg3y >= 50 : null },
   ] : [];
 
@@ -127,7 +127,7 @@ export default function AnalysisTab({
         <h2 style={{ fontSize: 26, fontWeight: 300, color: T.text, margin: 0,
           fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", letterSpacing: "0.04em", textTransform: "uppercase" }}>Critical Analysis</h2>
         <p style={{ fontSize: 12, color: T.dim, marginTop: 4, ...ui }}>
-          A full rundown of one fund — strengths, weaknesses, and the current numbers behind them.
+          A full rundown of one fund - strengths, weaknesses, and the current numbers behind them.
         </p>
       </div>
 
@@ -136,7 +136,7 @@ export default function AnalysisTab({
         <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
           <input value={input} onChange={(e) => setInput(e.target.value.toUpperCase())}
             onKeyDown={(e) => e.key === "Enter" && run(input)}
-            placeholder="Enter a ticker — e.g. SCHD, FXAIX, VTI"
+            placeholder="Enter a ticker - e.g. SCHD, FXAIX, VTI"
             style={{ flex: 1, background: T.panel, color: T.text, border: `1px solid ${T.line2}`,
               borderRadius: 6, padding: "9px 12px", fontSize: 14, outline: "none", ...mono }} />
           <Btn accent onClick={() => run(input)} disabled={loading || !input.trim()}>
@@ -283,7 +283,7 @@ export default function AnalysisTab({
             )}
 
             <Card style={{ padding: "16px 20px" }}>
-              <Label>Growth vs benchmark — 3 years</Label>
+              <Label>Growth vs benchmark - 3 years</Label>
               {rolling.length > 1 ? (
                 <ResponsiveContainer width="100%" height={200}>
                   <LineChart data={rolling} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
@@ -316,7 +316,7 @@ export default function AnalysisTab({
                       ...ui, marginBottom: 6 }}>{s.label}</div>
                     <div style={{ fontSize: 15, fontWeight: 600, ...mono,
                       color: s.fundReturn == null ? T.dim : s.fundReturn >= 0 ? T.green : T.red }}>
-                      {s.fundReturn != null ? `${s.fundReturn > 0 ? "+" : ""}${s.fundReturn.toFixed(1)}%` : "—"}
+                      {s.fundReturn != null ? `${s.fundReturn > 0 ? "+" : ""}${s.fundReturn.toFixed(1)}%` : "-"}
                     </div>
                     {s.benchReturn != null && (
                       <div style={{ fontSize: 10, color: T.muted, marginTop: 2, ...mono }}>
@@ -331,12 +331,12 @@ export default function AnalysisTab({
 
           {/* News & coverage */}
           <Card style={{ padding: "16px 20px" }}>
-            <Label>News &amp; coverage — recent articles mentioning {record.ticker}</Label>
+            <Label>News &amp; coverage - recent articles mentioning {record.ticker}</Label>
             {newsLoading ? (
               <div style={{ fontSize: 12, color: T.muted, ...ui, padding: "16px 0" }}>Pulling related coverage…</div>
             ) : news.length === 0 ? (
               <div style={{ fontSize: 12, color: T.muted, ...ui, padding: "12px 0" }}>
-                No recent articles found for {record.ticker}. Extra context only — the rating above is data-driven.
+                No recent articles found for {record.ticker}. Extra context only - the rating above is data-driven.
               </div>
             ) : (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginTop: 12 }}>

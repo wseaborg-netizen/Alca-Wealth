@@ -43,16 +43,16 @@ const CHIP_COLORS_DARK: Record<FactorChip, { bg: string; text: string; border: s
 // ── Formatters ─────────────────────────────────────────────────────────────────
 
 const fmtPct = (v: number | null | undefined, decimals = 1) =>
-  v == null ? "—" : (v >= 0 ? "+" : "") + v.toFixed(decimals) + "%";
+  v == null ? "-" : (v >= 0 ? "+" : "") + v.toFixed(decimals) + "%";
 const fmtNum = (v: number | null | undefined, dec = 2) =>
-  v == null ? "—" : v.toFixed(dec);
+  v == null ? "-" : v.toFixed(dec);
 const col = (v: number | null | undefined) =>
   v == null ? T.muted : v >= 0 ? T.green : T.red;
 
 // ── Sparkline ─────────────────────────────────────────────────────────────────
 
 function MiniSparkline({ data, color }: { data: number[]; color: string }) {
-  if (!data || data.length < 2) return <span style={{ color: T.muted, fontSize: 11 }}>—</span>;
+  if (!data || data.length < 2) return <span style={{ color: T.muted, fontSize: 11 }}>-</span>;
   const min = Math.min(...data), max = Math.max(...data);
   const range = max - min || 1;
   const W = 60, H = 22;
@@ -106,7 +106,7 @@ export default function WatchlistTab({ onAddToCompare, onAnalyze, onDiscover, au
     return () => obs.disconnect();
   }, []);
 
-  // Load persisted tickers — from Supabase if full account, else localStorage
+  // Load persisted tickers - from Supabase if full account, else localStorage
   useEffect(() => {
     if (authMode === "full") {
       fetch("/api/watchlist")
@@ -122,7 +122,7 @@ export default function WatchlistTab({ onAddToCompare, onAnalyze, onDiscover, au
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authMode]);
 
-  // Persist tickers — localStorage only (Supabase is updated on add/remove)
+  // Persist tickers - localStorage only (Supabase is updated on add/remove)
   useEffect(() => {
     if (authMode !== "full") {
       try { localStorage.setItem(LS_KEY, JSON.stringify(tickers)); } catch {}
@@ -168,7 +168,7 @@ export default function WatchlistTab({ onAddToCompare, onAnalyze, onDiscover, au
           body: JSON.stringify({ ticker: t }) }).catch(() => {});
       }
     } catch {
-      setAddError("Fetch failed — try again");
+      setAddError("Fetch failed - try again");
     } finally {
       setAdding(false);
     }
@@ -332,7 +332,7 @@ export default function WatchlistTab({ onAddToCompare, onAnalyze, onDiscover, au
                   color: fund.expenseRatio == null ? T.muted
                     : fund.expenseRatio < 0.2 ? T.green : fund.expenseRatio < 0.6 ? T.amber : T.red,
                   ...mono }}>
-                  {fund.expenseRatio != null ? fund.expenseRatio.toFixed(2) + "%" : "—"}
+                  {fund.expenseRatio != null ? fund.expenseRatio.toFixed(2) + "%" : "-"}
                 </div>
                 <div style={{ fontSize: 10, color: T.muted, marginTop: 1, ...ui }}>Exp. ratio</div>
               </div>
@@ -401,7 +401,7 @@ export default function WatchlistTab({ onAddToCompare, onAnalyze, onDiscover, au
               background: chipColors[c.id].text, flexShrink: 0 }} />
             <span style={{ fontSize: 11, color: T.dim, ...ui }}>
               <strong style={{ color: T.text }}>{c.label}</strong>
-              {" — "}opens {c.action === "analysis" ? "Analysis" : "Compare"} for this fund
+              {" - "}opens {c.action === "analysis" ? "Analysis" : "Compare"} for this fund
             </span>
           </div>
         ))}
@@ -440,7 +440,7 @@ function AddInput({ value, onChange, onAdd, adding, error, onClearError }: {
           value={value}
           onChange={(e) => { onChange(e.target.value.toUpperCase()); onClearError(); }}
           onKeyDown={(e) => e.key === "Enter" && onAdd()}
-          placeholder="Add ticker — e.g. VTI, FXAIX"
+          placeholder="Add ticker - e.g. VTI, FXAIX"
           maxLength={10}
           style={{ flex: 1, padding: "9px 13px", borderRadius: 9, fontSize: 13,
             background: "var(--c-panel2)", border: `1px solid ${error ? T.red : "var(--c-line2)"}`,

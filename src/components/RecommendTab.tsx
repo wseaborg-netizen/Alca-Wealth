@@ -13,11 +13,11 @@ interface Kpi {
   ttmYield: number | null; [k: string]: number | null | undefined;
 }
 
-const fmtPct = (v: number | null | undefined, d = 2) => (v == null ? "—" : `${v.toFixed(d)}%`);
-const fmtNum = (v: number | null | undefined, d = 2) => (v == null ? "—" : v.toFixed(d));
+const fmtPct = (v: number | null | undefined, d = 2) => (v == null ? "-" : `${v.toFixed(d)}%`);
+const fmtNum = (v: number | null | undefined, d = 2) => (v == null ? "-" : v.toFixed(d));
 
 // ────────────────────────────────────────────────────────────────────────────────
-// Mode 1 — From a fund you hold
+// Mode 1 - From a fund you hold
 // ────────────────────────────────────────────────────────────────────────────────
 
 interface FFFactor {
@@ -46,7 +46,7 @@ interface FFResult {
 
 const FACTOR_ICON: Record<string, string> = { cost: "💰", riskAdj: "📈", downside: "🛡", yield: "💵", alpha: "🎯" };
 const fmtFactorVal = (key: string, v: number | null): string =>
-  v == null ? "—" : key === "riskAdj" ? v.toFixed(2) : `${v.toFixed(2)}%`;
+  v == null ? "-" : key === "riskAdj" ? v.toFixed(2) : `${v.toFixed(2)}%`;
 
 function TopPickCard({ p, rank, onCompare, onAnalyze }: {
   p: TopPick; rank: number; onCompare?: (t: string) => void; onAnalyze?: (t: string) => void;
@@ -75,11 +75,11 @@ function TopPickCard({ p, rank, onCompare, onAnalyze }: {
       <div style={{ fontSize: 11, color: T.dim, ...ui, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
         {([
-          ["Expense", p.expenseRatio != null ? `${p.expenseRatio.toFixed(2)}%` : "—"],
-          ["3Y Ret", p.kpi.return3y != null ? `${p.kpi.return3y.toFixed(1)}%` : "—"],
-          ["Sharpe", p.kpi.sharpe3y != null ? p.kpi.sharpe3y.toFixed(2) : "—"],
-          ["Alpha", p.kpi.alpha3y != null ? `${p.kpi.alpha3y.toFixed(1)}%` : "—"],
-          ["Yield", p.kpi.ttmYield != null ? `${p.kpi.ttmYield.toFixed(1)}%` : "—"],
+          ["Expense", p.expenseRatio != null ? `${p.expenseRatio.toFixed(2)}%` : "-"],
+          ["3Y Ret", p.kpi.return3y != null ? `${p.kpi.return3y.toFixed(1)}%` : "-"],
+          ["Sharpe", p.kpi.sharpe3y != null ? p.kpi.sharpe3y.toFixed(2) : "-"],
+          ["Alpha", p.kpi.alpha3y != null ? `${p.kpi.alpha3y.toFixed(1)}%` : "-"],
+          ["Yield", p.kpi.ttmYield != null ? `${p.kpi.ttmYield.toFixed(1)}%` : "-"],
         ] as [string, string][]).map(([l, v]) => (
           <div key={l}>
             <div style={{ fontSize: 8.5, color: T.muted, textTransform: "uppercase", letterSpacing: "0.06em", ...ui }}>{l}</div>
@@ -193,7 +193,7 @@ export function FromFundMode({ seedTicker, onAddToCompare, onAnalyze }: {
             <div style={{ flex: 1, minWidth: 220 }}>
               <input value={ticker} onChange={(e) => setTicker(e.target.value.toUpperCase())}
                 onKeyDown={(e) => e.key === "Enter" && run(ticker)}
-                placeholder="Enter a ticker — e.g. AGTHX, ABALX, SPY"
+                placeholder="Enter a ticker - e.g. AGTHX, ABALX, SPY"
                 style={{ width: "100%", background: T.panel, color: T.text, border: `1px solid ${T.line2}`,
                   borderRadius: 6, padding: "9px 12px", fontSize: 14, outline: "none", boxSizing: "border-box", ...mono }} />
             </div>
@@ -223,11 +223,11 @@ export function FromFundMode({ seedTicker, onAddToCompare, onAnalyze }: {
               </div>
               <div style={{ display: "flex", gap: 20 }}>
                 {([
-                  ["Expense", cur.expenseRatio != null ? `${cur.expenseRatio.toFixed(2)}%` : "—"],
-                  ["Sharpe 3y", cur.kpi.sharpe3y?.toFixed(2) ?? "—"],
-                  ["TTM Yield", cur.kpi.ttmYield != null ? `${cur.kpi.ttmYield.toFixed(2)}%` : "—"],
-                  ["Max DD 3y", cur.kpi.maxDrawdown3y != null ? `${cur.kpi.maxDrawdown3y.toFixed(1)}%` : "—"],
-                  ["Alpha 3y", cur.kpi.alpha3y != null ? `${cur.kpi.alpha3y.toFixed(2)}%` : "—"],
+                  ["Expense", cur.expenseRatio != null ? `${cur.expenseRatio.toFixed(2)}%` : "-"],
+                  ["Sharpe 3y", cur.kpi.sharpe3y?.toFixed(2) ?? "-"],
+                  ["TTM Yield", cur.kpi.ttmYield != null ? `${cur.kpi.ttmYield.toFixed(2)}%` : "-"],
+                  ["Max DD 3y", cur.kpi.maxDrawdown3y != null ? `${cur.kpi.maxDrawdown3y.toFixed(1)}%` : "-"],
+                  ["Alpha 3y", cur.kpi.alpha3y != null ? `${cur.kpi.alpha3y.toFixed(2)}%` : "-"],
                 ] as [string, string][]).map(([l, v]) => (
                   <div key={l}>
                     <div style={{ fontSize: 9, color: T.muted, textTransform: "uppercase", letterSpacing: "0.08em", ...ui }}>{l}</div>
@@ -238,10 +238,10 @@ export function FromFundMode({ seedTicker, onAddToCompare, onAnalyze }: {
             </div>
           </div>
 
-          {/* Top 3 best-fit picks — overall best alternatives */}
+          {/* Top 3 best-fit picks - overall best alternatives */}
           {result.topPicks && result.topPicks.length > 0 && (
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: T.text, ...ui }}>Top 3 picks — best overall fit</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: T.text, ...ui }}>Top 3 picks - best overall fit</div>
               <div style={{ fontSize: 11, color: T.dim, ...ui, marginTop: 2, marginBottom: 12 }}>
                 The strongest all-around alternatives to {cur.ticker}, ranked by a blended fit score across cost, risk, downside, alpha &amp; income.
               </div>
@@ -256,7 +256,7 @@ export function FromFundMode({ seedTicker, onAddToCompare, onAnalyze }: {
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: T.text, ...ui }}>Best for each goal</div>
             <div style={{ fontSize: 11, color: T.dim, ...ui, marginTop: 2 }}>
-              If a client cares about one factor above all, here&apos;s the single best same-category alternative for it — from {result.poolSize} comparable funds.
+              If a client cares about one factor above all, here&apos;s the single best same-category alternative for it - from {result.poolSize} comparable funds.
               {improvements > 0
                 ? ` ${improvements} factor${improvements > 1 ? "s" : ""} where a switch could help.`
                 : " Your fund already leads its peers on every factor."}
@@ -273,7 +273,7 @@ export function FromFundMode({ seedTicker, onAddToCompare, onAnalyze }: {
 }
 
 // ────────────────────────────────────────────────────────────────────────────────
-// Mode 2 — By factors & metrics
+// Mode 2 - By factors & metrics
 // ────────────────────────────────────────────────────────────────────────────────
 
 const ASSET = ["Any", "US Equity", "International Equity", "Fixed Income", "Allocation / Balanced", "Sector / Thematic", "Alternatives"];
@@ -389,7 +389,7 @@ function ByFactorsMode({ onAddToCompare, onAnalyze }: {
 
       {funds && funds.length === 0 && !loading && (
         <div style={{ textAlign: "center", padding: "28px 0", color: T.muted, fontSize: 13, ...ui }}>
-          No funds matched — loosen the filters.
+          No funds matched - loosen the filters.
         </div>
       )}
 
@@ -418,7 +418,7 @@ function ByFactorsMode({ onAddToCompare, onAnalyze }: {
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginTop: 12 }}>
                 {[
-                  ["Expense", f.expenseRatio != null ? `${f.expenseRatio.toFixed(2)}%` : "—"],
+                  ["Expense", f.expenseRatio != null ? `${f.expenseRatio.toFixed(2)}%` : "-"],
                   ["3Y Return", fmtPct(f.kpi.return3y)],
                   ["Sharpe", fmtNum(f.kpi.sharpe3y)],
                   ["Alpha", fmtPct(f.kpi.alpha3y)],
@@ -460,7 +460,7 @@ function ByFactorsMode({ onAddToCompare, onAnalyze }: {
 }
 
 // ────────────────────────────────────────────────────────────────────────────────
-// Mode 3 — By client profile
+// Mode 3 - By client profile
 // ────────────────────────────────────────────────────────────────────────────────
 
 const RISK    = [["conservative", "Conservative"], ["moderate", "Moderate"], ["aggressive", "Aggressive"]] as const;
@@ -574,7 +574,7 @@ export function ProfileMode({ onAddToCompare, onAnalyze }: {
               )}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginTop: 12 }}>
                 {[
-                  ["Expense", f.expenseRatio != null ? `${f.expenseRatio.toFixed(2)}%` : "—"],
+                  ["Expense", f.expenseRatio != null ? `${f.expenseRatio.toFixed(2)}%` : "-"],
                   ["3Y Return", fmtPct(f.kpi.return3y)],
                   ["Sharpe", fmtNum(f.kpi.sharpe3y)],
                   ["Alpha", fmtPct(f.kpi.alpha3y)],
@@ -615,10 +615,10 @@ export default function RecommendTab({ seedTicker, onAddToCompare, onAnalyze, em
   useEffect(() => { if (seedTicker) setMode("fund"); }, [seedTicker]);
 
   const subtitle = mode === "fund"
-    ? "Start from a fund a client holds — get the best alternative for each goal."
+    ? "Start from a fund a client holds - get the best alternative for each goal."
     : mode === "factors"
     ? "Pick the factors that matter and get the funds that score best on them."
-    : "Describe the client — risk, horizon, income, cost — and get ranked matches.";
+    : "Describe the client - risk, horizon, income, cost - and get ranked matches.";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>

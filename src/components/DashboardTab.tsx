@@ -23,10 +23,10 @@ interface NewsItem {
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 const fmtPrice = (v: number | null) =>
-  v == null ? "—" : v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  v == null ? "-" : v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtPct = (v: number | null) =>
-  v == null ? "—" : (v >= 0 ? "+" : "") + (v * 100).toFixed(2) + "%";
-const fmtRate = (v: number | null) => v == null ? "—" : v.toFixed(2) + "%";
+  v == null ? "-" : (v >= 0 ? "+" : "") + (v * 100).toFixed(2) + "%";
+const fmtRate = (v: number | null) => v == null ? "-" : v.toFixed(2) + "%";
 const col = (v: number | null) => v == null ? T.dim : v >= 0 ? T.green : T.red;
 
 function Pct({ v, size = 13 }: { v: number | null; size?: number }) {
@@ -108,7 +108,7 @@ function RatesBar({ data }: { data: RatesData | null }) {
     { label: "Fed Funds",    value: fmtRate(data.fedFunds),    color: T.text },
     { label: "10Y Treasury", value: fmtRate(data.yield10y),    color: T.text },
     { label: "2Y Treasury",  value: fmtRate(data.yield2y),     color: T.text },
-    { label: "Yield Curve",  value: data.yieldCurve != null ? `${data.yieldCurve >= 0 ? "+" : ""}${data.yieldCurve.toFixed(2)}%` : "—",
+    { label: "Yield Curve",  value: data.yieldCurve != null ? `${data.yieldCurve >= 0 ? "+" : ""}${data.yieldCurve.toFixed(2)}%` : "-",
       color: data.yieldCurve != null ? (data.yieldCurve >= 0 ? T.green : T.amber) : T.dim },
     { label: "CPI Inflation", value: fmtRate(data.cpiYoY),
       color: data.cpiYoY != null ? (data.cpiYoY > 4 ? T.red : data.cpiYoY > 2.5 ? T.amber : T.green) : T.dim },
@@ -216,13 +216,13 @@ function SmallStory({ item }: { item: NewsItem }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  SCROLL PROGRESS RAIL — a little train that rides the left rail, then crosses
+//  SCROLL PROGRESS RAIL - a little train that rides the left rail, then crosses
 //  the page after the news and rides down the right rail.
 // ════════════════════════════════════════════════════════════════════════════
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 
 /**
- * ScrollProgress — a clean, straight scroll-position indicator hugging the
+ * ScrollProgress - a clean, straight scroll-position indicator hugging the
  * sidebar edge: a thin vertical track, a filled (traveled) portion, and a small
  * handle. Moves linearly with scroll position.
  */
@@ -302,7 +302,7 @@ export default function DashboardTab({ onNavigate, railOffset = 60 }: {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      {/* Scroll progress railroad — only when navigation is wired (dashboard) */}
+      {/* Scroll progress railroad - only when navigation is wired (dashboard) */}
       {onNavigate && <ScrollRail offset={railOffset} />}
 
       {/* 3 index heroes */}
@@ -313,7 +313,7 @@ export default function DashboardTab({ onNavigate, railOffset = 60 }: {
       <RatesBar data={rates} />
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 14, alignItems: "start" }}>
-        {/* LEFT — news */}
+        {/* LEFT - news */}
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <div style={{ fontSize: 13, color: T.dim, textTransform: "uppercase", letterSpacing: "0.07em",
@@ -337,7 +337,7 @@ export default function DashboardTab({ onNavigate, railOffset = 60 }: {
           )}
         </div>
 
-        {/* RIGHT — markets */}
+        {/* RIGHT - markets */}
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ fontSize: 13, color: T.dim, textTransform: "uppercase", letterSpacing: "0.07em",
             fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", fontWeight: 300 }}>Markets</div>
@@ -348,7 +348,7 @@ export default function DashboardTab({ onNavigate, railOffset = 60 }: {
       </div>
 
       <p style={{ fontSize: 10, color: T.muted, ...ui, textAlign: "center", marginTop: 8 }}>
-        Prices delayed · Yahoo Finance &amp; FRED · Research aid — verify before client use
+        Prices delayed · Yahoo Finance &amp; FRED · Research aid - verify before client use
       </p>
     </div>
   );

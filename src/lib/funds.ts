@@ -1,5 +1,5 @@
 /**
- * Fund data service — fetches from Yahoo Finance with async cache.
+ * Fund data service - fetches from Yahoo Finance with async cache.
  * Returns a normalized FundRecord with profile + KPIs.
  * Server-side only.
  *
@@ -14,7 +14,7 @@ import { computeKpis, type KpiResult } from "./kpi";
 export type { KpiResult };
 import fundMetaRaw from "../data/fund-meta.json";
 
-// Static fallback — used only when Yahoo returns nothing
+// Static fallback - used only when Yahoo returns nothing
 const FUND_META = fundMetaRaw as unknown as Record<string, { er: number; aum: number } | undefined>;
 
 export interface FundRecord {
@@ -30,14 +30,14 @@ export interface FundRecord {
   fundAge: number | null; // years
   kpi: KpiResult;
   fetchedAt: number;
-  dataSource?: string; // "live" | "fallback" — for debugging
+  dataSource?: string; // "live" | "fallback" - for debugging
   error?: string;
 }
 
 export const BENCHMARKS = ["SPY", "AGG", "VXUS"] as const;
 
 function formatAum(aum: number | null): string {
-  if (!aum) return "—";
+  if (!aum) return "-";
   if (aum >= 1e12) return `$${(aum / 1e12).toFixed(1)}T`;
   if (aum >= 1e9)  return `$${(aum / 1e9).toFixed(1)}B`;
   if (aum >= 1e6)  return `$${(aum / 1e6).toFixed(0)}M`;
@@ -125,7 +125,7 @@ export async function getBenchmarkHistory(
 }
 
 /**
- * Lightweight fund fetch for the recommend engine — 3y history only (~4× faster).
+ * Lightweight fund fetch for the recommend engine - 3y history only (~4× faster).
  */
 export async function getRecommendFund(
   ticker: string,
@@ -170,7 +170,7 @@ export async function getRecommendFund(
   } catch (err) {
     return {
       ticker, name, vehicle, category, benchmark,
-      expenseRatio: null, aum: null, aumFormatted: "—",
+      expenseRatio: null, aum: null, aumFormatted: "-",
       inceptionDate: null, fundAge: null,
       kpi: EMPTY_KPI,
       fetchedAt: Date.now(),
@@ -193,7 +193,7 @@ export async function getFund(
   let name = ticker;
 
   try {
-    // Fetch live profile, price history, and benchmark — all parallel
+    // Fetch live profile, price history, and benchmark - all parallel
     const [profile, histResult, benchItems] = await Promise.all([
       fetchLiveProfile(ticker, vehicle),
       fetchHistory(ticker),
@@ -227,7 +227,7 @@ export async function getFund(
   } catch (err) {
     const record: FundRecord = {
       ticker, name, vehicle, category, benchmark,
-      expenseRatio: null, aum: null, aumFormatted: "—",
+      expenseRatio: null, aum: null, aumFormatted: "-",
       inceptionDate: null, fundAge: null,
       kpi: EMPTY_KPI,
       fetchedAt: Date.now(),

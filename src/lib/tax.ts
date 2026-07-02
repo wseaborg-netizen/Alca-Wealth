@@ -1,5 +1,5 @@
 /**
- * Heuristic tax-efficiency scoring for a fund — pure, reusable across the app.
+ * Heuristic tax-efficiency scoring for a fund - pure, reusable across the app.
  * Values (expenseRatio, ttmYield) are in PERCENT units.
  */
 /** Minimal fields needed to score tax efficiency (FundRecord satisfies this). */
@@ -33,7 +33,7 @@ export function computeTaxEfficiency(fund: TaxInput): TaxResult {
 
   if (cat.includes("muni")) {
     score = 90;
-    reasons.push("Municipal bonds produce federally tax-exempt income — highly efficient for taxable accounts.");
+    reasons.push("Municipal bonds produce federally tax-exempt income - highly efficient for taxable accounts.");
   } else if (cat.includes("bond") || cat.includes("fixed") || cat.includes("income") || cat.includes("treasury") || cat.includes("credit")) {
     score -= 25;
     reasons.push("Fixed income generates ordinary income taxed at full marginal rates.");
@@ -72,12 +72,12 @@ export function computeTaxEfficiency(fund: TaxInput): TaxResult {
     reasons.push(`Moderate yield (${yield_.toFixed(1)}%) creates regular taxable distributions.`);
   } else if (yield_ < 1 && yield_ >= 0) {
     score += 8;
-    reasons.push("Low yield means fewer taxable distributions — gains deferred until sale.");
+    reasons.push("Low yield means fewer taxable distributions - gains deferred until sale.");
   }
 
   if (name.includes("tax-managed") || name.includes("tax managed")) {
     score += 15;
-    reasons.push("Explicitly tax-managed strategy — designed to minimize shareholder tax burden.");
+    reasons.push("Explicitly tax-managed strategy - designed to minimize shareholder tax burden.");
   }
   if (name.includes("growth") && isETF && er < 0.2) {
     score += 5;
@@ -95,7 +95,7 @@ export function computeTaxEfficiency(fund: TaxInput): TaxResult {
   const drags = { A: "~0.1–0.3%/yr", B: "~0.3–0.6%/yr", C: "~0.6–1.0%/yr", D: ">1.0%/yr" };
   const recs = {
     A: "Taxable Account OK",
-    B: "Either — slight preference for tax-advantaged",
+    B: "Either - slight preference for tax-advantaged",
     C: "Prefer Tax-Advantaged (IRA/401k)",
     D: "Tax-Advantaged Account (IRA/401k/529)",
   };

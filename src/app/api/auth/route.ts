@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       // Distinguish "server not configured" from "wrong password" so the cause is obvious.
       if (!expected) {
         return NextResponse.json(
-          { error: "Preview access isn't set up on the server yet — add PREVIEW_PASSWORD in Vercel and redeploy." },
+          { error: "Preview access isn't set up on the server yet - add PREVIEW_PASSWORD in Vercel and redeploy." },
           { status: 503 },
         );
       }
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-/** GET /api/auth — check current session */
+/** GET /api/auth - check current session */
 export async function GET(req: NextRequest) {
   try {
     // Check preview cookie first (doesn't need Supabase)

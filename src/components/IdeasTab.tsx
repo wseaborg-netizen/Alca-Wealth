@@ -46,14 +46,14 @@ export const DISCOVER_SECTIONS: DiscoverSection[] = [
   { id: "find", label: "Screen", short: "Screen", icon: IconFind, tag: "Screener",
     desc: "Screen the whole universe by style box, cost, alpha, Sharpe and the factors you weight." },
   { id: "fromfund", label: "Similar to a ticker", short: "Similar to a ticker", icon: IconHeld, tag: "From a reference",
-    desc: "Enter a fund a client owns — get the top-fit alternatives and the best option for each goal." },
+    desc: "Enter a fund a client owns - get the top-fit alternatives and the best option for each goal." },
   { id: "profile", label: "Match a client profile", short: "Client profile", icon: IconProfile, tag: "From a reference",
-    desc: "Describe risk, horizon, income & cost — get funds ranked to the client's profile." },
+    desc: "Describe risk, horizon, income & cost - get funds ranked to the client's profile." },
 ];
 
 const TOOLS = DISCOVER_SECTIONS.filter((s) => s.id !== "all");
 
-// ── Hub landing ("All") — every option as a clickable card ──────────────────────
+// ── Hub landing ("All") - every option as a clickable card ──────────────────────
 // Capability bullets per tool
 const BULLETS: Record<string, string[]> = {
   find: ["Style box + 16 metrics", "Weight by the factors you care about", "Ranked composite score"],
@@ -170,19 +170,19 @@ export default function IdeasTab({
         </h2>
         <p style={{ fontSize: 12, color: T.dim, marginTop: 4, ...ui }}>
           {mode === "all"
-            ? "Source funds for clients — screen the universe, find funds like a ticker they hold, or match a client profile."
+            ? "Source funds for clients - screen the universe, find funds like a ticker they hold, or match a client profile."
             : active?.desc}
         </p>
       </div>
 
-      {/* Hub landing — all options */}
+      {/* Hub landing - all options */}
       {mode === "all" && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
           {TOOLS.map((s) => <HubCard key={s.id} s={s} onClick={() => setMode(s.id)} />)}
         </div>
       )}
 
-      {/* Tools — all mounted, hidden when inactive so state persists */}
+      {/* Tools - all mounted, hidden when inactive so state persists */}
       <div style={{ display: mode === "find" ? "block" : "none" }}>
         <ScreenTab onAddToCompare={onAddToCompare} onAnalyze={onAnalyze} onFindSimilar={onFindSimilar} />
       </div>

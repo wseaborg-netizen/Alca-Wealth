@@ -10,7 +10,7 @@ import SettingsTab, { type Theme } from "./SettingsTab";
 import ComingSoonTab, { type RoadmapSpec } from "./ComingSoonTab";
 import WatchlistTab from "./WatchlistTab";
 
-// ── Roadmap / idea tabs (placeholders — not built yet) ──────────────────────────
+// ── Roadmap / idea tabs (placeholders - not built yet) ──────────────────────────
 const mk = (paths: React.ReactNode) => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">{paths}</svg>
 );
@@ -18,23 +18,23 @@ const mk = (paths: React.ReactNode) => (
 const ROADMAP: RoadmapSpec[] = [
   { id: "portfolio", label: "Portfolio", title: "Model Portfolio Builder",
     icon: mk(<><path d="M8 1.5V8l5.6 3.2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4"/></>),
-    blurb: "Assemble a model portfolio from the fund universe, set target weights, and see blended cost, risk and exposure in one view. Fund-level only — no client accounts.",
+    blurb: "Assemble a model portfolio from the fund universe, set target weights, and see blended cost, risk and exposure in one view. Fund-level only - no client accounts.",
     bullets: ["Add funds and set target weights", "Blended expense, yield, Sharpe & drawdown", "Asset-class & sector exposure", "Overlap detection between holdings", "Save & reuse model templates"] },
   { id: "backtest", label: "Backtest", title: "Backtest & What-If",
     icon: mk(<><circle cx="8" cy="8" r="6.2" stroke="currentColor" strokeWidth="1.4"/><path d="M8 4.6V8l2.4 1.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></>),
-    blurb: "Run a historical what-if on a single fund or a blend — see how the mix would have grown, its drawdowns, and how it behaved through past market regimes.",
+    blurb: "Run a historical what-if on a single fund or a blend - see how the mix would have grown, its drawdowns, and how it behaved through past market regimes.",
     bullets: ["Growth-of-$10k for a fund or blend", "Max drawdown & recovery time", "Stress-period performance", "Compare two blends side by side", "Rebalancing-frequency options"] },
   { id: "alerts", label: "Alerts", title: "Alerts",
     icon: mk(<><path d="M4 7a4 4 0 0 1 8 0c0 3 1 4 1 4H3s1-1 1-4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/><path d="M6.5 13a1.5 1.5 0 0 0 3 0" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></>),
-    blurb: "Get notified when a fund crosses a threshold you care about — a drawdown, a yield level, an expense change, or a rating shift.",
+    blurb: "Get notified when a fund crosses a threshold you care about - a drawdown, a yield level, an expense change, or a rating shift.",
     bullets: ["Set metric thresholds per fund", "Drawdown, yield, expense & rating triggers", "Email or in-app notifications", "Tie alerts to a watchlist or theme"] },
   { id: "tax", label: "Tax Center", title: "Tax Center",
     icon: mk(<><line x1="4" y1="12" x2="12" y2="4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><circle cx="5" cy="5" r="1.6" stroke="currentColor" strokeWidth="1.3"/><circle cx="11" cy="11" r="1.6" stroke="currentColor" strokeWidth="1.3"/></>),
-    blurb: "Compare the tax efficiency of funds and surface tax-aware swap ideas — all at the fund level, no client data involved.",
+    blurb: "Compare the tax efficiency of funds and surface tax-aware swap ideas - all at the fund level, no client data involved.",
     bullets: ["Estimated tax drag by fund", "Asset-location (taxable vs IRA) guidance", "Tax-efficient swap candidates", "Wash-sale-aware suggestions"] },
   { id: "assistant", label: "AI Assistant", title: "Research Assistant",
     icon: mk(<><path d="M2.5 4.3a1.8 1.8 0 0 1 1.8-1.8h7.4a1.8 1.8 0 0 1 1.8 1.8v4a1.8 1.8 0 0 1-1.8 1.8H7l-3 2.4V10.1H4.3a1.8 1.8 0 0 1-1.8-1.8z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></>),
-    blurb: "Ask plain-English questions about the fund universe — e.g. 'cheapest large-cap value with low drawdown' — and get an answer plus the matching funds, ready to compare or analyze.",
+    blurb: "Ask plain-English questions about the fund universe - e.g. 'cheapest large-cap value with low drawdown' - and get an answer plus the matching funds, ready to compare or analyze.",
     bullets: ["Natural-language fund search", "Explains the reasoning behind each pick", "One tap to Compare or Analyze the results", "Cites the metrics it used"] },
 ];
 
@@ -128,7 +128,7 @@ const GROUPS: NavGroup[] = [
   },
 ];
 
-// The core workflow tabs — shown as quick-access boxes in the top bar
+// The core workflow tabs - shown as quick-access boxes in the top bar
 const WORKFLOW: NavItem[] = GROUPS[1].items;
 const ALL_ITEMS: NavItem[] = GROUPS.flatMap((g) => g.items);
 const titleFor = (t: TabId) => t === "settings" ? "Settings" : (ALL_ITEMS.find((it) => it.id === t)?.label ?? "Dashboard");
@@ -149,7 +149,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
   const [open, setOpen] = useState(true);
   const [mounted, setMounted] = useState<Set<TabId>>(new Set<TabId>(["dashboard"]));
 
-  // Shared "focus fund" + tray — the glue that carries data across tabs
+  // Shared "focus fund" + tray - the glue that carries data across tabs
   const [compareTickers, setCompareTickers] = useState<string[]>([]);
   const [analysisTicker, setAnalysisTicker] = useState("");
   const [recommendSeed, setRecommendSeed]   = useState("");
@@ -210,7 +210,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
 
   // ── Cross-tab actions ──
   const goAnalyze = (t: string) => { setAnalysisTicker(t.toUpperCase()); navigate("analysis"); };
-  // Add to the comparison tray WITHOUT navigating away — build a list from anywhere.
+  // Add to the comparison tray WITHOUT navigating away - build a list from anywhere.
   const addToCompare = (t: string) => {
     const up = t.toUpperCase();
     setCompareTickers((prev) => (prev.includes(up) ? prev : [...prev, up].slice(0, 6)));
@@ -368,7 +368,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
           )}
         </nav>
 
-        {/* Settings — pinned to the bottom */}
+        {/* Settings - pinned to the bottom */}
         <div style={{ borderTop: `1px solid ${T.line}`, padding: "8px 8px", flexShrink: 0 }}>
           <NavButton item={{ id: "settings", label: "Settings", icon: IconSettings }} sub={open} />
           {open && (
@@ -389,7 +389,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
           gap: 14, padding: "0 22px", background: T.panel, borderBottom: `1px solid ${T.line}`,
           flexShrink: 0, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {/* Back / forward — in-app navigation history */}
+            {/* Back / forward - in-app navigation history */}
             <div style={{ display: "flex", gap: 2 }}>
               <button onClick={goBack} disabled={!canBack} title="Back"
                 style={{ width: 28, height: 28, borderRadius: 6, border: `1px solid ${T.line2}`,
@@ -411,7 +411,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
             <h1 style={{ fontSize: 14, fontWeight: 600, color: T.text, margin: 0, whiteSpace: "nowrap", ...ui }}>
               {titleFor(tab)}
             </h1>
-            {/* Tray indicator — funds queued for comparison from anywhere */}
+            {/* Tray indicator - funds queued for comparison from anywhere */}
             {compareTickers.length > 0 && (
               <button onClick={() => switchTab("comparison")} title="Open comparison"
                 style={{ display: "flex", alignItems: "center", gap: 6, background: T.blueL,
@@ -473,7 +473,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
           </div>
         </header>
 
-        {/* Content — lazy-mounted, hidden when inactive (state persists) */}
+        {/* Content - lazy-mounted, hidden when inactive (state persists) */}
         <main style={{ flex: 1, padding: "28px 28px 40px" }}>
           <div style={{ display: tab === "dashboard" ? "block" : "none" }}>
             <DashboardTab onNavigate={dashNavigate} railOffset={sidebarW} />
@@ -503,7 +503,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
               <SettingsTab theme={theme} setTheme={setTheme} />
             </div>
           )}
-          {/* Watchlist — real feature */}
+          {/* Watchlist - real feature */}
           {mounted.has("watchlist") && (
             <div style={{ display: tab === "watchlist" ? "block" : "none" }}>
               <WatchlistTab
@@ -514,20 +514,20 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
               />
             </div>
           )}
-          {/* Analytics group — coming soon placeholders */}
+          {/* Analytics group - coming soon placeholders */}
           {tab === "correlation" && (
             <ComingSoonTab spec={{ id: "correlation", label: "Correlation", title: "Correlation Matrix",
               icon: mk(<><path d="M2.5 2.5v11h11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><circle cx="5.5" cy="10.5" r="1.2" fill="currentColor"/><circle cx="8.5" cy="7.5" r="1.2" fill="currentColor"/><circle cx="11.5" cy="5" r="1.2" fill="currentColor"/></>),
-              blurb: "Drop in a set of funds and see how correlated they really are — find true diversifiers and spot redundant, overlapping holdings.",
+              blurb: "Drop in a set of funds and see how correlated they really are - find true diversifiers and spot redundant, overlapping holdings.",
               bullets: ["Color-coded correlation heatmap", "Rolling correlation over time", "Flags near-duplicate holdings", "Surfaces low-correlation diversifiers"] }} />
           )}
           {tab === "peers" && (
             <ComingSoonTab spec={{ id: "peers", label: "Peer Rankings", title: "Peer Rankings",
               icon: mk(<><rect x="2" y="9" width="3" height="5" rx="0.6" stroke="currentColor" strokeWidth="1.3"/><rect x="6.5" y="6" width="3" height="8" rx="0.6" stroke="currentColor" strokeWidth="1.3"/><rect x="11" y="3" width="3" height="11" rx="0.6" stroke="currentColor" strokeWidth="1.3"/></>),
-              blurb: "Category leaderboards — see where any fund ranks against its peers on every metric, with percentile tables and top-of-category lists.",
+              blurb: "Category leaderboards - see where any fund ranks against its peers on every metric, with percentile tables and top-of-category lists.",
               bullets: ["Category leaderboards by metric", "Percentile rank vs peers", "Top funds per category", "Filter by vehicle & cost"] }} />
           )}
-          {/* Roadmap tabs — placeholders */}
+          {/* Roadmap tabs - placeholders */}
           {ROADMAP.filter((r) => r.id === tab).map((r) => (
             <ComingSoonTab key={r.id} spec={r} />
           ))}

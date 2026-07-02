@@ -1,7 +1,7 @@
 /**
  * Fund-based factor recommendation.
- * Given a fund the client currently holds, find — for EACH factor (cost, risk-adjusted
- * return, downside protection, income, alpha) — the single best same-category alternative,
+ * Given a fund the client currently holds, find - for EACH factor (cost, risk-adjusted
+ * return, downside protection, income, alpha) - the single best same-category alternative,
  * with a plain-English articulation of why and by how much.
  */
 import { NextRequest, NextResponse } from "next/server";
@@ -55,6 +55,12 @@ export async function POST(req: NextRequest) {
            !c.includes("emerging") && !c.includes("allocation") && !c.includes("target");
   });
 
+  // Same-vehicle preference: a mutual fund should be recommended mutual funds,
+  // an ETF should be recommended ETFs. Fall back to all vehicles only if the
+  // same-vehicle pool is too thin to produce a meaningful comparison.
+  const sameVehicle = candidates.filter((u) => u.vehicle === currentFund.vehicle);
+  if (sameVehicle.length >= 6) candidates = sameVehicle;
+
   // Prefer exact category first
   const sameCat = candidates.filter((u) => u.category === currentFund.category);
   const rest    = candidates.filter((u) => u.category !== currentFund.category);
@@ -104,8 +110,8 @@ export async function POST(req: NextRequest) {
     improvement: boolean;
   }> = [];
 
-  const pct = (v: number | null) => (v == null ? "—" : `${v.toFixed(2)}%`);
-  const rat = (v: number | null) => (v == null ? "—" : v.toFixed(2));
+  const pct = (v: number | null) => (v == null ? "-" : `${v.toFixed(2)}%`);
+  const rat = (v: number | null) => (v == null ? "-" : v.toFixed(2));
 
   // helper: best alt by percentile key
   const bestBy = (key: PKey) =>
@@ -124,7 +130,7 @@ export async function POST(req: NextRequest) {
         improvement: av != null && cv != null && av < cv,
         ticker: b.ticker, name: b.name, category: b.category, vehicle: b.vehicle,
         blurb: av != null && cv != null && av < cv
-          ? `${b.ticker} charges ${pct(av)} vs your ${pct(cv)} — ${bps} bps/yr cheaper.`
+          ? `${b.ticker} charges ${pct(av)} vs your ${pct(cv)} - ${bps} bps/yr cheaper.`
           : `Your fund is already among the cheapest in its category.`,
       });
     }
@@ -140,12 +146,12 @@ export async function POST(req: NextRequest) {
         improvement: av != null && cv != null && av > cv,
         ticker: b.ticker, name: b.name, category: b.category, vehicle: b.vehicle,
         blurb: av != null && cv != null && av > cv
-          ? `${b.ticker} earns a ${rat(av)} Sharpe vs your ${rat(cv)} — more return per unit of risk.`
+          ? `${b.ticker} earns a ${rat(av)} Sharpe vs your ${rat(cv)} - more return per unit of risk.`
           : `Your fund already has top-tier risk-adjusted returns here.`,
       });
     }
   }
-  // 3) Downside protection (max drawdown 3y — less negative is better)
+  // 3) Downside protection (max drawdown 3y - less negative is better)
   {
     const b = bestBy("downside");
     if (b) {
@@ -156,7 +162,7 @@ export async function POST(req: NextRequest) {
         improvement: av != null && cv != null && av > cv,
         ticker: b.ticker, name: b.name, category: b.category, vehicle: b.vehicle,
         blurb: av != null && cv != null && av > cv
-          ? `${b.ticker} fell only ${pct(av)} at its 3y worst vs your ${pct(cv)} — shallower drawdowns.`
+          ? `${b.ticker} fell only ${pct(av)} at its 3y worst vs your ${pct(cv)} - shallower drawdowns.`
           : `Your fund already holds up best on the downside here.`,
       });
     }
@@ -172,7 +178,7 @@ export async function POST(req: NextRequest) {
         improvement: av != null && cv != null && av > cv,
         ticker: b.ticker, name: b.name, category: b.category, vehicle: b.vehicle,
         blurb: av != null && cv != null && av > cv
-          ? `${b.ticker} yields ${pct(av)} vs your ${pct(cv)} — more income for the client.`
+          ? `${b.ticker} yields ${pct(av)} vs your ${pct(cv)} - more income for the client.`
           : `Your fund already yields near the top of its category.`,
       });
     }
@@ -226,7 +232,7 @@ export async function POST(req: NextRequest) {
           sharpe3y: a.kpi.sharpe3y, return3y: a.kpi.return3y, alpha3y: a.kpi.alpha3y,
           ttmYield: a.kpi.ttmYield, maxDrawdown3y: a.kpi.maxDrawdown3y,
         },
-        reason: `Best all-around fit — strong on ${strengths[0]} and ${strengths[1]}` +
+        reason: `Best all-around fit - strong on ${strengths[0]} and ${strengths[1]}` +
           (betterThanCur ? `, and grades out ahead of ${cur.ticker} overall.` : `.`),
       };
     });

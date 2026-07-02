@@ -105,7 +105,7 @@ export function KPI({ label, value, good, large }: {
       <div style={{ color: T.muted, fontSize: 9, fontWeight: 600, letterSpacing: "0.1em",
         textTransform: "uppercase", marginBottom: 3, ...ui }}>{label}</div>
       <div style={{ color, fontSize: large ? 18 : 13, fontWeight: large ? 600 : 500, ...mono }}>
-        {value ?? "—"}
+        {value ?? "-"}
       </div>
     </div>
   );
@@ -146,7 +146,7 @@ export function Card({ children, style, className }: {
   return <div className={className} style={{ ...cardStyle(style) }}>{children}</div>;
 }
 
-// ── Rank badge — shows rank + optional total (e.g. "3 /47") ──────────────────
+// ── Rank badge - shows rank + optional total (e.g. "3 /47") ──────────────────
 export function RankBadge({ rank, total }: { rank: number; total?: number }) {
   const isFirst = rank === 1;
   return (

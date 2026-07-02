@@ -1,9 +1,9 @@
 /**
- * Cache layer — uses Upstash Redis in production (Vercel) and an in-memory
+ * Cache layer - uses Upstash Redis in production (Vercel) and an in-memory
  * Map locally so local dev still works without any extra setup.
  *
  * All functions are async to support both backends uniformly.
- * Server-side only — never imported in client components.
+ * Server-side only - never imported in client components.
  */
 
 // ── In-memory fallback (local dev) ──────────────────────────────────────────
@@ -82,7 +82,7 @@ export async function cacheClear(): Promise<void> {
   const redis = getRedis();
   if (redis) {
     try {
-      // FLUSHDB would wipe everything — instead scan for our keys
+      // FLUSHDB would wipe everything - instead scan for our keys
       const keys = await redis.keys("fund:*");
       const bkeys = await redis.keys("bench:*");
       const all = [...keys, ...bkeys];

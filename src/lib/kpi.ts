@@ -1,5 +1,5 @@
 /**
- * KPI engine — all formulas computed from daily NAV/adjusted-close history.
+ * KPI engine - all formulas computed from daily NAV/adjusted-close history.
  * 3-year window for risk stats; 5-year for return/drawdown.
  * Monthly returns derived from last trading day of each calendar month.
  */
@@ -61,7 +61,7 @@ export interface KpiResult {
   stressTests: StressResult[];
 }
 
-/** Risk-free rate — use FRED 3-month T-bill proxy. Edit to update. */
+/** Risk-free rate - use FRED 3-month T-bill proxy. Edit to update. */
 const RISK_FREE_ANNUAL = 0.045;
 const RISK_FREE_MONTHLY = (1 + RISK_FREE_ANNUAL) ** (1 / 12) - 1;
 
@@ -101,7 +101,7 @@ function mean(arr: number[]): number {
   return arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0;
 }
 
-/** Median — robust center, used to gauge a fund's "normal" distribution size. */
+/** Median - robust center, used to gauge a fund's "normal" distribution size. */
 function median(arr: number[]): number {
   if (!arr.length) return 0;
   const s = [...arr].sort((a, b) => a - b);
@@ -115,7 +115,7 @@ function stdDev(arr: number[], avg?: number): number {
   return Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / (arr.length - 1));
 }
 
-/** Downside deviation — std dev of returns below the target (monthly rf) */
+/** Downside deviation - std dev of returns below the target (monthly rf) */
 function downsideDev(returns: number[], target = RISK_FREE_MONTHLY): number {
   const below = returns.filter((r) => r < target).map((r) => (r - target) ** 2);
   if (below.length < 2) return 0;
@@ -323,8 +323,8 @@ function computeStressTests(fundDaily: DailyPrice[], benchDaily: DailyPrice[]): 
  * Trailing-12-month distribution yield (%).
  *
  * Yahoo's chart `events=dividends` stream folds year-end CAPITAL-GAINS
- * distributions in with income dividends for mutual funds — it exposes no
- * separate capital-gains stream — so naively summing it overstates the income
+ * distributions in with income dividends for mutual funds - it exposes no
+ * separate capital-gains stream - so naively summing it overstates the income
  * yield, often several-fold (e.g. AIVSX: ~1.5% income reads as ~10%).
  *
  * Fix: winsorize the stream. Any single payment that is BOTH a large multiple

@@ -1,5 +1,5 @@
 /**
- * Market dashboard API — fetches live quotes for key indices/ETFs from Yahoo Finance.
+ * Market dashboard API - fetches live quotes for key indices/ETFs from Yahoo Finance.
  * Cached 15 minutes (short TTL for market data).
  */
 import { NextResponse } from "next/server";
@@ -53,7 +53,7 @@ async function fetchQuote(ticker: string, includeSpark = false): Promise<QuoteRe
     const prev1w = validPairs[Math.max(0, validPairs.length - 6)]?.[1] ?? price;
     // 1 month ago (~21 trading days)
     const prev1m = validPairs[Math.max(0, validPairs.length - 22)]?.[1] ?? price;
-    // YTD — find first close of the year
+    // YTD - find first close of the year
     const nowYear = new Date().getFullYear();
     const ytdPair = validPairs.find(([ts]) => new Date(ts * 1000).getFullYear() === nowYear);
     const prevYtd = ytdPair?.[1] ?? validPairs[0][1];

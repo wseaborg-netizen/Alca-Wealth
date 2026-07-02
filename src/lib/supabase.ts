@@ -1,5 +1,5 @@
 /**
- * Supabase client helpers — three exports:
+ * Supabase client helpers - three exports:
  *  - createBrowserClient()  → use in Client Components
  *  - createServerClient()   → use in Server Components / API routes
  *  - supabaseAdmin          → service-role client for admin ops (server only)
@@ -13,12 +13,12 @@ const URL   = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const ANON  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const SVCRL = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-/** Browser client — for use inside "use client" components */
+/** Browser client - for use inside "use client" components */
 export function createBrowserClient() {
   return _browser(URL, ANON);
 }
 
-/** Server client — reads/writes cookies for session */
+/** Server client - reads/writes cookies for session */
 export async function createServerClient() {
   const cookieStore = await cookies();
   return _server(URL, ANON, {
@@ -34,7 +34,7 @@ export async function createServerClient() {
   });
 }
 
-/** Admin client — bypasses RLS, server only. Lazy so it doesn't throw at build time. */
+/** Admin client - bypasses RLS, server only. Lazy so it doesn't throw at build time. */
 let _admin: ReturnType<typeof createClient> | null = null;
 export function getSupabaseAdmin() {
   if (!_admin) {

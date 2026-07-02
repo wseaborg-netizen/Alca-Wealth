@@ -1,5 +1,5 @@
 /**
- * Per-ticker news — pulls recent articles mentioning a fund/ticker from the
+ * Per-ticker news - pulls recent articles mentioning a fund/ticker from the
  * Yahoo Finance search API. Cached 30 minutes per ticker.
  */
 import { NextRequest, NextResponse } from "next/server";

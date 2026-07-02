@@ -1,5 +1,5 @@
 /**
- * Macro rates endpoint — Fed Funds Rate, 10-year yield, 2-year yield, CPI inflation.
+ * Macro rates endpoint - Fed Funds Rate, 10-year yield, 2-year yield, CPI inflation.
  * Sources: Yahoo Finance (^TNX, ^IRX, ^FVX) + FRED (Fed Funds, CPI).
  * Cached 4 hours.
  */
@@ -34,7 +34,7 @@ async function fetchYFRate(symbol: string): Promise<number | null> {
   }
 }
 
-/** Fetch a FRED time series CSV — returns last non-null value */
+/** Fetch a FRED time series CSV - returns last non-null value */
 async function fetchFRED(seriesId: string): Promise<number | null> {
   try {
     const url = `https://fred.stlouisfed.org/graph/fredgraph.csv?id=${seriesId}`;
@@ -91,7 +91,7 @@ export async function GET() {
   const [fedFunds, yield10y, yield2y, cpiYoY] = await Promise.all([
     fetchFRED("FEDFUNDS"),       // Federal Funds Rate (monthly, lags ~1mo)
     fetchYFRate("^TNX"),         // 10-year treasury yield
-    fetchYFRate("^FVX"),         // 5-year (used as ~2y proxy — ^IRX is 3-mo)
+    fetchYFRate("^FVX"),         // 5-year (used as ~2y proxy - ^IRX is 3-mo)
     fetchCPIYoY(),               // CPI YoY inflation
   ]);
 

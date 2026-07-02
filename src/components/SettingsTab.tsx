@@ -87,7 +87,7 @@ export default function SettingsTab({ theme, setTheme }: { theme: Theme; setThem
       <Card style={{ padding: "6px 22px 16px" }}>
         <div style={{ fontSize: 11, fontWeight: 300, letterSpacing: "0.07em", textTransform: "uppercase",
           color: T.muted, fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", padding: "16px 0 4px" }}>About</div>
-        <Row label="Application" sub="Internal research aid — verify in your firm's system before client use.">
+        <Row label="Application" sub="Internal research aid - verify in your firm's system before client use.">
           <span style={{ fontSize: 12, color: T.dim, ...mono }}>Tool v1</span>
         </Row>
         <Row label="Fund universe" sub="Funds available to screen, compare and analyze.">
@@ -97,7 +97,7 @@ export default function SettingsTab({ theme, setTheme }: { theme: Theme; setThem
           <span style={{ fontSize: 12, color: T.dim, ...ui }}>Yahoo Finance · FRED</span>
         </Row>
         <div style={{ paddingTop: 14, fontSize: 11.5, color: T.muted, ...ui, lineHeight: 1.55 }}>
-          Tool · Fund Analytics. Research tool only — not investment advice.
+          Tool · Fund Analytics. Research tool only - not investment advice.
         </div>
       </Card>
     </div>
