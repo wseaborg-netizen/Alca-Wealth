@@ -291,7 +291,7 @@ export default function DashboardTab({ onNavigate, railOffset = 60 }: {
   );
 
   const find = (t: string) => market.items.find((i) => i.ticker === t) ?? null;
-  const heroes = [find("^GSPC"), find("^DJI"), find("^IXIC")];
+  const heroes = [find("^DJI"), find("^IXIC"), find("^GSPC")];
   const equities = market.items.filter((i) => i.group === "Equity" && !["^GSPC", "^DJI", "^IXIC"].includes(i.ticker));
   const bonds = market.items.filter((i) => i.group === "Fixed Income");
   const alts = market.items.filter((i) => i.group === "Alternatives");

@@ -18,6 +18,10 @@ function timeAgo(unixSec: number): string {
   if (s < 86400) return `${Math.round(s / 3600)}h ago`;
   return `${Math.round(s / 86400)}d ago`;
 }
+function fmtDate(unixSec: number): string {
+  if (!unixSec) return "";
+  return new Date(unixSec * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
 
 function assetClassOf(category: string): string {
   const c = (category || "").toLowerCase();
@@ -226,7 +230,8 @@ export default function MurderBoardTab({ onAnalyze, onFindSimilar }: {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 12.5, color: T.text, ...ui, lineHeight: 1.4 }}>{n.title}</div>
                     <div style={{ fontSize: 10.5, color: T.muted, ...ui, marginTop: 2 }}>
-                      {n.publisher}{n.publishedAt ? ` · ${timeAgo(n.publishedAt)}` : ""}
+                      {n.publisher}
+                      {n.publishedAt ? <> &middot; <b style={{ color: T.dim, fontWeight: 600 }}>{fmtDate(n.publishedAt)}</b> &middot; {timeAgo(n.publishedAt)}</> : ""}
                     </div>
                   </div>
                 </div>
