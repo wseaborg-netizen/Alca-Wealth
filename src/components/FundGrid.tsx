@@ -9,6 +9,7 @@ import CompareTab   from "./CompareTab";
 import SettingsTab, { type Theme } from "./SettingsTab";
 import ComingSoonTab, { type RoadmapSpec } from "./ComingSoonTab";
 import WatchlistTab from "./WatchlistTab";
+import PortfolioBuilderTab from "./PortfolioBuilderTab";
 
 // ── Roadmap / idea tabs (placeholders - not built yet) ──────────────────────────
 const mk = (paths: React.ReactNode) => (
@@ -16,10 +17,6 @@ const mk = (paths: React.ReactNode) => (
 );
 
 const ROADMAP: RoadmapSpec[] = [
-  { id: "portfolio", label: "Portfolio", title: "Model Portfolio Builder",
-    icon: mk(<><path d="M8 1.5V8l5.6 3.2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4"/></>),
-    blurb: "Assemble a model portfolio from the fund universe, set target weights, and see blended cost, risk and exposure in one view. Fund-level only - no client accounts.",
-    bullets: ["Add funds and set target weights", "Blended expense, yield, Sharpe & drawdown", "Asset-class & sector exposure", "Overlap detection between holdings", "Save & reuse model templates"] },
   { id: "backtest", label: "Backtest", title: "Backtest & What-If",
     icon: mk(<><circle cx="8" cy="8" r="6.2" stroke="currentColor" strokeWidth="1.4"/><path d="M8 4.6V8l2.4 1.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></>),
     blurb: "Run a historical what-if on a single fund or a blend - see how the mix would have grown, its drawdowns, and how it behaved through past market regimes.",
@@ -107,6 +104,12 @@ const GROUPS: NavGroup[] = [
       { id: "ideas",      label: "Discover",   icon: IconIdeas },
       { id: "comparison", label: "Comparison", icon: IconComparison },
       { id: "analysis",   label: "Analysis",   icon: IconAnalysis },
+    ],
+  },
+  {
+    id: "clienttools", title: "Client Tools",
+    items: [
+      { id: "portfolio", label: "Portfolio Builder", icon: mk(<><path d="M8 1.8V8l5.4 3.1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><circle cx="8" cy="8" r="6.3" stroke="currentColor" strokeWidth="1.4"/></>) },
     ],
   },
   {
@@ -526,6 +529,12 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
               icon: mk(<><rect x="2" y="9" width="3" height="5" rx="0.6" stroke="currentColor" strokeWidth="1.3"/><rect x="6.5" y="6" width="3" height="8" rx="0.6" stroke="currentColor" strokeWidth="1.3"/><rect x="11" y="3" width="3" height="11" rx="0.6" stroke="currentColor" strokeWidth="1.3"/></>),
               blurb: "Category leaderboards - see where any fund ranks against its peers on every metric, with percentile tables and top-of-category lists.",
               bullets: ["Category leaderboards by metric", "Percentile rank vs peers", "Top funds per category", "Filter by vehicle & cost"] }} />
+          )}
+          {/* Client Tools - real */}
+          {mounted.has("portfolio") && (
+            <div style={{ display: tab === "portfolio" ? "block" : "none" }}>
+              <PortfolioBuilderTab />
+            </div>
           )}
           {/* Roadmap tabs - placeholders */}
           {ROADMAP.filter((r) => r.id === tab).map((r) => (
