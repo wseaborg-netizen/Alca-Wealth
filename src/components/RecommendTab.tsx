@@ -45,7 +45,16 @@ interface FFResult {
   poolSize: number;
 }
 
-const FACTOR_ICON: Record<string, string> = { cost: "💰", riskAdj: "📈", downside: "🛡", yield: "💵", alpha: "🎯" };
+const FI = (paths: React.ReactNode) => (
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ display: "block" }}>{paths}</svg>
+);
+const FACTOR_ICON: Record<string, React.ReactNode> = {
+  cost: FI(<><circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3"/><path d="M8 4.7v6.6M6.4 6.2c0-.8.7-1.3 1.6-1.3s1.6.5 1.6 1.2c0 .8-.7 1-1.6 1.2s-1.6.5-1.6 1.3.7 1.3 1.6 1.3 1.6-.5 1.6-1.2" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></>),
+  riskAdj: FI(<><path d="M2 11.5l3.6-3.6 2.4 2 5.6-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.6 3.9h3.5v3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></>),
+  downside: FI(<path d="M8 2l5 1.8v3.6c0 3-2 5-5 6-3-1-5-3-5-6V3.8L8 2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>),
+  yield: FI(<><rect x="2" y="4.8" width="12" height="6.4" rx="1.2" stroke="currentColor" strokeWidth="1.3"/><circle cx="8" cy="8" r="1.7" stroke="currentColor" strokeWidth="1.2"/></>),
+  alpha: FI(<><circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3"/><circle cx="8" cy="8" r="2.7" stroke="currentColor" strokeWidth="1.2"/><circle cx="8" cy="8" r="0.7" fill="currentColor"/></>),
+};
 const fmtFactorVal = (key: string, v: number | null): string =>
   v == null ? "-" : key === "riskAdj" ? v.toFixed(2) : `${v.toFixed(2)}%`;
 
@@ -89,7 +98,7 @@ function TopPickCard({ p, rank, onCompare, onAnalyze }: {
         ))}
       </div>
       <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.5, ...ui, background: T.panel2,
-        border: `1px solid ${T.line}`, borderRadius: 6, padding: "8px 10px" }}>💡 {p.reason}</div>
+        border: `1px solid ${T.line}`, borderLeft: `2px solid ${T.data}`, borderRadius: 6, padding: "8px 11px" }}>{p.reason}</div>
       <div style={{ display: "flex", gap: 12 }}>
         {onAnalyze && <button onClick={() => onAnalyze(p.ticker)} style={{ fontSize: 11, color: T.blue, background: "none", border: "none", cursor: "pointer", padding: 0, ...ui }}>Analyze {p.ticker}</button>}
         {onCompare && <button onClick={() => onCompare(p.ticker)} style={{ fontSize: 11, color: T.blue, background: "none", border: "none", cursor: "pointer", padding: 0, ...ui }}>+ Compare</button>}
@@ -107,7 +116,7 @@ function FactorCard({ f, onCompare, onAnalyze }: {
       boxShadow: "0 1px 2px rgba(16,24,40,0.04)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 16 }}>{FACTOR_ICON[f.key]}</span>
+          <span style={{ display: "inline-flex", width: 28, height: 28, borderRadius: 7, background: T.panel3, border: `1px solid ${T.line}`, alignItems: "center", justifyContent: "center", color: T.text, flexShrink: 0 }}>{FACTOR_ICON[f.key]}</span>
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, color: T.text, ...ui }}>{f.label}</div>
             <div style={{ fontSize: 10, color: T.muted, ...ui }}>{f.metricLabel}</div>
@@ -602,7 +611,7 @@ export function ProfileMode({ onAddToCompare, onAnalyze }: {
               </div>
               {f.reason && (
                 <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 6, background: T.panel2,
-                  border: `1px solid ${T.line}`, fontSize: 11.5, color: T.dim, lineHeight: 1.55, ...ui }}>💡 {f.reason}</div>
+                  border: `1px solid ${T.line}`, borderLeft: `2px solid ${T.data}`, fontSize: 11.5, color: T.dim, lineHeight: 1.55, ...ui }}>{f.reason}</div>
               )}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginTop: 12 }}>
                 {[

@@ -27,7 +27,7 @@ export function Btn({
   if (accent) return (
     <button onClick={onClick} style={{ ...base, padding: small ? "3px 12px" : "7px 16px",
       fontSize: small ? 11 : 13, background: T.blue, color: "#fff", borderColor: T.blue,
-      boxShadow: "0 1px 4px rgba(59,130,246,0.25)" }}
+      boxShadow: "0 1px 3px rgba(0,0,0,0.16)" }}
       onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = T.blueD; }}
       onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = T.blue; }}
     >{children}</button>

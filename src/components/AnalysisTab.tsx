@@ -171,8 +171,8 @@ export default function AnalysisTab({
                 </div>
               </div>
               <div style={{ display: "flex", gap: 8 }}>
-                {onCompare && <Btn small onClick={() => onCompare(record.ticker)}>⚖ Compare this</Btn>}
-                {onFindSimilar && <Btn small onClick={() => onFindSimilar(record.ticker)}>✦ Find similar</Btn>}
+                {onCompare && <Btn small onClick={() => onCompare(record.ticker)}>Compare this</Btn>}
+                {onFindSimilar && <Btn small onClick={() => onFindSimilar(record.ticker)}>Find similar</Btn>}
               </div>
             </div>
 

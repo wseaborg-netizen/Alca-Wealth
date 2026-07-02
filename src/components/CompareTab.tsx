@@ -294,16 +294,16 @@ export default function CompareTab({
           <Label>What you&apos;ll be able to compare</Label>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginTop: 12 }}>
             {[
-              { icon: "🛡", title: "Profile Radar", desc: "Percentile profile across cost, risk-adjusted return, downside, alpha, consistency & yield." },
-              { icon: "📈", title: "Cumulative Return", desc: "3-year growth of each fund vs. its benchmark, rebased to 0%." },
-              { icon: "⚖️", title: "Sharpe vs. Sortino", desc: "Risk-adjusted return side by side - ≥ 1.0 is strong." },
-              { icon: "◎", title: "Tax Efficiency", desc: "An A–D grade and best account type (taxable vs. IRA/401k) for each fund." },
-              { icon: "📊", title: "Percentile Scorecard", desc: "How each fund ranks vs. its category on every factor." },
-              { icon: "🌊", title: "Stress Tests", desc: "How each held up in past selloffs vs. the benchmark." },
+              { icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><polygon points="8,2 14,6.3 11.6,13.5 4.4,13.5 2,6.3" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>, title: "Profile Radar", desc: "Percentile profile across cost, risk-adjusted return, downside, alpha, consistency & yield." },
+              { icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 13V3M2 13h12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M3.5 11l3-3.2 2.3 1.8 4-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>, title: "Cumulative Return", desc: "3-year growth of each fund vs. its benchmark, rebased to 0%." },
+              { icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="3.4" height="6" rx="0.6" stroke="currentColor" strokeWidth="1.2"/><rect x="9.6" y="3.5" width="3.4" height="9.5" rx="0.6" stroke="currentColor" strokeWidth="1.2"/></svg>, title: "Sharpe vs. Sortino", desc: "Risk-adjusted return side by side - 1.0 or higher is strong." },
+              { icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3"/><path d="M5.4 8.2l1.8 1.8 3.4-3.8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>, title: "Tax Efficiency", desc: "An A to D grade and best account type (taxable vs. IRA/401k) for each fund." },
+              { icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="2.5" y="2.5" width="11" height="11" rx="1.4" stroke="currentColor" strokeWidth="1.2"/><path d="M2.5 6.3h11M2.5 9.7h11M6 2.5v11" stroke="currentColor" strokeWidth="1"/></svg>, title: "Percentile Scorecard", desc: "How each fund ranks vs. its category on every factor." },
+              { icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 8.5c1.5-2.6 3.3-2.6 4.9 0s3.4 2.6 5 0" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><path d="M2 12c1.5-2.6 3.3-2.6 4.9 0s3.4 2.6 5 0" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" opacity="0.5"/></svg>, title: "Stress Tests", desc: "How each held up in past selloffs vs. the benchmark." },
             ].map((t) => (
-              <div key={t.title} style={{ border: `1.5px dashed ${T.line2}`, borderRadius: 10,
+              <div key={t.title} style={{ border: `1px solid ${T.line2}`, borderRadius: 10,
                 padding: "16px 16px", background: T.panel2 }}>
-                <div style={{ fontSize: 20, marginBottom: 8 }}>{t.icon}</div>
+                <div style={{ width: 30, height: 30, borderRadius: 8, background: T.panel3, border: `1px solid ${T.line}`, display: "flex", alignItems: "center", justifyContent: "center", color: T.text, marginBottom: 10 }}>{t.icon}</div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: T.text, ...ui, marginBottom: 5 }}>{t.title}</div>
                 <div style={{ fontSize: 11.5, color: T.dim, lineHeight: 1.55, ...ui }}>{t.desc}</div>
               </div>
