@@ -9,8 +9,7 @@ import CompareTab   from "./CompareTab";
 import SettingsTab, { type Theme } from "./SettingsTab";
 import ComingSoonTab, { type RoadmapSpec } from "./ComingSoonTab";
 import WatchlistTab from "./WatchlistTab";
-import PortfolioBuilderTab from "./PortfolioBuilderTab";
-import ComparePortfolioTab from "./ComparePortfolioTab";
+import PortfoliosTab from "./PortfoliosTab";
 import MurderBoardTab from "./MurderBoardTab";
 
 // ── Roadmap / idea tabs (placeholders - not built yet) ──────────────────────────
@@ -87,7 +86,7 @@ const IconSettings = (
 // ── Nav model ───────────────────────────────────────────────────────────────────
 
 type TabId = "dashboard" | "news" | "ideas" | "analysis" | "comparison" | "settings"
-  | "portfolio" | "compare-portfolio" | "murderboard" | "watchlist" | "backtest" | "correlation" | "peers" | "alerts" | "tax" | "assistant";
+  | "portfolio" | "murderboard" | "watchlist" | "backtest" | "correlation" | "peers" | "alerts" | "tax" | "assistant";
 
 interface NavItem { id: TabId; label: string; icon: React.ReactNode; }
 interface NavGroup { id: string; title: string; items: NavItem[]; }
@@ -111,8 +110,7 @@ const GROUPS: NavGroup[] = [
   {
     id: "clienttools", title: "Client Tools",
     items: [
-      { id: "portfolio", label: "Portfolio Builder", icon: mk(<><path d="M8 1.8V8l5.4 3.1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><circle cx="8" cy="8" r="6.3" stroke="currentColor" strokeWidth="1.4"/></>) },
-      { id: "compare-portfolio", label: "Portfolio Compare", icon: mk(<><path d="M8 2v12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><rect x="2" y="5" width="4.5" height="6" rx="1" stroke="currentColor" strokeWidth="1.3"/><rect x="9.5" y="3" width="4.5" height="9" rx="1" stroke="currentColor" strokeWidth="1.3"/></>) },
+      { id: "portfolio", label: "Portfolios", icon: mk(<><path d="M8 1.8V8l5.4 3.1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><circle cx="8" cy="8" r="6.3" stroke="currentColor" strokeWidth="1.4"/></>) },
       { id: "murderboard", label: "Murder Board", icon: mk(<><rect x="2" y="2.5" width="12" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><line x1="4.5" y1="6" x2="11.5" y2="6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><line x1="4.5" y1="8.5" x2="11.5" y2="8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><line x1="4.5" y1="11" x2="8.5" y2="11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></>) },
     ],
   },
@@ -537,12 +535,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
           {/* Client Tools - real */}
           {mounted.has("portfolio") && (
             <div style={{ display: tab === "portfolio" ? "block" : "none" }}>
-              <PortfolioBuilderTab />
-            </div>
-          )}
-          {mounted.has("compare-portfolio") && (
-            <div style={{ display: tab === "compare-portfolio" ? "block" : "none" }}>
-              <ComparePortfolioTab />
+              <PortfoliosTab onAnalyze={goAnalyze} onFindSimilar={goFindSimilar} />
             </div>
           )}
           {mounted.has("murderboard") && (
