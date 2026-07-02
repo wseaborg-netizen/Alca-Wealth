@@ -6,6 +6,7 @@ import {
 } from "recharts";
 import { T, ui, mono } from "./tokens";
 import { Card, Label, Btn } from "./ui";
+import { ProfileMode } from "./RecommendTab";
 import {
   type Client, type RiskLevel, type Goal, type AccountType,
   RISK_LABELS, ACCOUNT_LABELS, GOAL_LABELS,
@@ -40,11 +41,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 interface Side { kpi: BlendedKpis; taxScore: number | null; series: BlendedChartPoint[]; n: number; }
 
-interface MatchFund {
-  ticker: string; name: string; vehicle: string; category: string;
-  expenseRatio: number | null; compositeScore: number; reason: string;
-  kpi: { return1y: number | null; sharpe3y: number | null; maxDrawdown3y: number | null; ttmYield: number | null };
-}
 
 async function fetchHoldings(items: { ticker: string; weight: number }[]): Promise<Holding[]> {
   const r = await Promise.all(items.map(async (it) => {
@@ -91,10 +87,6 @@ export default function PortfoliosTab({ onAnalyze, onFindSimilar }: {
   const [cmpLoading, setCmpLoading] = useState(false);
   const [ran, setRan] = useState(false);
 
-  // Match (client-profile fund finder)
-  const [matchFunds, setMatchFunds] = useState<MatchFund[] | null>(null);
-  const [matchLoading, setMatchLoading] = useState(false);
-  const [matchErr, setMatchErr] = useState("");
 
   useEffect(() => {
     const list = loadClients();
@@ -166,25 +158,6 @@ export default function PortfoliosTab({ onAnalyze, onFindSimilar }: {
       analyzeSide(proposedItems),
     ]);
     setCur(c); setProp(p); setCmpLoading(false);
-  };
-
-  // Match funds to the client's profile (reuses the profile matcher engine).
-  const runMatch = async () => {
-    setMatchLoading(true); setMatchErr(""); setMatchFunds(null);
-    const risk = draft.risk <= 2 ? "conservative" : draft.risk === 3 ? "moderate" : "aggressive";
-    const horizon = draft.horizonYears == null ? "medium" : draft.horizonYears < 3 ? "short" : draft.horizonYears <= 10 ? "medium" : "long";
-    const income = draft.goal === "income" ? "high" : draft.goal === "balanced" ? "some" : "none";
-    try {
-      const res = await fetch("/api/recommend", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ riskTolerance: risk, timeHorizon: horizon, incomeNeed: income, costSensitivity: "medium", assetClass: "Any", vehicle, notes: "" }),
-      });
-      const data = await res.json();
-      if (data.message && !data.funds?.length) throw new Error(data.message);
-      if (!res.ok) throw new Error(data.error || "Request failed");
-      setMatchFunds(data.funds ?? []);
-    } catch (e) { setMatchErr((e as Error).message); }
-    setMatchLoading(false);
   };
 
   const mix = built ? assetClassMix(built.sleeves) : null;
@@ -518,62 +491,9 @@ export default function PortfoliosTab({ onAnalyze, onFindSimilar }: {
         </>
       )}
 
-      {/* ══════════════ MATCH VIEW ══════════════ */}
+      {/* ══════════════ MATCH VIEW - the full client-profile matcher ══════════════ */}
       {view === "match" && (
-        <>
-          <Card>
-            <div style={{ padding: "16px 20px" }}>
-              <Label>Match Funds to This Client</Label>
-              <p style={{ fontSize: 12.5, color: T.dim, ...ui, marginTop: 6, lineHeight: 1.5 }}>
-                Screens the universe and ranks funds to {draft.name || "this client"}&apos;s profile - {RISK_LABELS[draft.risk].toLowerCase()} risk,
-                {draft.horizonYears ? ` ${draft.horizonYears}-yr horizon,` : ""} {GOAL_LABELS[draft.goal].toLowerCase()} goal, {vehicle} preference.
-                Change the profile or vehicle in the Build tab to re-target.
-              </p>
-              <div style={{ display: "flex", gap: 10, marginTop: 12, alignItems: "center" }}>
-                <div style={{ display: "inline-flex", border: `1px solid ${T.line2}`, borderRadius: 8, overflow: "hidden" }}>
-                  {(["ETF", "Mutual Fund"] as Vehicle[]).map((v) => (
-                    <button key={v} onClick={() => setVehicle(v)} style={{ padding: "7px 14px", fontSize: 12, ...ui, cursor: "pointer", border: "none", background: vehicle === v ? T.text : "transparent", color: vehicle === v ? T.bg : T.dim, fontWeight: 600 }}>{v}</button>
-                  ))}
-                </div>
-                <Btn accent onClick={runMatch}>{matchLoading ? "Matching..." : "Find matching funds ->"}</Btn>
-                {matchErr && <span style={{ fontSize: 11.5, color: T.red, ...ui }}>{matchErr}</span>}
-              </div>
-            </div>
-          </Card>
-
-          {matchFunds && matchFunds.length > 0 && (
-            <Card>
-              <div style={{ padding: "16px 20px" }}>
-                <Label>Top {Math.min(matchFunds.length, 12)} matches for this profile</Label>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
-                  {matchFunds.slice(0, 12).map((f, i) => (
-                    <div key={f.ticker} style={{ border: `1px solid ${T.line}`, borderRadius: 8, padding: "10px 13px", background: T.panel }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <span style={{ fontSize: 10, ...mono, color: T.muted, width: 16 }}>{i + 1}</span>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: T.text, ...mono }}>{f.ticker}</span>
-                        <span style={{ fontSize: 11, color: T.dim, ...ui, flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{f.name}</span>
-                        <span style={{ fontSize: 9, ...ui, color: T.muted }}>{f.category} · {f.vehicle}</span>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: T.data, ...mono }}>{f.compositeScore}</span>
-                      </div>
-                      <div style={{ fontSize: 11, color: T.dim, ...ui, marginTop: 5, marginLeft: 26, lineHeight: 1.4 }}>{f.reason}</div>
-                      <div style={{ display: "flex", gap: 14, marginTop: 7, marginLeft: 26, alignItems: "center", flexWrap: "wrap" }}>
-                        {([["1Y", pctv(f.kpi.return1y)], ["Sharpe", num2(f.kpi.sharpe3y)], ["Yield", pctv(f.kpi.ttmYield, 2)], ["Expense", f.expenseRatio != null ? pctv(f.expenseRatio, 2) : "-"]] as [string, string][]).map(([l, v]) => (
-                          <span key={l} style={{ fontSize: 10.5, color: T.muted, ...ui }}>{l} <b style={{ color: T.dim, ...mono }}>{v}</b></span>
-                        ))}
-                        <div style={{ flex: 1 }} />
-                        {onAnalyze && <button onClick={() => onAnalyze(f.ticker)} style={{ fontSize: 10.5, ...ui, padding: "3px 10px", borderRadius: 6, border: `1px solid ${T.line2}`, background: T.panel, color: T.dim, cursor: "pointer" }}>Analyze</button>}
-                        {onFindSimilar && <button onClick={() => onFindSimilar(f.ticker)} style={{ fontSize: 10.5, ...ui, padding: "3px 10px", borderRadius: 6, border: `1px solid ${T.line2}`, background: T.panel, color: T.dim, cursor: "pointer" }}>Find similar</button>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Card>
-          )}
-          {matchFunds && matchFunds.length === 0 && !matchLoading && (
-            <Card><div style={{ padding: "16px 20px", fontSize: 12, color: T.muted, ...ui }}>No matches returned right now. Try a different vehicle, or check back once the data source is warmed up.</div></Card>
-          )}
-        </>
+        <ProfileMode onAnalyze={onAnalyze} onAddToCompare={onFindSimilar} />
       )}
     </div>
   );
