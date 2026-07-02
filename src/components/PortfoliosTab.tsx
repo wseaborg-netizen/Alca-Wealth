@@ -75,6 +75,7 @@ export default function PortfoliosTab({ onAnalyze, onFindSimilar }: {
   const [built, setBuilt] = useState<{ sleeves: Sleeve[]; placement: PlacementResult } | null>(null);
   const [metrics, setMetrics] = useState<BlendedKpis | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
+  const [selecting, setSelecting] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
   const [variantLabel, setVariantLabel] = useState("");
 
@@ -104,21 +105,38 @@ export default function PortfoliosTab({ onAnalyze, onFindSimilar }: {
   const total = totalAssets(draft);
   const eqFrac = equityFraction(draft);
 
-  const generate = (client: Client, label = "") => {
-    const sleeves = targetSleeves(client, vehicle);
+  const generate = async (client: Client, label = "") => {
+    const base = targetSleeves(client, vehicle);
+    // Data-driven selection: screen each sleeve's category and pick the best-scoring fund.
+    setSelecting(true);
+    let sleeves = base;
+    try {
+      const res = await fetch("/api/portfolio/select", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ goal: client.goal, sleeves: base.map((s) => ({ key: s.key, category: s.category, vehicle: s.fund.vehicle, seed: s.fund.ticker })) }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const picks = data.picks ?? {};
+        sleeves = base.map((s) => {
+          const p = picks[s.key];
+          return p ? { ...s, fund: { ticker: p.ticker, name: p.name, vehicle: p.vehicle }, reason: p.reason } : s;
+        });
+      }
+    } catch { /* keep curated defaults */ }
+    setSelecting(false);
     const placement = placeAssets(client, sleeves, vehicle);
     setBuilt({ sleeves, placement }); setVariantLabel(label); setActiveIdx(0);
-    void (async () => {
-      setMetricsLoading(true); setMetrics(null);
-      const uniq = Array.from(new Map(sleeves.map((s) => [s.fund.ticker, s])).values())
-        .map((s) => ({ ticker: s.fund.ticker, weight: Math.round(s.weight * 100) }));
-      const side = await analyzeSide(uniq);
-      setMetrics(side?.kpi ?? null); setMetricsLoading(false);
-    })();
+    // Blended metrics
+    setMetricsLoading(true); setMetrics(null);
+    const uniq = Array.from(new Map(sleeves.map((s) => [s.fund.ticker, s])).values())
+      .map((s) => ({ ticker: s.fund.ticker, weight: Math.round(s.weight * 100) }));
+    const side = await analyzeSide(uniq);
+    setMetrics(side?.kpi ?? null); setMetricsLoading(false);
   };
-  const build = () => generate(draft);
+  const build = () => void generate(draft);
   const applyVariant = (patch: Partial<Client>, label: string) => {
-    const nd = { ...draft, ...patch }; setDraft(nd); generate(nd, label);
+    const nd = { ...draft, ...patch }; setDraft(nd); void generate(nd, label);
   };
 
   const setHolding = (i: number, key: "ticker" | "value", v: string) =>
@@ -234,7 +252,7 @@ export default function PortfoliosTab({ onAnalyze, onFindSimilar }: {
                     <button key={v} onClick={() => setVehicle(v)} style={{ padding: "8px 16px", fontSize: 12, ...ui, cursor: "pointer", border: "none", background: vehicle === v ? T.text : "transparent", color: vehicle === v ? T.bg : T.dim, fontWeight: 600 }}>{v}</button>
                   ))}
                 </div>
-                <Btn accent onClick={build}>Build Portfolio -&gt;</Btn>
+                <Btn accent onClick={build}>{selecting ? "Selecting best funds..." : "Build Portfolio ->"}</Btn>
                 <span style={{ fontSize: 11, color: T.muted, ...ui }}>Investable <b style={{ color: T.text, ...mono }}>{money(total)}</b> · target equity <b style={{ color: T.text, ...mono }}>{Math.round(eqFrac * 100)}%</b></span>
               </div>
             </div>
@@ -249,6 +267,11 @@ export default function PortfoliosTab({ onAnalyze, onFindSimilar }: {
                     <Label>Target Allocation</Label>
                     {variantLabel && <span style={{ fontSize: 10.5, color: T.data, background: `${T.data}18`, borderRadius: 10, padding: "3px 10px", ...ui, fontWeight: 600 }}>Variant: {variantLabel}</span>}
                   </div>
+                  {mix && (
+                    <div style={{ fontSize: 11, color: T.muted, ...ui, marginTop: 4 }}>
+                      {Math.round(mix.equity * 100)}% equity / {Math.round((mix.fixed + mix.cash) * 100)}% bonds &amp; cash - driven by {RISK_LABELS[draft.risk].toLowerCase()} risk{draft.horizonYears ? `, ${draft.horizonYears}-yr horizon` : ""}{draft.age ? `, age ${draft.age}` : ""}, {GOAL_LABELS[draft.goal].toLowerCase()} goal. Funds screened and scored per sleeve on cost, risk-adjusted return, downside &amp; more.
+                    </div>
+                  )}
                   <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 24, alignItems: "center", marginTop: 8 }}>
                     <div style={{ height: 300, position: "relative" }}>
                       <ResponsiveContainer width="100%" height="100%">
@@ -281,7 +304,7 @@ export default function PortfoliosTab({ onAnalyze, onFindSimilar }: {
                       )}
                       <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                         {built.sleeves.map((s, i) => (
-                          <div key={s.key} onMouseEnter={() => setActiveIdx(i)} style={{ display: "grid", gridTemplateColumns: "10px 1fr 56px 30px", gap: 9, alignItems: "center",
+                          <div key={s.key} onMouseEnter={() => setActiveIdx(i)} title={s.reason} style={{ display: "grid", gridTemplateColumns: "10px 1fr 56px 30px", gap: 9, alignItems: "center",
                             padding: "6px 8px", borderRadius: 6, cursor: "default", background: activeIdx === i ? T.panel3 : "transparent" }}>
                             <span style={{ width: 9, height: 9, borderRadius: 2, background: SLICE[i % SLICE.length] }} />
                             <span style={{ fontSize: 12, color: T.dim, ...ui, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.label}</span>
@@ -290,6 +313,11 @@ export default function PortfoliosTab({ onAnalyze, onFindSimilar }: {
                           </div>
                         ))}
                       </div>
+                      {built.sleeves[activeIdx]?.reason && (
+                        <div style={{ marginTop: 10, padding: "8px 11px", background: T.panel3, border: `1px solid ${T.line}`, borderRadius: 7, fontSize: 10.5, color: T.dim, ...ui, lineHeight: 1.45 }}>
+                          <b style={{ color: T.text, ...mono }}>{built.sleeves[activeIdx].fund.ticker}</b> selected: {built.sleeves[activeIdx].reason}
+                        </div>
+                      )}
                     </div>
                   </div>
 

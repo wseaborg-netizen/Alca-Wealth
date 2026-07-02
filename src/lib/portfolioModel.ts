@@ -79,11 +79,20 @@ export interface Sleeve {
   key: string;
   label: string;
   assetClass: "equity" | "fixed" | "cash";
+  category: string;   // universe category this sleeve screens within
   taxClass: TaxClass;
   growth: number;
   weight: number;     // 0..1 of total portfolio
   fund: FundPick;
+  reason?: string;    // why this fund was selected (filled by data-driven selection)
 }
+
+// Which universe category each sleeve screens within (for data-driven selection).
+const SLEEVE_CATEGORY: Record<string, string> = {
+  us: "US Equity Large Blend", smid: "US Equity Small Blend", intl: "International Equity",
+  em: "Emerging Markets", core: "Intermediate Core Bond", short: "Short-Term Bond",
+  tips: "Inflation-Protected Bond", cash: "Ultrashort Bond",
+};
 
 /** Equity fraction from risk, adjusted for horizon, age and goal. */
 export function equityFraction(client: Client): number {
@@ -115,7 +124,8 @@ export function targetSleeves(client: Client, vehicle: Vehicle): Sleeve[] {
   const add = (key: string, label: string, assetClass: Sleeve["assetClass"], fundKey: string, weight: number) => {
     if (weight <= 0.001) return;
     const f = FUNDS[fundKey];
-    sleeves.push({ key, label, assetClass, taxClass: f.taxClass, growth: f.growth, weight, fund: pick(fundKey) });
+    sleeves.push({ key, label, assetClass, category: SLEEVE_CATEGORY[key] ?? "US Equity Large Blend",
+      taxClass: f.taxClass, growth: f.growth, weight, fund: pick(fundKey) });
   };
 
   // ── Equity split ──
@@ -139,7 +149,7 @@ export function targetSleeves(client: Client, vehicle: Vehicle): Sleeve[] {
 
   // ── Cash ──
   if (cash > 0) {
-    sleeves.push({ key: "cash", label: "Cash / Money Market", assetClass: "cash",
+    sleeves.push({ key: "cash", label: "Cash / Money Market", assetClass: "cash", category: SLEEVE_CATEGORY.cash,
       taxClass: "efficient", growth: 0, weight: cash, fund: CASH_FUND });
   }
 
@@ -208,7 +218,9 @@ export function placeAssets(client: Client, sleeves: Sleeve[], vehicle: Vehicle)
   // Muni swap: taxable core bond -> municipal for high brackets
   const highBracket = (client.taxBracket ?? 0) >= 32;
   if (tax && highBracket) {
-    const coreTicker = vehicle === "ETF" ? FUNDS.coreBond.etf.ticker : FUNDS.coreBond.mf.ticker;
+    // Use the actually-selected core-bond fund (data-driven selection may differ from the seed).
+    const coreSleeve = sleeves.find((s) => s.key === "core");
+    const coreTicker = coreSleeve?.fund.ticker ?? (vehicle === "ETF" ? FUNDS.coreBond.etf.ticker : FUNDS.coreBond.mf.ticker);
     const muni = vehicle === "ETF" ? FUNDS.coreBond.muniEtf! : FUNDS.coreBond.muniMf!;
     let swapped = false;
     tax.lots = tax.lots.map((l) => {
