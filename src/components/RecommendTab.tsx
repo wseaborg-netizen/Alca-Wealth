@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { T, ui, mono } from "./tokens";
 import { Label, Card, Btn, Select, ScoreBadge, PercentileBar, PriorityChip, Spinner, ErrBanner } from "./ui";
+import { loadClients, RISK_LABELS, type Client } from "../lib/client";
 
 // ────────────────────────────────────────────────────────────────────────────────
 // Shared types
@@ -507,6 +508,21 @@ export function ProfileMode({ onAddToCompare, onAnalyze }: {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [funds, setFunds] = useState<ProfileFund[] | null>(null);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [clientId, setClientId] = useState("");
+
+  useEffect(() => { setClients(loadClients()); }, []);
+
+  // Prefill the profile fields from a saved client.
+  const loadFromClient = (id: string) => {
+    setClientId(id);
+    const c = clients.find((x) => x.id === id);
+    if (!c) return;
+    setRisk(c.risk <= 2 ? "conservative" : c.risk === 3 ? "moderate" : "aggressive");
+    const h = c.horizonYears;
+    if (h != null) setHorizon(h < 3 ? "short" : h <= 10 ? "medium" : "long");
+    setIncome(c.goal === "income" ? "high" : c.goal === "balanced" ? "some" : "none");
+  };
 
   const run = async () => {
     setLoading(true); setError(""); setFunds(null);
@@ -524,12 +540,28 @@ export function ProfileMode({ onAddToCompare, onAnalyze }: {
     setLoading(false);
   };
   const clear = () => { setRisk("moderate"); setHorizon("medium"); setIncome("none"); setCost("medium");
-    setAssetC("Any"); setVehicle("Either"); setFunds(null); setError(""); };
+    setAssetC("Any"); setVehicle("Either"); setFunds(null); setError(""); setClientId(""); };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <Card>
         <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+          {clients.length > 0 && (
+            <div>
+              <Label>Load from saved client</Label>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
+                <select value={clientId} onChange={(e) => loadFromClient(e.target.value)}
+                  style={{ background: T.panel3, border: `1px solid ${T.line2}`, borderRadius: 7,
+                    padding: "8px 11px", color: T.text, fontSize: 13, ...ui, minWidth: 200 }}>
+                  <option value="">Pick a client...</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name || "Untitled"} · {RISK_LABELS[c.risk]}</option>
+                  ))}
+                </select>
+                <span style={{ fontSize: 11, color: T.muted, ...ui }}>Prefills risk, horizon &amp; income from the client profile.</span>
+              </div>
+            </div>
+          )}
           <ProfileField label="Risk tolerance" opts={RISK} value={risk} onChange={setRisk} />
           <ProfileField label="Time horizon" opts={HORIZON} value={horizon} onChange={setHorizon} />
           <ProfileField label="Income need" opts={INCOME} value={income} onChange={setIncome} />
