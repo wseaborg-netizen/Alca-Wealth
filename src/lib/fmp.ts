@@ -1,22 +1,27 @@
 /**
- * Market data provider - Financial Modeling Prep (keyed API).
+ * Market & fund data provider layer — FMP-first, with narrow fallbacks.
  *
- * Why keyed instead of scraping Yahoo: a real API with a key isn't IP-blocked
- * from Vercel the way Yahoo's unofficial endpoints are (which 429'd every
- * request and left the whole app showing "-"). Set FMP_API_KEY in the env.
+ * ── Provider priority (see each function for specifics) ──────────────────────
+ *   Market index quotes + sparklines … FMP (quote + light EOD)   → Yahoo fallback
+ *   Fund / ETF profile (name/AUM/inception) … FMP (/profile)     → static meta
+ *   Price + dividend history … FMP (/historical + /dividends)    → Tiingo fallback
+ *   Expense ratio … NOT provided by FMP Starter (etf-info empty) → static meta only
  *
- * Interface is identical to the previous module - same exported functions and
- * return shapes - so no other file changes when swapping providers.
+ * ── Environment variables ────────────────────────────────────────────────────
+ *   FMP_API_KEY      REQUIRED. Primary provider for everything above.
+ *   TIINGO_API_KEY   OPTIONAL. History fallback only — used when FMP returns no
+ *                    rows (e.g. smaller non-Vanguard/Fidelity mutual funds like
+ *                    ACBAX that FMP Starter does not cover). Absent locally by
+ *                    design; present in production.
  *
- * Free-tier notes: ETFs and stocks are well covered; some mutual funds and
- * expense-ratio/AUM fields may be premium-only and will gracefully return null
- * (those cells show "-", but prices/returns/charts populate). Results are cached
- * in Redis for 24h, so each ticker hits FMP at most once a day.
+ * Results are cached (see cache TTLs at each call site) and concurrent identical
+ * requests are coalesced, so each ticker hits a provider at most once per window.
  */
-import { cacheGet, cacheSet } from "./cache";
+import { cacheGet, cacheSet, coalesce } from "./cache";
 
 const HISTORY_TTL = 24 * 60 * 60; // 24 hours
-const INFO_TTL    = 24 * 60 * 60;
+const INFO_TTL    = 24 * 60 * 60; // 24 hours
+const QUOTE_TTL   = 15 * 60;      // 15 minutes (market data)
 
 const FMP_KEY    = process.env.FMP_API_KEY ?? "";
 const STABLE     = "https://financialmodelingprep.com/stable";
@@ -26,7 +31,7 @@ let warnedNoKey = false;
 function ensureKey(): boolean {
   if (!FMP_KEY) {
     if (!warnedNoKey) {
-      console.warn("[fmp] FMP_API_KEY is not set - market data will be empty.");
+      console.warn("[fmp] FMP_API_KEY is not set — market and fund data will be empty.");
       warnedNoKey = true;
     }
     return false;
@@ -34,7 +39,7 @@ function ensureKey(): boolean {
   return true;
 }
 
-// ── Throttle (stay polite to the free tier) ───────────────────────────────────
+// ── Throttle (stay polite to the API) ─────────────────────────────────────────
 let lastCall = 0;
 const MIN_GAP_MS = 120;
 async function throttle() {
@@ -75,7 +80,7 @@ function asArray(data: unknown): Record<string, unknown>[] {
   return Array.isArray(h) ? (h as Record<string, unknown>[]) : [];
 }
 
-// ── Types (unchanged) ─────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface FmpHistoricalItem {
   date: string;    // YYYY-MM-DD
@@ -87,25 +92,64 @@ export interface FmpDividendItem {
   amount: number;
 }
 
-// ── Profile ───────────────────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════════
+//  MARKET DATA (dashboard) — FMP primary; the route adds a Yahoo fallback.
+// ════════════════════════════════════════════════════════════════════════════
 
-export async function fetchProfile(
-  ticker: string,
-): Promise<{ name: string; mktCap: number; ipoDate: string } | null> {
-  const rows = await fmpFetchJson(`${STABLE}/profile?symbol=${encodeURIComponent(ticker)}`);
-  const p = Array.isArray(rows) ? (rows[0] as Record<string, unknown>) : null;
-  if (!p) return null;
+export interface MarketQuote {
+  price: number;
+  change1d: number;
+  change1w: number;
+  change1m: number;
+  changeYtd: number;
+  spark6m?: number[];
+}
+
+/** Compute the standard change windows + sparkline from an ascending price series. */
+function windowsFromSeries(asc: number[], dates: string[], includeSpark: boolean): MarketQuote | null {
+  if (asc.length < 2) return null;
+  const price = asc[asc.length - 1];
+  const at = (backFromEnd: number) => asc[Math.max(0, asc.length - 1 - backFromEnd)] ?? price;
+  const prev1d = at(1);
+  const prev1w = at(5);   // ~5 trading days
+  const prev1m = at(21);  // ~21 trading days
+  // YTD: first close of the current calendar year
+  const nowYear = new Date().getFullYear();
+  const ytdIdx = dates.findIndex((d) => new Date(d).getFullYear() === nowYear);
+  const prevYtd = ytdIdx >= 0 ? asc[ytdIdx] : asc[0];
   return {
-    name: (p.companyName as string) ?? ticker,
-    mktCap: (p.marketCap as number) ?? 0,
-    ipoDate: (p.ipoDate as string) ?? "",
+    price,
+    change1d: (price - prev1d) / prev1d,
+    change1w: (price - prev1w) / prev1w,
+    change1m: (price - prev1m) / prev1m,
+    changeYtd: (price - prevYtd) / prevYtd,
+    ...(includeSpark ? { spark6m: asc.slice(-132) } : {}),
   };
 }
 
-// ── ETF info ──────────────────────────────────────────────────────────────────
-// Note: this plan's etf-info endpoint is empty, so the live expense ratio isn't
-// available - it comes back null and the curated static value (FUND_META) is used
-// in fetchLiveProfile. We still pull live name + AUM (market cap) from /profile.
+/**
+ * FMP market quote for a dashboard ticker (index or ETF). Uses light EOD history
+ * (one call, ~1y) so we can compute 1d/1w/1m/YTD changes and — when requested —
+ * a ~6-month sparkline. Returns null on any miss so the route can fall back to Yahoo.
+ */
+export async function fetchMarketQuoteFmp(ticker: string, includeSpark = false): Promise<MarketQuote | null> {
+  const from = yearsAgoISO(1);
+  const T = encodeURIComponent(ticker);
+  const rows = asArray(await fmpFetchJson(`${STABLE}/historical-price-eod/light?symbol=${T}&from=${from}`));
+  if (rows.length < 2) return null;
+  // FMP returns newest-first; sort ascending for window math.
+  const sorted = rows
+    .map((r) => ({ date: String(r.date).slice(0, 10), price: Number(r.price ?? r.close ?? r.adjClose ?? 0) }))
+    .filter((r) => r.price > 0 && r.date)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  if (sorted.length < 2) return null;
+  return windowsFromSeries(sorted.map((r) => r.price), sorted.map((r) => r.date), includeSpark);
+}
+
+// ── Profile / metadata (FMP primary) ───────────────────────────────────────────
+// FMP Starter's /profile covers name, AUM (marketCap), and inception (ipoDate)
+// for ETFs and major mutual funds. Expense ratio is NOT exposed on Starter
+// (etf-info returns empty), so callers fill it from the static curated meta.
 
 export async function fetchEtfInfo(ticker: string): Promise<{
   expenseRatio: number | null;
@@ -114,38 +158,40 @@ export async function fetchEtfInfo(ticker: string): Promise<{
   name: string | null;
 } | null> {
   const cacheKey = `etfinfo:${ticker}`;
-  const cached = await cacheGet<{ expenseRatio: number | null; aum: number | null; inceptionDate: string | null; name: string | null }>(cacheKey);
-  if (cached) return cached;
+  return coalesce(cacheKey, async () => {
+    const cached = await cacheGet<{ expenseRatio: number | null; aum: number | null; inceptionDate: string | null; name: string | null }>(cacheKey);
+    if (cached) return cached;
 
-  const rows = await fmpFetchJson(`${STABLE}/profile?symbol=${encodeURIComponent(ticker)}`);
-  const p = Array.isArray(rows) ? (rows[0] as Record<string, unknown>) : null;
-  if (!p) return null;
+    const rows = await fmpFetchJson(`${STABLE}/profile?symbol=${encodeURIComponent(ticker)}`);
+    const p = Array.isArray(rows) ? (rows[0] as Record<string, unknown>) : null;
+    if (!p) return null;
 
-  const result = {
-    expenseRatio: null,                              // not exposed on this plan → static fallback fills it
-    aum: (p.marketCap as number) ?? null,
-    inceptionDate: (p.ipoDate as string) ?? null,
-    name: (p.companyName as string) ?? null,
-  };
+    const result = {
+      expenseRatio: null,                              // not exposed on Starter → static fallback fills it
+      aum: (p.marketCap as number) ?? null,
+      inceptionDate: (p.ipoDate as string) ?? null,
+      name: (p.companyName as string) ?? null,
+    };
 
-  await cacheSet(cacheKey, result, INFO_TTL);
-  return result;
+    await cacheSet(cacheKey, result, INFO_TTL);
+    return result;
+  });
 }
-
-// ── Mutual fund info ───────────────────────────────────────────────────────────
 
 export async function fetchMutualFundInfo(ticker: string): Promise<{
   expenseRatio: number | null;
   aum: number | null;
   inceptionDate: string | null;
 } | null> {
-  // FMP exposes fund metadata through the same etf-info endpoint for many funds.
+  // FMP exposes fund metadata through the same /profile endpoint for covered funds.
   const info = await fetchEtfInfo(ticker);
   if (!info) return null;
   return { expenseRatio: info.expenseRatio, aum: info.aum, inceptionDate: info.inceptionDate };
 }
 
-// ── Price history + dividends ─────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════════
+//  PRICE + DIVIDEND HISTORY — FMP primary, Tiingo fallback.
+// ════════════════════════════════════════════════════════════════════════════
 
 const EMPTY_HISTORY = { prices: [] as FmpHistoricalItem[], dividends: [] as FmpDividendItem[], currentPrice: 0, chartName: null };
 
@@ -163,8 +209,42 @@ function yearsAgoISO(years: number): string {
 }
 
 /**
- * Tiingo - one EOD endpoint returns adjusted prices AND dividends (divCash),
- * and covers ETFs + mutual funds. Used first when TIINGO_API_KEY is set.
+ * FMP — adjusted price history (/historical-price-eod/full) plus dividends
+ * (/dividends). Starter returns a ~20-year window (5000-row cap), enough for all
+ * KPIs. Primary source. Covers ETFs, indices, and major mutual funds.
+ */
+async function fetchHistoryFmp(ticker: string, from: string): Promise<HistoryResult> {
+  const T = encodeURIComponent(ticker);
+
+  const rawPrices = asArray(
+    await fmpFetchJson(`${STABLE}/historical-price-eod/full?symbol=${T}&from=${from}`),
+  );
+  if (rawPrices.length === 0) return EMPTY_HISTORY;
+
+  const prices: FmpHistoricalItem[] = rawPrices
+    .map((p) => ({
+      date: String(p.date).slice(0, 10),
+      adjClose: Number(p.adjClose ?? p.close ?? p.price ?? 0),
+    }))
+    .filter((p) => p.adjClose > 0 && p.date)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  if (prices.length === 0) return EMPTY_HISTORY;
+
+  const rawDivs = asArray(await fmpFetchJson(`${STABLE}/dividends?symbol=${T}`));
+  const dividends: FmpDividendItem[] = rawDivs
+    .map((d) => ({ date: String(d.date).slice(0, 10), amount: Number(d.adjDividend ?? d.dividend ?? 0) }))
+    .filter((d) => d.amount > 0 && d.date >= from)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const currentPrice = prices.at(-1)?.adjClose ?? 0;
+  return { prices, dividends, currentPrice, chartName: null };
+}
+
+/**
+ * Tiingo — one EOD endpoint returns adjusted prices AND dividends (divCash) and
+ * covers mutual-fund NAVs that FMP Starter misses. Used ONLY as a fallback when
+ * FMP returns no rows and TIINGO_API_KEY is configured.
  */
 async function fetchHistoryTiingo(ticker: string, from: string): Promise<HistoryResult> {
   const url = `https://api.tiingo.com/tiingo/daily/${encodeURIComponent(ticker)}/prices?startDate=${from}&format=json&token=${TIINGO_KEY}`;
@@ -198,55 +278,35 @@ async function fetchHistoryTiingo(ticker: string, from: string): Promise<History
 export async function fetchHistory(ticker: string, range = "10y"): Promise<HistoryResult> {
   const cacheKey = `hist:${ticker}:${range}`;
 
-  // 1. Cache first - skip the API entirely on a hit
-  const cached = await cacheGet<HistoryResult>(cacheKey);
-  if (cached && cached.prices && cached.prices.length > 0) return cached;
+  return coalesce(cacheKey, async () => {
+    // 1. Cache first — skip the API entirely on a hit
+    const cached = await cacheGet<HistoryResult>(cacheKey);
+    if (cached && cached.prices && cached.prices.length > 0) return cached;
 
-  // 2. Resolve the "from" date from the requested range (e.g. "10y", "5y", "1y")
-  const yrs = parseInt(range) || 10;
-  const from = yearsAgoISO(yrs);
+    // 2. Resolve the "from" date from the requested range (e.g. "10y", "5y", "1y")
+    const yrs = parseInt(range) || 10;
+    const from = yearsAgoISO(yrs);
 
-  // 2a. Tiingo first when configured (covers funds; prices + dividends in one call)
-  if (TIINGO_KEY) {
-    const t = await fetchHistoryTiingo(ticker, from);
-    if (t.prices.length > 0) {
-      await cacheSet(cacheKey, t, HISTORY_TTL);
-      return t;
+    // 3. FMP primary — ~20y depth, covers ETFs/indices/major MFs.
+    const fmp = await fetchHistoryFmp(ticker, from);
+    if (fmp.prices.length > 0) {
+      await cacheSet(cacheKey, fmp, HISTORY_TTL);
+      return fmp;
     }
-    // else fall through to FMP
-  }
 
-  const T = encodeURIComponent(ticker);
+    // 4. Tiingo fallback — only when FMP returned nothing AND a key is configured
+    //    (catches non-major mutual funds like ACBAX that FMP Starter doesn't cover).
+    if (TIINGO_KEY) {
+      const t = await fetchHistoryTiingo(ticker, from);
+      if (t.prices.length > 0) {
+        await cacheSet(cacheKey, t, HISTORY_TTL);
+        return t;
+      }
+    }
 
-  // 3. Prices - FMP "stable" EOD endpoint (returns OHLCV; we use close).
-  const rawPrices = asArray(
-    await fmpFetchJson(`${STABLE}/historical-price-eod/full?symbol=${T}&from=${from}`),
-  );
-  if (rawPrices.length === 0) return EMPTY_HISTORY;
-
-  const prices: FmpHistoricalItem[] = rawPrices
-    .map((p) => ({
-      date: String(p.date).slice(0, 10),
-      adjClose: Number(p.adjClose ?? p.close ?? p.price ?? 0),
-    }))
-    .filter((p) => p.adjClose > 0 && p.date)
-    .sort((a, b) => a.date.localeCompare(b.date));
-
-  if (prices.length === 0) return EMPTY_HISTORY;
-
-  // 4. Dividends (best-effort; powers TTM yield).
-  const rawDivs = asArray(await fmpFetchJson(`${STABLE}/dividends?symbol=${T}`));
-  const dividends: FmpDividendItem[] = rawDivs
-    .map((d) => ({ date: String(d.date).slice(0, 10), amount: Number(d.adjDividend ?? d.dividend ?? 0) }))
-    .filter((d) => d.amount > 0 && d.date >= from)
-    .sort((a, b) => a.date.localeCompare(b.date));
-
-  const currentPrice = prices.at(-1)?.adjClose ?? 0;
-
-  const histResult: HistoryResult = { prices, dividends, currentPrice, chartName: null };
-
-  // 5. Cache (24h) so each ticker hits FMP at most once a day
-  if (prices.length > 0) await cacheSet(cacheKey, histResult, HISTORY_TTL);
-
-  return histResult;
+    return EMPTY_HISTORY;
+  });
 }
+
+// Re-exported TTL so market route and provider stay in sync on the 15-min window.
+export { QUOTE_TTL };

@@ -1,42 +1,88 @@
 "use client";
 import React from "react";
-import { T, mono, ui, cardStyle } from "./tokens";
+import { T, R, mono, ui, cardStyle } from "./tokens";
+
+// ── Page header - one consistent title/subtitle hierarchy across every screen ──
+export function PageHeader({ title, subtitle, actions }: {
+  title: string; subtitle?: string; actions?: React.ReactNode;
+}) {
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between",
+      gap: 16, marginBottom: 4 }}>
+      <div>
+        <h1 style={{ ...ui, fontSize: 21, fontWeight: 600, color: T.text, margin: 0,
+          letterSpacing: "-0.01em", lineHeight: 1.2 }}>{title}</h1>
+        {subtitle && (
+          <p style={{ fontSize: 13, color: T.dim, marginTop: 4, ...ui, lineHeight: 1.5, maxWidth: 660 }}>{subtitle}</p>
+        )}
+      </div>
+      {actions && <div style={{ flexShrink: 0, display: "flex", gap: 8, alignItems: "center" }}>{actions}</div>}
+    </div>
+  );
+}
+
+// ── Badge - neutral by default; tone carries meaning, never decoration ──
+type BadgeTone = "neutral" | "teal" | "positive" | "warning" | "negative";
+export function Badge({ children, tone = "neutral" }: { children: React.ReactNode; tone?: BadgeTone }) {
+  const map: Record<BadgeTone, { fg: string; bg: string; bd: string }> = {
+    neutral:  { fg: T.dim,   bg: T.panel3,       bd: T.line2 },
+    teal:     { fg: T.blue,  bg: `${T.blue}14`,  bd: `${T.blue}33` },
+    positive: { fg: T.green, bg: `${T.green}16`, bd: `${T.green}33` },
+    warning:  { fg: T.amber, bg: `${T.amber}16`, bd: `${T.amber}33` },
+    negative: { fg: T.red,   bg: `${T.red}16`,   bd: `${T.red}33` },
+  };
+  const c = map[tone];
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", fontSize: 9.5, fontWeight: 600,
+      letterSpacing: "0.07em", textTransform: "uppercase", color: c.fg, background: c.bg,
+      border: `1px solid ${c.bd}`, borderRadius: R.sm, padding: "3px 8px", whiteSpace: "nowrap", ...ui }}>
+      {children}
+    </span>
+  );
+}
 
 // ── Button ────────────────────────────────────────────────────────────────────
+// Hierarchy: `accent` = primary (filled teal) · default = secondary (bordered) ·
+// `ghost` = tertiary (borderless, quiet). Use one primary per view.
 export function Btn({
-  children, onClick, disabled, accent, small,
+  children, onClick, disabled, accent, ghost, small,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   disabled?: boolean;
   accent?: boolean;
+  ghost?: boolean;
   small?: boolean;
 }) {
   const base: React.CSSProperties = {
-    borderRadius: 6, fontWeight: 500, letterSpacing: "0.01em",
+    borderRadius: R.md, fontWeight: 500, letterSpacing: "0.01em",
     cursor: disabled ? "default" : "pointer",
-    transition: "all 0.15s", border: "1px solid",
-    display: "inline-flex", alignItems: "center", gap: 6, ...ui,
+    transition: "background 0.15s, border-color 0.15s, color 0.15s",
+    border: "1px solid", padding: small ? "5px 12px" : "8px 16px",
+    fontSize: small ? 12 : 13, lineHeight: 1.2,
+    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, ...ui,
   };
   if (disabled) return (
-    <button disabled style={{ ...base, padding: small ? "3px 12px" : "7px 16px",
-      fontSize: small ? 11 : 13, background: T.panel3, color: T.muted, borderColor: T.line2 }}>
+    <button disabled style={{ ...base, background: T.panel3, color: T.muted, borderColor: T.line2 }}>
       {children}
     </button>
   );
   if (accent) return (
-    <button onClick={onClick} style={{ ...base, padding: small ? "3px 12px" : "7px 16px",
-      fontSize: small ? 11 : 13, background: T.blue, color: "#fff", borderColor: T.blue,
-      boxShadow: "0 1px 3px rgba(0,0,0,0.16)" }}
-      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = T.blueD; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = T.blue; }}
+    <button onClick={onClick} style={{ ...base, background: T.blue, color: "#fff", borderColor: T.blue }}
+      onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = T.blueD; b.style.borderColor = T.blueD; }}
+      onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = T.blue; b.style.borderColor = T.blue; }}
+    >{children}</button>
+  );
+  if (ghost) return (
+    <button onClick={onClick} style={{ ...base, background: "transparent", color: T.dim, borderColor: "transparent" }}
+      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = T.panel2; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
     >{children}</button>
   );
   return (
-    <button onClick={onClick} style={{ ...base, padding: small ? "3px 12px" : "7px 16px",
-      fontSize: small ? 11 : 13, background: T.panel, color: T.dim, borderColor: T.line2 }}
-      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = T.panel2; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fff"; }}
+    <button onClick={onClick} style={{ ...base, background: T.panel, color: T.text, borderColor: T.line2 }}
+      onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = T.panel2; b.style.borderColor = T.line; }}
+      onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = T.panel; b.style.borderColor = T.line2; }}
     >{children}</button>
   );
 }

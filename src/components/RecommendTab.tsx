@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { T, ui, mono } from "./tokens";
 import { Label, Card, Btn, Select, ScoreBadge, PercentileBar, PriorityChip, Spinner, ErrBanner } from "./ui";
-import { loadClients, RISK_LABELS, type Client } from "../lib/client";
+import { loadClients, riskLabel, type Client } from "../lib/client";
 
 // ────────────────────────────────────────────────────────────────────────────────
 // Shared types
@@ -505,8 +505,32 @@ function ProfileField({ label, opts, value, onChange }: {
   );
 }
 
-export function ProfileMode({ onAddToCompare, onAnalyze }: {
+// Bucket the continuous 1-5 risk slider down to the matcher's 3 risk tiers.
+function riskBucket(risk: number): "conservative" | "moderate" | "aggressive" {
+  const r = Math.round(risk);
+  return r <= 2 ? "conservative" : r === 3 ? "moderate" : "aggressive";
+}
+
+// Map a full client profile straight to the /api/recommend body, so the matcher
+// can run with no separate form when embedded in the Portfolio Builder.
+function clientToRecommendBody(c: Client, vehicle?: string) {
+  return {
+    riskTolerance: riskBucket(c.risk),
+    timeHorizon: c.horizonYears == null ? "medium" : c.horizonYears < 3 ? "short" : c.horizonYears <= 10 ? "medium" : "long",
+    incomeNeed: c.goal === "income" ? "high" : c.goal === "balanced" ? "some" : "none",
+    costSensitivity: c.costSensitivity ?? "medium",
+    assetClass: "Any",
+    vehicle: vehicle === "ETF" ? "ETF" : vehicle === "Mutual Fund" ? "MF" : "Either",
+    notes: "",
+  };
+}
+
+export function ProfileMode({ onAddToCompare, onAnalyze, presetClient, presetVehicle, hideForm, runToken }: {
   onAddToCompare?: (t: string) => void; onAnalyze?: (t: string) => void;
+  presetClient?: Client;
+  presetVehicle?: string;   // "ETF" | "Mutual Fund" | "Both"
+  hideForm?: boolean;       // hide own inputs (driven by the parent's client profile)
+  runToken?: number;        // bump to trigger a run from the parent
 }) {
   const [risk, setRisk] = useState("moderate");
   const [horizon, setHorizon] = useState("medium");
@@ -522,24 +546,34 @@ export function ProfileMode({ onAddToCompare, onAnalyze }: {
 
   useEffect(() => { setClients(loadClients()); }, []);
 
-  // Prefill the profile fields from a saved client.
-  const loadFromClient = (id: string) => {
-    setClientId(id);
-    const c = clients.find((x) => x.id === id);
-    if (!c) return;
-    setRisk(c.risk <= 2 ? "conservative" : c.risk === 3 ? "moderate" : "aggressive");
+  // Prefill the profile fields from a client profile.
+  const applyClient = (c: Client) => {
+    setRisk(riskBucket(c.risk));
     const h = c.horizonYears;
     if (h != null) setHorizon(h < 3 ? "short" : h <= 10 ? "medium" : "long");
     setIncome(c.goal === "income" ? "high" : c.goal === "balanced" ? "some" : "none");
+    if (c.costSensitivity) setCost(c.costSensitivity);
+  };
+  const loadFromClient = (id: string) => {
+    setClientId(id);
+    const c = clients.find((x) => x.id === id);
+    if (c) applyClient(c);
   };
 
-  const run = async () => {
+  // When embedded in the Build view, follow the client selected there.
+  useEffect(() => {
+    if (presetClient) applyClient(presetClient);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presetClient?.id, presetClient?.risk, presetClient?.horizonYears, presetClient?.goal]);
+
+  const run = async (body?: ReturnType<typeof clientToRecommendBody>) => {
     setLoading(true); setError(""); setFunds(null);
+    const payload = body ?? { riskTolerance: risk, timeHorizon: horizon, incomeNeed: income,
+      costSensitivity: cost, assetClass: assetC, vehicle, notes: "" };
     try {
       const res = await fetch("/api/recommend", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ riskTolerance: risk, timeHorizon: horizon, incomeNeed: income,
-          costSensitivity: cost, assetClass: assetC, vehicle, notes: "" }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.message && !data.funds?.length) throw new Error(data.message);
@@ -548,14 +582,23 @@ export function ProfileMode({ onAddToCompare, onAnalyze }: {
     } catch (e) { setError((e as Error).message); }
     setLoading(false);
   };
+
+  // Parent (Portfolio Builder) triggers a run using the shared client profile.
+  useEffect(() => {
+    if (!runToken || !presetClient) return;
+    applyClient(presetClient);
+    void run(clientToRecommendBody(presetClient, presetVehicle));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runToken]);
   const clear = () => { setRisk("moderate"); setHorizon("medium"); setIncome("none"); setCost("medium");
     setAssetC("Any"); setVehicle("Either"); setFunds(null); setError(""); setClientId(""); };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {!hideForm && (
       <Card>
         <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
-          {clients.length > 0 && (
+          {!presetClient && clients.length > 0 && (
             <div>
               <Label>Load from saved client</Label>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
@@ -564,7 +607,7 @@ export function ProfileMode({ onAddToCompare, onAnalyze }: {
                     padding: "8px 11px", color: T.text, fontSize: 13, ...ui, minWidth: 200 }}>
                   <option value="">Pick a client...</option>
                   {clients.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name || "Untitled"} · {RISK_LABELS[c.risk]}</option>
+                    <option key={c.id} value={c.id}>{c.name || "Untitled"} · {riskLabel(c.risk)}</option>
                   ))}
                 </select>
                 <span style={{ fontSize: 11, color: T.muted, ...ui }}>Prefills risk, horizon &amp; income from the client profile.</span>
@@ -580,11 +623,12 @@ export function ProfileMode({ onAddToCompare, onAnalyze }: {
             <div><Label>Vehicle</Label><Select value={vehicle} onChange={setVehicle} options={PROFILE_VEHICLE} /></div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <Btn accent onClick={run} disabled={loading}>{loading ? "Finding best matches…" : "Get recommendations"}</Btn>
+            <Btn accent onClick={() => run()} disabled={loading}>{loading ? "Finding best matches…" : "Get recommendations"}</Btn>
             <Btn onClick={clear} disabled={loading}>Clear</Btn>
           </div>
         </div>
       </Card>
+      )}
 
       {loading && <Spinner label="Matching funds to the client profile…" />}
       <ErrBanner msg={error} />

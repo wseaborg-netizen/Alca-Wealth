@@ -269,7 +269,7 @@ function LockShowcaseSection({
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <span style={{ fontSize: 18, fontWeight: 300, color: T.text,
-            fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", letterSpacing: "0.06em" }}>{name}</span>
+            fontFamily: "var(--font-text)", letterSpacing: "0.06em" }}>{name}</span>
           <div style={{ fontSize: 12, color: T.dim, ...ui, marginTop: 1 }}>{tagline}</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0,
@@ -319,11 +319,11 @@ function LockShowcase({ onLoginScroll }: { onLoginScroll: () => void }) {
             ★ Advisor Hub
           </span>
           <div style={{ fontSize: 22, fontWeight: 300, color: "var(--c-text)", marginTop: 11,
-            fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+            fontFamily: "var(--font-text)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
             The Advisor Hub
           </div>
           <div style={{ fontSize: 13, color: "var(--c-dim)", ...ui, marginTop: 6, lineHeight: 1.55, maxWidth: 520 }}>
-            Everything Tool does for your workflow - find funds, pressure-test them, and
+            Everything ALCA does for your workflow - find funds, pressure-test them, and
             build a recommendation. Sign in to get started.
           </div>
           <div style={{ display: "flex", gap: 18, marginTop: 16 }}>
@@ -490,7 +490,7 @@ export default function Home() {
             letterSpacing: "0.07em", color: navText,
             textTransform: "uppercase", lineHeight: 1, transition: "color 0.3s",
           }}>
-            Tool
+            ALCA
           </span>
         </div>
 
@@ -580,7 +580,7 @@ export default function Home() {
               textTransform: "uppercase",
               textShadow: "0 2px 40px rgba(0,0,0,0.5)",
             }}>
-              Tool
+              ALCA
             </h1>
 
             {/* By The Capital Group - attribution line */}
@@ -652,7 +652,7 @@ export default function Home() {
             <div style={{ marginBottom: 0 }}>
               <div style={{ marginBottom: 14 }}>
                 <div style={{ ...lynx, fontSize: 24, fontWeight: 300, letterSpacing: "0.05em", color: H.text, textTransform: "uppercase", lineHeight: 1 }}>
-                  Tool
+                  ALCA
                 </div>
                 <div style={{ fontSize: 9.5, color: H.muted, letterSpacing: "0.07em", textTransform: "uppercase", ...ui, marginTop: 5 }}>
                   Fund Analytics · The Capital Group

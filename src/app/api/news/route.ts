@@ -1,6 +1,8 @@
 /**
  * Financial news - parses Yahoo Finance RSS feed for titles + summaries.
- * Cached 30 minutes.
+ * Provider: Yahoo (intentional). FMP's news is per-symbol, not a broad-market
+ * feed, so Yahoo remains the better source for this general dashboard headline
+ * strip. Cached 30 minutes.
  */
 import { NextResponse } from "next/server";
 import { cacheGet, cacheSet } from "@/lib/cache";

@@ -248,7 +248,7 @@ export default function CompareTab({
       <Card style={{ padding: "18px 20px" }}>
         <div style={{ fontSize: 20, fontWeight: 300, letterSpacing: "0.04em",
           textTransform: "uppercase", color: T.text, marginBottom: 14,
-          fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif" }}>
+          fontFamily: "var(--font-text)" }}>
           Cross-Reference
         </div>
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>

@@ -39,6 +39,17 @@ If the live site doesn't reflect changes: hard-refresh (Cmd+Shift+R) / check inc
 confirm the CLI printed a Production URL and that it aliases alcawealth.vercel.app.
 
 ## Open items
-- Merge the "Match Funds" sub-tab INTO the Build section of PortfoliosTab (show client
-  portfolio and matched funds together in one view).
 - Verify production deploy is actually promoting to alcawealth.vercel.app.
+
+## Done
+- Merged "Match Funds" INTO Build in PortfoliosTab and made it one unified flow. View flip is
+  now just Build/Compare. One comprehensive Client Profile (added `costSensitivity` to the
+  `Client` model in `lib/client.ts`, with `COST_LABELS`; `loadClients` backfills it) drives
+  BOTH the sleeve build and the fund matcher. `ProfileMode` (RecommendTab) gained props
+  `presetClient` / `presetVehicle` / `hideForm` / `runToken`; when embedded it hides its own
+  form and runs automatically on each build (via `clientToRecommendBody`).
+- Added a "Both" `Vehicle` (portfolioModel.ts) = no vehicle constraint (seeds ETF, but
+  `/api/portfolio/select` gets vehicle "Both" → unconstrained pool). The ETF/MF/Both toggle
+  moved to AFTER the build (in the Target Allocation header); first build defaults to "Both".
+  NOTE: local FMP free tier returns thin data so the matcher often shows "no funds matched" -
+  it's fuller in prod (Tiingo).

@@ -11,6 +11,14 @@ import ComingSoonTab, { type RoadmapSpec } from "./ComingSoonTab";
 import WatchlistTab from "./WatchlistTab";
 import PortfoliosTab from "./PortfoliosTab";
 import MurderBoardTab from "./MurderBoardTab";
+import { ResearchHubTab, AdvisorWorkspaceTab, type HubDest } from "./Hubs";
+
+// ── Dark chrome - the sidebar and header are one continuous graphite frame
+// (--c-chrome), the same material as the dashboard's workspace cards. The
+// frame stays dark in both themes; only the work canvas changes. Hairlines
+// inside the chrome are white-alpha so they read as machined edges.
+const CHROME = "var(--c-chrome)";
+const CHROME_LINE = "var(--c-chrome-line)";
 
 // ── Roadmap / idea tabs (placeholders - not built yet) ──────────────────────────
 const mk = (paths: React.ReactNode) => (
@@ -57,10 +65,9 @@ const IconNews = (
 );
 const IconIdeas = (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <path d="M8 1.5a4.5 4.5 0 0 0-2.7 8.1c.45.34.7.86.7 1.4v.5h4v-.5c0-.54.25-1.06.7-1.4A4.5 4.5 0 0 0 8 1.5Z"
-      stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
-    <line x1="6.2" y1="13.5" x2="9.8" y2="13.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-    <line x1="6.8" y1="15" x2="9.2" y2="15" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+    <circle cx="7.2" cy="7.2" r="5" stroke="currentColor" strokeWidth="1.4"/>
+    <circle cx="7.2" cy="7.2" r="1.7" stroke="currentColor" strokeWidth="1.3"/>
+    <line x1="10.9" y1="10.9" x2="14.5" y2="14.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
   </svg>
 );
 const IconAnalysis = (
@@ -85,22 +92,43 @@ const IconSettings = (
 
 // ── Nav model ───────────────────────────────────────────────────────────────────
 
-type TabId = "dashboard" | "news" | "ideas" | "analysis" | "comparison" | "settings"
+type TabId = "dashboard" | "research" | "workspace" | "news" | "ideas" | "analysis" | "comparison" | "settings"
   | "portfolio" | "murderboard" | "watchlist" | "backtest" | "correlation" | "peers" | "alerts" | "tax" | "assistant";
 
 interface NavItem { id: TabId; label: string; icon: React.ReactNode; }
 interface NavGroup { id: string; title: string; items: NavItem[]; }
 
+// Named icons for the workflow items (kept out of the GROUPS array for clarity).
+const IconPortfolios  = mk(<><path d="M8 1.8V8l5.4 3.1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><circle cx="8" cy="8" r="6.3" stroke="currentColor" strokeWidth="1.4"/></>);
+const IconMurderBoard = mk(<><rect x="2" y="2.5" width="12" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><line x1="4.5" y1="6" x2="11.5" y2="6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><line x1="4.5" y1="8.5" x2="11.5" y2="8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><line x1="4.5" y1="11" x2="8.5" y2="11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></>);
+const IconWatchlist   = mk(<><path d="M8 2.5l1.7 3.5 3.8.5-2.8 2.7.7 3.8L8 11.3l-3.4 1.7.7-3.8L2.5 6.5l3.8-.5L8 2.5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></>);
+const IconCorrelation = mk(<><path d="M2.5 2.5v11h11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><circle cx="5.5" cy="10.5" r="1.2" fill="currentColor"/><circle cx="8.5" cy="7.5" r="1.2" fill="currentColor"/><circle cx="11.5" cy="5" r="1.2" fill="currentColor"/></>);
+const IconPeers       = mk(<><rect x="2" y="9" width="3" height="5" rx="0.6" stroke="currentColor" strokeWidth="1.3"/><rect x="6.5" y="6" width="3" height="8" rx="0.6" stroke="currentColor" strokeWidth="1.3"/><rect x="11" y="3" width="3" height="11" rx="0.6" stroke="currentColor" strokeWidth="1.3"/></>);
+const IconResearchHub = mk(<><circle cx="6.6" cy="6.6" r="4.4" stroke="currentColor" strokeWidth="1.4"/><line x1="9.9" y1="9.9" x2="13.5" y2="13.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><line x1="4.6" y1="6.6" x2="8.6" y2="6.6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><line x1="6.6" y1="4.6" x2="6.6" y2="8.6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></>);
+const IconWorkspace   = mk(<><rect x="2" y="4.5" width="12" height="9" rx="1.4" stroke="currentColor" strokeWidth="1.4"/><path d="M6 4.5V3.4A1 1 0 0 1 7 2.4h2a1 1 0 0 1 1 1V4.5" stroke="currentColor" strokeWidth="1.4"/><line x1="2" y1="8.5" x2="14" y2="8.5" stroke="currentColor" strokeWidth="1.2"/></>);
+const IconTools       = mk(<><path d="M6.5 3.2a2.6 2.6 0 0 0-3.3 3.3l4.3 4.3 1.9-1.9-4.3-4.3a2.6 2.6 0 0 1-.9 1.4" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M9.5 9l3.3 3.3a1.2 1.2 0 0 1-1.7 1.7L7.8 10.7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></>);
+const IconAssistant   = mk(<><path d="M2.5 4.3a1.8 1.8 0 0 1 1.8-1.8h7.4a1.8 1.8 0 0 1 1.8 1.8v4a1.8 1.8 0 0 1-1.8 1.8H7l-3 2.4V10.1H4.3a1.8 1.8 0 0 1-1.8-1.8z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></>);
+
+// Pull a roadmap item (backtest / alerts / tax / assistant) as a nav item.
+const rm = (id: string): NavItem => { const r = ROADMAP.find((x) => x.id === id)!; return { id: r.id as TabId, label: r.label, icon: r.icon }; };
+
+// Two-hub advisor platform: Overview → Workspaces → the research + advisor tools that live inside them.
 const GROUPS: NavGroup[] = [
   {
-    id: "markets", title: "Markets",
+    id: "overview", title: "Overview",
     items: [
       { id: "dashboard", label: "Dashboard", icon: IconDashboard },
-      { id: "news",      label: "News",      icon: IconNews },
     ],
   },
   {
-    id: "workspace", title: "Advisor Hub",
+    id: "workspaces", title: "Workspaces",
+    items: [
+      { id: "research",  label: "Research Hub",      icon: IconResearchHub },
+      { id: "workspace", label: "Advisor Workspace", icon: IconWorkspace },
+    ],
+  },
+  {
+    id: "research", title: "Research",
     items: [
       { id: "ideas",      label: "Discover",   icon: IconIdeas },
       { id: "comparison", label: "Comparison", icon: IconComparison },
@@ -108,33 +136,30 @@ const GROUPS: NavGroup[] = [
     ],
   },
   {
-    id: "clienttools", title: "Client Tools",
+    id: "advisor", title: "Advisor",
     items: [
-      { id: "portfolio", label: "Portfolios", icon: mk(<><path d="M8 1.8V8l5.4 3.1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><circle cx="8" cy="8" r="6.3" stroke="currentColor" strokeWidth="1.4"/></>) },
-      { id: "murderboard", label: "Murder Board", icon: mk(<><rect x="2" y="2.5" width="12" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><line x1="4.5" y1="6" x2="11.5" y2="6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><line x1="4.5" y1="8.5" x2="11.5" y2="8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><line x1="4.5" y1="11" x2="8.5" y2="11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></>) },
+      { id: "portfolio",   label: "Portfolios",       icon: IconPortfolios },
+      { id: "murderboard", label: "Portfolio Review", icon: IconMurderBoard },
+      { id: "watchlist",   label: "Watchlist",        icon: IconWatchlist },
+      rm("alerts"),
     ],
   },
   {
-    id: "watchlist-group", title: "Watchlist",
+    id: "tools", title: "Tools",
     items: [
-      { id: "watchlist", label: "Watchlist", icon: mk(<><path d="M8 2.5l1.7 3.5 3.8.5-2.8 2.7.7 3.8L8 11.3l-3.4 1.7.7-3.8L2.5 6.5l3.8-.5L8 2.5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></>) },
+      { id: "correlation", label: "Correlation",   icon: IconCorrelation },
+      { id: "peers",       label: "Peer Rankings", icon: IconPeers },
+      rm("backtest"),
+      rm("tax"),
     ],
   },
   {
-    id: "analytics", title: "Analytics",
-    items: [
-      { id: "correlation", label: "Correlation",   icon: mk(<><path d="M2.5 2.5v11h11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><circle cx="5.5" cy="10.5" r="1.2" fill="currentColor"/><circle cx="8.5" cy="7.5" r="1.2" fill="currentColor"/><circle cx="11.5" cy="5" r="1.2" fill="currentColor"/></>) },
-      { id: "peers",       label: "Peer Rankings", icon: mk(<><rect x="2" y="9" width="3" height="5" rx="0.6" stroke="currentColor" strokeWidth="1.3"/><rect x="6.5" y="6" width="3" height="8" rx="0.6" stroke="currentColor" strokeWidth="1.3"/><rect x="11" y="3" width="3" height="11" rx="0.6" stroke="currentColor" strokeWidth="1.3"/></>) },
-    ],
-  },
-  {
-    id: "roadmap", title: "Roadmap · Ideas",
-    items: ROADMAP.map((r) => ({ id: r.id as TabId, label: r.label, icon: r.icon })),
+    id: "assistant-group", title: "Assistant",
+    items: [ rm("assistant") ],
   },
 ];
 
-// The core workflow tabs - shown as quick-access boxes in the top bar
-const WORKFLOW: NavItem[] = GROUPS[1].items;
+// The core research workflow tabs - shown as quick-access boxes in the top bar.
 const ALL_ITEMS: NavItem[] = GROUPS.flatMap((g) => g.items);
 const titleFor = (t: TabId) => t === "settings" ? "Settings" : (ALL_ITEMS.find((it) => it.id === t)?.label ?? "Dashboard");
 
@@ -160,6 +185,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
   const [recommendSeed, setRecommendSeed]   = useState("");
   const [ideasMode, setIdeasMode]           = useState<IdeasMode>("all");
   const [discoverOpen, setDiscoverOpen]     = useState(false);
+  const [expanded, setExpanded]             = useState<Set<string>>(new Set()); // expandable sidebar sections
 
   // ── Theme (persisted per device) ──
   const [theme, setThemeState] = useState<Theme>("light");
@@ -223,11 +249,28 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
   const goFindSimilar = (t: string) => { setRecommendSeed(t.toUpperCase()); navigate("ideas", "fromfund"); };
   const goIdeas = (m: IdeasMode) => navigate("ideas", m);
 
-  // Adapter for the dashboard showcase tour → routes find/recommend into the Discover hub
-  const dashNavigate = (t: "news" | "find" | "analysis" | "comparison" | "recommendation" | "discover") => {
+  // Route the hub-landing cards into the real tools they represent.
+  const hubGo = (d: HubDest) => {
+    switch (d) {
+      case "discover":     setDiscoverOpen(true); goIdeas("all"); break;
+      case "replacements": setDiscoverOpen(true); goIdeas("fromfund"); break;
+      case "compare":      switchTab("comparison"); break;
+      case "analysis":     switchTab("analysis"); break;
+      case "watchlist":    switchTab("watchlist"); break;
+      case "build":
+      case "portfolios":
+      case "present":      switchTab("portfolio"); break;
+      case "improve":
+      case "opportunity":  switchTab("murderboard"); break;
+    }
+  };
+
+  // Adapter for the dashboard command-center + showcase tour.
+  const dashNavigate = (t: import("./DashboardTab").DashTab) => {
     if (t === "discover") { setDiscoverOpen(true); goIdeas("all"); }
     else if (t === "find") goIdeas("find");
     else if (t === "recommendation") goIdeas("fromfund");
+    else if (t === "present") switchTab("portfolio");
     else switchTab(t);
   };
 
@@ -252,29 +295,29 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
         onClick={onClick}
         title={!open ? item.label : undefined}
         style={{
-          width: "100%", display: "flex", alignItems: "center", gap: 10, position: "relative",
-          padding: open ? "8px 10px" : "9px 0",
-          paddingLeft: open ? (sub ? 22 : 10) : 0,
+          width: "100%", display: "flex", alignItems: "center", gap: 11, position: "relative",
+          padding: open ? "11px 12px" : "11px 0",
+          paddingLeft: open ? (sub ? 22 : 11) : 0,
           justifyContent: open ? "flex-start" : "center",
-          borderRadius: 6, cursor: "pointer", border: "none",
-          borderLeft: active ? `3px solid ${T.blue}` : "3px solid transparent",
-          background: active ? T.blueL : "transparent",
-          color: active ? T.blueD : T.dim, transition: "all 0.15s",
+          borderRadius: 8, cursor: "pointer", border: "none",
+          borderLeft: active ? `3px solid var(--c-chrome-accent)` : "3px solid transparent",
+          background: active ? "var(--c-chrome-active-bg)" : "transparent",
+          color: active ? "var(--c-chrome-accent)" : "var(--c-chrome-dim)", transition: "all 0.15s",
         }}
-        onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = T.panel2; }}
-        onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}
+        onMouseEnter={(e) => { if (!active) { e.currentTarget.style.background = "var(--c-chrome-hover)"; e.currentTarget.style.color = "var(--c-chrome-text)"; } }}
+        onMouseLeave={(e) => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--c-chrome-dim)"; } }}
       >
         <span style={{ flexShrink: 0, display: "flex", alignItems: "center" }}>{item.icon}</span>
         {open && (
-          <span style={{ fontSize: 12.5, fontWeight: active ? 600 : 400, whiteSpace: "nowrap",
+          <span style={{ fontSize: 15, fontWeight: active ? 600 : 500, whiteSpace: "nowrap",
             flex: 1, textAlign: "left", ...ui }}>{item.label}</span>
         )}
         {open && count != null && (
-          <span style={{ fontSize: 9, fontWeight: 600, color: "#fff", background: T.blue,
+          <span style={{ fontSize: 9, fontWeight: 600, color: "var(--c-chrome-accent)", background: "rgba(94,234,212,0.16)",
             borderRadius: 99, padding: "1px 6px", ...mono }}>{count}</span>
         )}
         {open && isDiscover && (
-          <span style={{ flexShrink: 0, display: "flex", alignItems: "center", color: T.muted,
+          <span style={{ flexShrink: 0, display: "flex", alignItems: "center", color: "var(--c-chrome-muted)",
             transform: discoverOpen ? "rotate(180deg)" : "none", transition: "transform 0.18s" }}>
             <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
               <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
@@ -283,7 +326,7 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
         )}
         {!open && count != null && (
           <span style={{ position: "absolute", top: 6, right: 8, width: 7, height: 7,
-            borderRadius: "50%", background: T.blue }} />
+            borderRadius: "50%", background: "var(--c-chrome-accent)" }} />
         )}
       </button>
     );
@@ -295,16 +338,102 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
     return (
       <button onClick={() => goIdeas(id)}
         style={{ width: "100%", display: "flex", alignItems: "center", gap: 9,
-          padding: "6px 10px 6px 40px", borderRadius: 6, cursor: "pointer", border: "none",
-          background: on ? T.blueL : "transparent", color: on ? T.blueD : T.dim, transition: "all 0.14s" }}
-        onMouseEnter={(e) => { if (!on) e.currentTarget.style.background = T.panel2; }}
+          padding: "8px 10px 8px 40px", borderRadius: 6, cursor: "pointer", border: "none",
+          background: on ? "var(--c-chrome-active-bg)" : "transparent",
+          color: on ? "var(--c-chrome-accent)" : "var(--c-chrome-dim)", transition: "all 0.14s" }}
+        onMouseEnter={(e) => { if (!on) e.currentTarget.style.background = "var(--c-chrome-hover)"; }}
         onMouseLeave={(e) => { if (!on) e.currentTarget.style.background = "transparent"; }}>
         <span style={{ flexShrink: 0, display: "flex", alignItems: "center", opacity: 0.85,
           transform: "scale(0.82)" }}>{icon}</span>
-        <span style={{ fontSize: 12, fontWeight: on ? 600 : 400, whiteSpace: "nowrap", ...ui }}>{label}</span>
+        <span style={{ fontSize: 13, fontWeight: on ? 600 : 400, whiteSpace: "nowrap", ...ui }}>{label}</span>
       </button>
     );
   };
+
+  // ── Expandable sidebar model (Notion/Linear-style hierarchy) ──
+  interface NavChild { label: string; onClick: () => void; active: boolean; count?: number | null; }
+  interface NavParent { id: string; label: string; icon: React.ReactNode; landing?: TabId; owns: TabId[]; children: NavChild[]; }
+  const NAV_PARENTS: NavParent[] = [
+    {
+      id: "research", label: "Research", icon: IconResearchHub, landing: "research",
+      owns: ["research", "ideas", "comparison", "analysis", "watchlist"],
+      children: [
+        { label: "Discover", onClick: () => { setDiscoverOpen(false); goIdeas("all"); }, active: tab === "ideas" },
+        { label: "Comparison", onClick: () => switchTab("comparison"), active: tab === "comparison", count: compareTickers.length || null },
+        { label: "Analysis", onClick: () => switchTab("analysis"), active: tab === "analysis" },
+        { label: "Research Watchlist", onClick: () => switchTab("watchlist"), active: tab === "watchlist" },
+        { label: "Replacement Ideas", onClick: () => goIdeas("fromfund"), active: false },
+      ],
+    },
+    {
+      id: "workspace", label: "Advisor Workspace", icon: IconWorkspace, landing: "workspace",
+      owns: ["workspace", "portfolio", "murderboard"],
+      children: [
+        { label: "Build Recommendation", onClick: () => switchTab("portfolio"), active: tab === "portfolio" },
+        { label: "Portfolio Review", onClick: () => switchTab("murderboard"), active: tab === "murderboard" },
+        { label: "Client Portfolios", onClick: () => switchTab("portfolio"), active: false },
+        { label: "Present to Client", onClick: () => switchTab("portfolio"), active: false },
+        { label: "Opportunity Feed", onClick: () => switchTab("workspace"), active: false },
+      ],
+    },
+    {
+      id: "tools", label: "Tools", icon: IconTools,
+      owns: ["correlation", "peers", "backtest", "tax", "alerts"],
+      children: [
+        { label: "Correlation", onClick: () => switchTab("correlation"), active: tab === "correlation" },
+        { label: "Peer Rankings", onClick: () => switchTab("peers"), active: tab === "peers" },
+        { label: "Backtest", onClick: () => switchTab("backtest"), active: tab === "backtest" },
+        { label: "Tax Center", onClick: () => switchTab("tax"), active: tab === "tax" },
+        { label: "Alerts", onClick: () => switchTab("alerts"), active: tab === "alerts" },
+      ],
+    },
+  ];
+  const isExpanded = (p: NavParent) => expanded.has(p.id) || p.owns.includes(tab);
+  const onParentClick = (p: NavParent) => {
+    if (p.landing) { switchTab(p.landing); setExpanded((prev) => new Set(prev).add(p.id)); }
+    else setExpanded((prev) => { const n = new Set(prev); n.has(p.id) ? n.delete(p.id) : n.add(p.id); return n; });
+  };
+  const toggleExpand = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setExpanded((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  };
+
+  const ParentRow = ({ p }: { p: NavParent }) => {
+    const activeParent = p.landing != null && tab === p.landing;
+    const openSec = isExpanded(p);
+    return (
+      <button onClick={() => onParentClick(p)} title={!open ? p.label : undefined}
+        style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, position: "relative",
+          padding: open ? "11px 12px" : "11px 0", justifyContent: open ? "flex-start" : "center",
+          borderRadius: 8, cursor: "pointer", border: "none",
+          borderLeft: activeParent ? "3px solid var(--c-chrome-accent)" : "3px solid transparent",
+          background: activeParent ? "var(--c-chrome-active-bg)" : "transparent",
+          color: activeParent ? "var(--c-chrome-accent)" : "var(--c-chrome-text)", transition: "all 0.15s" }}
+        onMouseEnter={(e) => { if (!activeParent) e.currentTarget.style.background = "var(--c-chrome-hover)"; }}
+        onMouseLeave={(e) => { if (!activeParent) e.currentTarget.style.background = "transparent"; }}>
+        <span style={{ flexShrink: 0, display: "flex", alignItems: "center" }}>{p.icon}</span>
+        {open && <span style={{ fontSize: 15, fontWeight: 600, whiteSpace: "nowrap", flex: 1, textAlign: "left", ...ui }}>{p.label}</span>}
+        {open && (
+          <span onClick={(e) => toggleExpand(e, p.id)} style={{ flexShrink: 0, display: "flex", alignItems: "center", color: "var(--c-chrome-muted)", padding: 2,
+            transform: openSec ? "rotate(180deg)" : "none", transition: "transform 0.18s" }}>
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </span>
+        )}
+      </button>
+    );
+  };
+  const ChildRow = ({ c }: { c: NavChild }) => (
+    <button onClick={c.onClick} style={{ width: "100%", display: "flex", alignItems: "center", gap: 9,
+      padding: "9px 10px 9px 42px", borderRadius: 6, cursor: "pointer", border: "none",
+      background: c.active ? "var(--c-chrome-active-bg)" : "transparent",
+      color: c.active ? "var(--c-chrome-accent)" : "var(--c-chrome-dim)", transition: "all 0.14s" }}
+      onMouseEnter={(e) => { if (!c.active) { e.currentTarget.style.background = "var(--c-chrome-hover)"; e.currentTarget.style.color = "var(--c-chrome-text)"; } }}
+      onMouseLeave={(e) => { if (!c.active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--c-chrome-dim)"; } }}>
+      <span style={{ width: 4, height: 4, borderRadius: "50%", flexShrink: 0, background: c.active ? "var(--c-chrome-accent)" : "rgba(255,255,255,0.25)" }} />
+      <span style={{ fontSize: 14, fontWeight: c.active ? 600 : 500, whiteSpace: "nowrap", flex: 1, textAlign: "left", ...ui }}>{c.label}</span>
+      {c.count != null && <span style={{ fontSize: 9, fontWeight: 600, color: "var(--c-chrome-accent)", background: "rgba(94,234,212,0.16)", borderRadius: 99, padding: "1px 6px", ...mono }}>{c.count}</span>}
+    </button>
+  );
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: T.bg }}>
@@ -312,74 +441,52 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
       {/* ── Sidebar ── */}
       <aside style={{
         position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 50, width: sidebarW,
-        background: T.panel, borderRight: `1px solid ${T.line}`,
+        background: CHROME, borderRight: `1px solid rgba(0,0,0,0.5)`,
         display: "flex", flexDirection: "column", overflow: "hidden",
         transition: "width 0.2s cubic-bezier(0.4,0,0.2,1)",
       }}>
-        <div style={{ height: 60, display: "flex", alignItems: "center", gap: 12,
-          borderBottom: `1px solid ${T.line}`, padding: "0 14px", flexShrink: 0 }}>
+        {/* Brand lives in the app header - the sidebar top holds only the toggle. */}
+        <div style={{ height: 64, display: "flex", alignItems: "center", gap: 12,
+          borderBottom: `1px solid ${CHROME_LINE}`, padding: "0 16px", flexShrink: 0 }}>
           <button onClick={() => setOpen((o) => !o)} aria-label="Toggle sidebar"
-            style={{ width: 28, height: 28, borderRadius: 6, border: `1px solid ${T.line2}`,
-              background: T.panel, cursor: "pointer", display: "flex", flexDirection: "column",
-              alignItems: "center", justifyContent: "center", gap: 4, flexShrink: 0 }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = T.panel2)}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--c-panel)")}
+            style={{ width: 30, height: 30, borderRadius: 7, border: `1px solid rgba(255,255,255,0.16)`,
+              background: "transparent", cursor: "pointer", display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center", gap: 4, flexShrink: 0,
+              transition: "background var(--dur-fast) var(--ease-out)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--c-chrome-hover)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           >
-            <span style={{ width: 12, height: 1.5, background: T.dim, borderRadius: 1 }} />
-            <span style={{ width: 12, height: 1.5, background: T.dim, borderRadius: 1 }} />
-            <span style={{ width: 12, height: 1.5, background: T.dim, borderRadius: 1 }} />
+            <span style={{ width: 12, height: 1.5, background: "var(--c-chrome-dim)", borderRadius: 1 }} />
+            <span style={{ width: 12, height: 1.5, background: "var(--c-chrome-dim)", borderRadius: 1 }} />
+            <span style={{ width: 12, height: 1.5, background: "var(--c-chrome-dim)", borderRadius: 1 }} />
           </button>
           {open && (
-            <div style={{ overflow: "hidden", color: T.text }}>
-              <div style={{ fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", fontSize: 16, fontWeight: 300, letterSpacing: "0.05em", color: T.text, textTransform: "uppercase", lineHeight: 1, whiteSpace: "nowrap" }}>Tool</div>
-              <div style={{ fontSize: 9, color: T.muted, letterSpacing: "0.04em",
-                textTransform: "uppercase", marginTop: 4, whiteSpace: "nowrap", ...ui }}>Fund Analytics</div>
-            </div>
+            <span style={{ fontSize: 11, color: "var(--c-chrome-muted)", letterSpacing: "0.12em", fontWeight: 600,
+              textTransform: "uppercase", whiteSpace: "nowrap", ...ui }}>Navigation</span>
           )}
         </div>
 
-        <nav style={{ flex: 1, overflowY: "auto", padding: "10px 8px" }}>
-          {open ? (
-            GROUPS.map((g) => (
-              <div key={g.id} style={{ marginBottom: 10 }}>
-                <div style={{ fontSize: 11, fontWeight: 300, color: T.muted, textTransform: "uppercase",
-                  letterSpacing: "0.07em", padding: "6px 10px 4px",
-                  fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif" }}>{g.title}</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  {g.items.map((item) => (
-                    <React.Fragment key={item.id}>
-                      <NavButton item={item} sub />
-                      {item.id === "ideas" && discoverOpen && (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 1, marginTop: 1, marginBottom: 2 }}>
-                          {DISCOVER_SECTIONS.map((s) => (
-                            <DiscoverSubItem key={s.id} id={s.id} label={s.short} icon={s.icon} />
-                          ))}
-                        </div>
-                      )}
-                    </React.Fragment>
-                  ))}
+        <nav style={{ flex: 1, overflowY: "auto", padding: "16px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
+          <NavButton item={{ id: "dashboard", label: "Dashboard", icon: IconDashboard }} />
+          {NAV_PARENTS.map((p) => (
+            <React.Fragment key={p.id}>
+              <ParentRow p={p} />
+              {open && isExpanded(p) && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 1, marginTop: 1, marginBottom: 4 }}>
+                  {p.children.map((c) => <ChildRow key={c.label} c={c} />)}
                 </div>
-              </div>
-            ))
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              {GROUPS.map((g, gi) => (
-                <React.Fragment key={g.id}>
-                  {gi > 0 && <div style={{ height: 1, background: T.line, margin: "6px 8px" }} />}
-                  {g.items.map((item) => <NavButton key={item.id} item={item} />)}
-                </React.Fragment>
-              ))}
-            </div>
-          )}
+              )}
+            </React.Fragment>
+          ))}
+          <NavButton item={{ id: "assistant", label: "AI Assistant", icon: IconAssistant }} />
         </nav>
 
         {/* Settings - pinned to the bottom */}
-        <div style={{ borderTop: `1px solid ${T.line}`, padding: "8px 8px", flexShrink: 0 }}>
+        <div style={{ borderTop: `1px solid ${CHROME_LINE}`, padding: "8px 10px", flexShrink: 0 }}>
           <NavButton item={{ id: "settings", label: "Settings", icon: IconSettings }} sub={open} />
           {open && (
             <div style={{ padding: "8px 12px 4px" }}>
-              <div style={{ fontSize: 9, color: T.muted, ...mono }}>Tool v1</div>
-              <div style={{ fontSize: 9, color: T.muted, lineHeight: 1.4, ...ui }}>Research aid · verify before client use.</div>
+              <div style={{ fontSize: 9.5, color: "var(--c-chrome-muted)", lineHeight: 1.4, ...ui }}>Research aid · verify before client use.</div>
             </div>
           )}
         </div>
@@ -389,86 +496,87 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
       <div style={{ marginLeft: sidebarW, flex: 1, minWidth: 0, display: "flex", flexDirection: "column",
         transition: "margin-left 0.2s cubic-bezier(0.4,0,0.2,1)" }}>
 
-        {/* Top bar: page title + tray + workflow switcher */}
-        <header style={{ minHeight: 60, display: "flex", alignItems: "center", justifyContent: "space-between",
-          gap: 14, padding: "0 22px", background: T.panel, borderBottom: `1px solid ${T.line}`,
+        {/* Top bar: dark chrome - continuous with the sidebar */}
+        <header style={{ minHeight: 64, display: "flex", alignItems: "center", justifyContent: "space-between",
+          gap: 14, padding: "0 24px", background: CHROME, borderBottom: `1px solid rgba(0,0,0,0.5)`,
+          boxShadow: "var(--elev-2)", position: "relative", zIndex: 40,
           flexShrink: 0, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             {/* Back / forward - in-app navigation history */}
-            <div style={{ display: "flex", gap: 2 }}>
+            <div style={{ display: "flex", gap: 3 }}>
               <button onClick={goBack} disabled={!canBack} title="Back"
-                style={{ width: 28, height: 28, borderRadius: 6, border: `1px solid ${T.line2}`,
-                  background: T.panel, cursor: canBack ? "pointer" : "default", opacity: canBack ? 1 : 0.4,
-                  display: "flex", alignItems: "center", justifyContent: "center", color: T.dim }}
-                onMouseEnter={(e) => { if (canBack) e.currentTarget.style.background = T.panel2; }}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "var(--c-panel)")}>
+                style={{ width: 30, height: 30, borderRadius: 7, border: `1px solid rgba(255,255,255,0.14)`,
+                  background: "transparent", cursor: canBack ? "pointer" : "default", opacity: canBack ? 1 : 0.35,
+                  display: "flex", alignItems: "center", justifyContent: "center", color: "var(--c-chrome-dim)",
+                  transition: "background var(--dur-fast) var(--ease-out)" }}
+                onMouseEnter={(e) => { if (canBack) e.currentTarget.style.background = "var(--c-chrome-hover)"; }}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 3.5L5.5 8l4.5 4.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </button>
               <button onClick={goForward} disabled={!canForward} title="Forward"
-                style={{ width: 28, height: 28, borderRadius: 6, border: `1px solid ${T.line2}`,
-                  background: T.panel, cursor: canForward ? "pointer" : "default", opacity: canForward ? 1 : 0.4,
-                  display: "flex", alignItems: "center", justifyContent: "center", color: T.dim }}
-                onMouseEnter={(e) => { if (canForward) e.currentTarget.style.background = T.panel2; }}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "var(--c-panel)")}>
+                style={{ width: 30, height: 30, borderRadius: 7, border: `1px solid rgba(255,255,255,0.14)`,
+                  background: "transparent", cursor: canForward ? "pointer" : "default", opacity: canForward ? 1 : 0.35,
+                  display: "flex", alignItems: "center", justifyContent: "center", color: "var(--c-chrome-dim)",
+                  transition: "background var(--dur-fast) var(--ease-out)" }}
+                onMouseEnter={(e) => { if (canForward) e.currentTarget.style.background = "var(--c-chrome-hover)"; }}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 3.5L10.5 8 6 12.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </button>
             </div>
-            <h1 style={{ fontSize: 14, fontWeight: 600, color: T.text, margin: 0, whiteSpace: "nowrap", ...ui }}>
-              {titleFor(tab)}
-            </h1>
+            {/* Primary brand location - the header identifies the platform on every page */}
+            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", lineHeight: 1.2 }}>
+              <span style={{ fontSize: 17, fontWeight: 700, color: "#fff", ...ui, letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>ALCA Wealth</span>
+              <span style={{ fontSize: 11, fontWeight: 500, color: "var(--c-chrome-muted)", ...ui, marginTop: 2, whiteSpace: "nowrap",
+                letterSpacing: "0.03em" }}>Advisor Intelligence Platform</span>
+            </div>
+            {tab !== "dashboard" && (
+              <>
+                <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.14)", margin: "0 6px" }} />
+                <h1 style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.78)", margin: 0, whiteSpace: "nowrap", ...ui }}>
+                  {titleFor(tab)}
+                </h1>
+              </>
+            )}
             {/* Tray indicator - funds queued for comparison from anywhere */}
             {compareTickers.length > 0 && (
               <button onClick={() => switchTab("comparison")} title="Open comparison"
-                style={{ display: "flex", alignItems: "center", gap: 6, background: T.blueL,
-                  border: `1px solid ${T.blue}55`, borderRadius: 7, padding: "4px 9px", cursor: "pointer" }}>
-                <span style={{ fontSize: 8, fontWeight: 600, color: T.blueD, textTransform: "uppercase",
+                style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(94,234,212,0.12)",
+                  border: `1px solid rgba(94,234,212,0.38)`, borderRadius: 7, padding: "4px 9px", cursor: "pointer" }}>
+                <span style={{ fontSize: 8, fontWeight: 600, color: "var(--c-chrome-accent)", textTransform: "uppercase",
                   letterSpacing: "0.08em", ...ui }}>Tray · {compareTickers.length}</span>
                 {compareTickers.map((t) => (
-                  <span key={t} style={{ fontSize: 10, fontWeight: 600, color: T.blue, ...mono }}>{t}</span>
+                  <span key={t} style={{ fontSize: 10, fontWeight: 600, color: "#fff", ...mono }}>{t}</span>
                 ))}
-                <span style={{ fontSize: 11, color: T.blue, marginLeft: 1 }}>→</span>
+                <span style={{ fontSize: 11, color: "var(--c-chrome-accent)", marginLeft: 1 }}>→</span>
               </button>
             )}
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {/* Brand mark + wordmark, top-right */}
-            <div style={{ width: 1, height: 26, background: T.line, margin: "0 2px" }} />
-            <div style={{ display: "flex", alignItems: "center", gap: 10, color: T.text }}>
-              <span style={{
-                fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif",
-                fontSize: 17, fontWeight: 300, letterSpacing: "0.06em",
-                color: T.text, textTransform: "uppercase", lineHeight: 1,
-                whiteSpace: "nowrap",
-              }}>
-                Tool
-              </span>
-            </div>
-
             {/* Auth status + logout */}
             {(authMode === "full" || authMode === "preview") && (
               <>
-                <div style={{ width: 1, height: 26, background: T.line, margin: "0 2px" }} />
+                <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.14)", margin: "0 2px" }} />
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   {authMode === "preview" ? (
-                    <span style={{ fontSize: 10.5, color: T.amber, background: `${T.amber}18`,
-                      border: `1px solid ${T.amber}44`, borderRadius: 5,
+                    <span style={{ fontSize: 10.5, color: "#F59E0B", background: "rgba(245,158,11,0.12)",
+                      border: `1px solid rgba(245,158,11,0.35)`, borderRadius: 5,
                       padding: "3px 8px", fontWeight: 600, ...ui, letterSpacing: "0.05em", textTransform: "uppercase" }}>
                       Preview
                     </span>
                   ) : (
-                    <span style={{ fontSize: 11, color: T.dim, ...ui, maxWidth: 160,
+                    <span style={{ fontSize: 11, color: "var(--c-chrome-dim)", ...ui, maxWidth: 160,
                       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {authUser}
                     </span>
                   )}
                   {onLogout && (
                     <button onClick={onLogout}
-                      style={{ fontSize: 11, color: T.muted, background: "none",
-                        border: `1px solid ${T.line2}`, borderRadius: 5,
+                      style={{ fontSize: 11, color: "var(--c-chrome-muted)", background: "none",
+                        border: `1px solid rgba(255,255,255,0.16)`, borderRadius: 5,
                         padding: "4px 10px", cursor: "pointer", ...ui, transition: "all 0.15s" }}
-                      onMouseEnter={e => { e.currentTarget.style.color = T.text; e.currentTarget.style.borderColor = T.dim; }}
-                      onMouseLeave={e => { e.currentTarget.style.color = T.muted; e.currentTarget.style.borderColor = T.line2; }}>
+                      onMouseEnter={e => { e.currentTarget.style.color = "#fff"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.4)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = "var(--c-chrome-muted)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.16)"; }}>
                       Sign out
                     </button>
                   )}
@@ -478,11 +586,19 @@ export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps
           </div>
         </header>
 
-        {/* Content - lazy-mounted, hidden when inactive (state persists) */}
-        <main style={{ flex: 1, padding: "28px 28px 40px" }}>
+        {/* Content - lazy-mounted, hidden when inactive (state persists).
+            A faint teal wash falls from under the dark header - depth, not decoration. */}
+        <main style={{ flex: 1, padding: "30px 32px 48px",
+          background: "linear-gradient(180deg, rgba(14,116,144,0.045) 0%, rgba(14,116,144,0) 300px)" }}>
           <div style={{ display: tab === "dashboard" ? "block" : "none" }}>
             <DashboardTab onNavigate={dashNavigate} railOffset={sidebarW} />
           </div>
+          {mounted.has("research") && (
+            <div style={{ display: tab === "research" ? "block" : "none" }}><ResearchHubTab go={hubGo} /></div>
+          )}
+          {mounted.has("workspace") && (
+            <div style={{ display: tab === "workspace" ? "block" : "none" }}><AdvisorWorkspaceTab go={hubGo} /></div>
+          )}
           {mounted.has("news") && (
             <div style={{ display: tab === "news" ? "block" : "none" }}><NewsTab /></div>
           )}

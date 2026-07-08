@@ -5,9 +5,12 @@
  * local) - no client PII leaves the browser.
  */
 
-export type RiskLevel = 1 | 2 | 3 | 4 | 5;
+// Continuous 1.0 (conservative) - 5.0 (aggressive). The slider rests anywhere;
+// riskLabel() below buckets it to the nearest of the 5 named levels for display.
+export type RiskLevel = number;
 export type AccountType = "taxable" | "traditional" | "roth";
 export type Goal = "income" | "balanced" | "growth";
+export type CostSensitivity = "low" | "medium" | "high";
 
 export interface ClientAccount {
   type: AccountType;
@@ -23,23 +26,31 @@ export interface Client {
   id: string;
   name: string;
   age: number | null;
+  spouseAge?: number | null;  // optional - couples planning (drives horizon inference)
   horizonYears: number | null;
   risk: RiskLevel;            // 1 = conservative ... 5 = aggressive
   taxBracket: number | null;  // marginal rate, e.g. 32 (%)
   state: string;              // e.g. "CA" (used for muni suggestions)
   goal: Goal;
+  costSensitivity: CostSensitivity;  // fee tolerance - drives fund selection + matching
   accounts: ClientAccount[];
   holdings: ClientHolding[];  // what they hold today (the "murder board" for this client)
   updatedAt: number;
 }
 
-export const RISK_LABELS: Record<RiskLevel, string> = {
+export const RISK_LABELS: Record<number, string> = {
   1: "Conservative",
   2: "Moderately Conservative",
   3: "Moderate",
   4: "Moderately Aggressive",
   5: "Aggressive",
 };
+
+/** Bucket a continuous risk value to the nearest of the 5 named levels. */
+export function riskLabel(risk: number): string {
+  const bucket = Math.max(1, Math.min(5, Math.round(risk)));
+  return RISK_LABELS[bucket];
+}
 
 export const ACCOUNT_LABELS: Record<AccountType, string> = {
   taxable: "Taxable Brokerage",
@@ -51,6 +62,12 @@ export const GOAL_LABELS: Record<Goal, string> = {
   income: "Income",
   balanced: "Balanced",
   growth: "Growth",
+};
+
+export const COST_LABELS: Record<CostSensitivity, string> = {
+  low: "Low - open to premium/active funds",
+  medium: "Medium - balance cost & quality",
+  high: "High - prioritize low fees",
 };
 
 const KEY = "tool_clients_v1";
@@ -69,6 +86,7 @@ export function newClient(): Client {
     taxBracket: null,
     state: "",
     goal: "balanced",
+    costSensitivity: "medium",
     accounts: [
       { type: "taxable", balance: 0 },
       { type: "traditional", balance: 0 },
@@ -85,7 +103,9 @@ export function loadClients(): Client[] {
     const raw = localStorage.getItem(KEY);
     if (!raw) return [];
     const list = JSON.parse(raw) as Client[];
-    return Array.isArray(list) ? list : [];
+    if (!Array.isArray(list)) return [];
+    // Backfill fields added after a client was first saved.
+    return list.map((c) => ({ ...c, costSensitivity: c.costSensitivity ?? "medium" }));
   } catch {
     return [];
   }

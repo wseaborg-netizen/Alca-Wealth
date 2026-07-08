@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useCallback } from "react";
 import { T, ui, mono } from "./tokens";
-import { Card, Label, Btn } from "./ui";
+import { Card, Label, Btn, PageHeader } from "./ui";
 import type { FundRecord } from "../lib/funds";
 
 const KEY = "tool_murderboard_v1";
@@ -103,14 +103,8 @@ export default function MurderBoardTab({ onAnalyze, onFindSimilar }: {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 1080 }}>
-      <div>
-        <h2 style={{ ...ui, fontSize: 22, fontWeight: 300, color: T.text, margin: 0,
-          fontFamily: "'Cormorant Garamond', Georgia, serif" }}>Murder Board</h2>
-        <p style={{ fontSize: 12.5, color: T.dim, marginTop: 4, ...ui }}>
-          Your working set of funds in use. Track them, watch the news, and see what is missing or
-          worth adding.
-        </p>
-      </div>
+      <PageHeader title="Portfolio Review"
+        subtitle="Review the funds in a client's portfolio - track them, watch the news, and surface gaps or better alternatives." />
 
       {/* Add */}
       <Card>

@@ -14,7 +14,9 @@
 import type { Client, AccountType } from "./client";
 import { ACCOUNT_LABELS } from "./client";
 
-export type Vehicle = "ETF" | "Mutual Fund";
+// "Both" = no vehicle constraint: seed with the ETF share class, but the
+// data-driven selector may pick either an ETF or a mutual fund per sleeve.
+export type Vehicle = "ETF" | "Mutual Fund" | "Both";
 export type TaxClass = "efficient" | "neutral" | "inefficient";
 
 export interface FundPick {
@@ -94,10 +96,19 @@ const SLEEVE_CATEGORY: Record<string, string> = {
   tips: "Inflation-Protected Bond", cash: "Ultrashort Bond",
 };
 
+/** Linear-interpolate a continuous risk value (1-5) through named control points. */
+function lerpTable(risk: number, points: [number, number][]): number {
+  const r = Math.max(points[0][0], Math.min(points[points.length - 1][0], risk));
+  for (let i = 0; i < points.length - 1; i++) {
+    const [x0, y0] = points[i], [x1, y1] = points[i + 1];
+    if (r >= x0 && r <= x1) return x1 === x0 ? y0 : y0 + (y1 - y0) * (r - x0) / (x1 - x0);
+  }
+  return points[points.length - 1][1];
+}
+
 /** Equity fraction from risk, adjusted for horizon, age and goal. */
 export function equityFraction(client: Client): number {
-  const base: Record<number, number> = { 1: 0.30, 2: 0.45, 3: 0.60, 4: 0.75, 5: 0.88 };
-  let eq = base[client.risk] ?? 0.60;
+  let eq = lerpTable(client.risk, [[1, 0.30], [2, 0.45], [3, 0.60], [4, 0.75], [5, 0.88]]);
   const h = client.horizonYears;
   if (h != null) {
     if (h < 5) eq -= 0.15;
@@ -114,11 +125,14 @@ export function equityFraction(client: Client): number {
   return Math.max(0.15, Math.min(0.92, eq));
 }
 
-export function targetSleeves(client: Client, vehicle: Vehicle): Sleeve[] {
+// opts.intlShare (0-1) is an optional advisor override for the TOTAL international
+// weight of the equity sleeve (developed + emerging). Omitting it reproduces the
+// original allocation exactly - existing callers are unaffected.
+export function targetSleeves(client: Client, vehicle: Vehicle, opts?: { intlShare?: number }): Sleeve[] {
   const eq = equityFraction(client);
-  const cash = client.risk === 1 ? 0.05 : 0;
+  const cash = lerpTable(client.risk, [[1, 0.05], [2, 0]]);
   const bond = Math.max(0, 1 - eq - cash);
-  const pick = (k: string): FundPick => (vehicle === "ETF" ? FUNDS[k].etf : FUNDS[k].mf);
+  const pick = (k: string): FundPick => (vehicle === "Mutual Fund" ? FUNDS[k].mf : FUNDS[k].etf);
 
   const sleeves: Sleeve[] = [];
   const add = (key: string, label: string, assetClass: Sleeve["assetClass"], fundKey: string, weight: number) => {
@@ -128,21 +142,25 @@ export function targetSleeves(client: Client, vehicle: Vehicle): Sleeve[] {
       taxClass: f.taxClass, growth: f.growth, weight, fund: pick(fundKey) });
   };
 
-  // ── Equity split ──
-  const emergingShare = client.risk >= 3 ? 0.12 : 0;
-  const intlShare = 0.26;
+  // ── Equity split ── (ramps smoothly between risk 2-3 and 3-4 rather than snapping)
+  const emergingBase = lerpTable(client.risk, [[2, 0], [3, 0.12]]);
+  const intlDevBase = 0.26;
+  const intlTotalDefault = intlDevBase + emergingBase;
+  // Advisor override rescales developed + emerging proportionally to hit the target total intl weight.
+  const intlTotal = opts?.intlShare != null ? Math.max(0, Math.min(0.9, opts.intlShare)) : intlTotalDefault;
+  const emergingShare = intlTotalDefault > 0 ? intlTotal * (emergingBase / intlTotalDefault) : 0;
+  const intlShare = intlTotal - emergingShare;
   const usShare = 1 - intlShare - emergingShare;
-  const smidShare = client.risk >= 4 ? 0.20 : 0; // small/mid tilt for aggressive
+  const smidShare = lerpTable(client.risk, [[3, 0], [4, 0.20]]); // small/mid tilt for aggressive
   add("us", "US Equity", "equity", "usEquity", eq * usShare * (1 - smidShare));
   add("smid", "US Small / Mid Cap", "equity", "usSmid", eq * usShare * smidShare);
   add("intl", "International Developed", "equity", "intl", eq * intlShare);
   add("em", "Emerging Markets", "equity", "emerging", eq * emergingShare);
 
   // ── Fixed income split ──
-  let core: number, short: number, tips: number;
-  if (client.risk <= 2) { core = 0.50; short = 0.35; tips = 0.15; }
-  else if (client.risk === 3) { core = 0.70; short = 0.15; tips = 0.15; }
-  else { core = 0.85; short = 0.0; tips = 0.15; }
+  const core = lerpTable(client.risk, [[1, 0.50], [2, 0.50], [3, 0.70], [4, 0.85], [5, 0.85]]);
+  const short = lerpTable(client.risk, [[1, 0.35], [2, 0.35], [3, 0.15], [4, 0], [5, 0]]);
+  const tips = 0.15;
   add("core", "Core Bond", "fixed", "coreBond", bond * core);
   add("short", "Short-Term Bond", "fixed", "shortBond", bond * short);
   add("tips", "Inflation-Protected (TIPS)", "fixed", "tips", bond * tips);
@@ -220,8 +238,8 @@ export function placeAssets(client: Client, sleeves: Sleeve[], vehicle: Vehicle)
   if (tax && highBracket) {
     // Use the actually-selected core-bond fund (data-driven selection may differ from the seed).
     const coreSleeve = sleeves.find((s) => s.key === "core");
-    const coreTicker = coreSleeve?.fund.ticker ?? (vehicle === "ETF" ? FUNDS.coreBond.etf.ticker : FUNDS.coreBond.mf.ticker);
-    const muni = vehicle === "ETF" ? FUNDS.coreBond.muniEtf! : FUNDS.coreBond.muniMf!;
+    const coreTicker = coreSleeve?.fund.ticker ?? (vehicle === "Mutual Fund" ? FUNDS.coreBond.mf.ticker : FUNDS.coreBond.etf.ticker);
+    const muni = vehicle === "Mutual Fund" ? FUNDS.coreBond.muniMf! : FUNDS.coreBond.muniEtf!;
     let swapped = false;
     tax.lots = tax.lots.map((l) => {
       if (l.ticker === coreTicker) {

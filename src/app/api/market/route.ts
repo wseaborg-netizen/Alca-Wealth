@@ -1,11 +1,14 @@
 /**
- * Market dashboard API - fetches live quotes for key indices/ETFs from Yahoo Finance.
- * Cached 15 minutes (short TTL for market data).
+ * Market dashboard API - live quotes + sparklines for key indices/ETFs.
+ * Provider priority: FMP primary (quote + light EOD history), Yahoo fallback only
+ * if FMP returns nothing (Yahoo's unofficial endpoint rate-limits from Vercel).
+ * Cached 15 minutes (short TTL for market data), shared with the provider layer.
  */
 import { NextResponse } from "next/server";
 import { cacheGet, cacheSet } from "@/lib/cache";
+import { fetchMarketQuoteFmp, QUOTE_TTL } from "@/lib/fmp";
 
-const CACHE_TTL = 15 * 60; // 15 min
+const CACHE_TTL = QUOTE_TTL; // 15 min
 
 const WATCHLIST = [
   { ticker: "^GSPC", label: "S&P 500",        group: "Equity" },
@@ -28,7 +31,8 @@ interface QuoteResult {
   spark30d?: number[]; // last 30 closing prices (for SPY sparkline)
 }
 
-async function fetchQuote(ticker: string, includeSpark = false): Promise<QuoteResult | null> {
+/** Yahoo Finance fallback - used only when FMP returns no data for a ticker. */
+async function fetchQuoteYahoo(ticker: string, includeSpark = false): Promise<QuoteResult | null> {
   try {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1y`;
     const res = await fetch(url, {
@@ -77,13 +81,17 @@ async function fetchQuote(ticker: string, includeSpark = false): Promise<QuoteRe
 }
 
 export async function GET() {
-  const cacheKey = "market:dashboard:v2";
+  const cacheKey = "market:dashboard:v3"; // v3: FMP-first provider
   const cached = await cacheGet<unknown>(cacheKey);
   if (cached) return NextResponse.json(cached);
 
   const results = await Promise.all(
     WATCHLIST.map(async (item) => {
-      const q = await fetchQuote(item.ticker, ["^GSPC", "^DJI", "^IXIC"].includes(item.ticker));
+      const includeSpark = ["^GSPC", "^DJI", "^IXIC"].includes(item.ticker);
+      // FMP primary; fall back to Yahoo only if FMP returns nothing for this ticker.
+      const q =
+        (await fetchMarketQuoteFmp(item.ticker, includeSpark)) ??
+        (await fetchQuoteYahoo(item.ticker, includeSpark));
       return { ...item, ...(q ?? { price: null, change1d: null, change1w: null, change1m: null, changeYtd: null }) };
     })
   );

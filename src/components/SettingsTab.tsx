@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { T, ui, mono } from "./tokens";
-import { Card } from "./ui";
+import { Card, PageHeader } from "./ui";
 import universeData from "@/../data/universe.json";
 
 const UNIVERSE_COUNT = (universeData as unknown[]).length;
@@ -63,18 +63,13 @@ const MoonIcon = (
 export default function SettingsTab({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) => void }) {
   return (
     <div style={{ maxWidth: 720, display: "flex", flexDirection: "column", gap: 18 }}>
-      <div>
-        <h2 style={{ fontSize: 26, fontWeight: 300, color: T.text, margin: 0,
-          fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", letterSpacing: "0.04em", textTransform: "uppercase" }}>Settings</h2>
-        <p style={{ fontSize: 12, color: T.dim, marginTop: 4, ...ui }}>
-          Personalize how Tool looks and behaves on this device.
-        </p>
-      </div>
+      <PageHeader title="Settings"
+        subtitle="Personalize how ALCA looks and behaves on this device." />
 
       {/* Appearance */}
       <Card style={{ padding: "6px 22px 14px" }}>
-        <div style={{ fontSize: 11, fontWeight: 300, letterSpacing: "0.07em", textTransform: "uppercase",
-          color: T.muted, fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", padding: "16px 0 4px" }}>Appearance</div>
+        <div style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: "0.11em", textTransform: "uppercase",
+          color: T.muted, ...ui, padding: "16px 0 4px" }}>Appearance</div>
         <Row label="Theme" sub="Switch between the light and dark interface.">
           <Segmented<Theme> value={theme} onChange={setTheme} options={[
             { id: "light", label: "Light", icon: SunIcon },
@@ -85,10 +80,10 @@ export default function SettingsTab({ theme, setTheme }: { theme: Theme; setThem
 
       {/* About */}
       <Card style={{ padding: "6px 22px 16px" }}>
-        <div style={{ fontSize: 11, fontWeight: 300, letterSpacing: "0.07em", textTransform: "uppercase",
-          color: T.muted, fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", padding: "16px 0 4px" }}>About</div>
+        <div style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: "0.11em", textTransform: "uppercase",
+          color: T.muted, ...ui, padding: "16px 0 4px" }}>About</div>
         <Row label="Application" sub="Internal research aid - verify in your firm's system before client use.">
-          <span style={{ fontSize: 12, color: T.dim, ...mono }}>Tool v1</span>
+          <span style={{ fontSize: 12, color: T.dim, ...ui, fontWeight: 600 }}>ALCA Wealth</span>
         </Row>
         <Row label="Fund universe" sub="Funds available to screen, compare and analyze.">
           <span style={{ fontSize: 14, fontWeight: 600, color: T.data, ...mono }}>{UNIVERSE_COUNT.toLocaleString()}</span>
@@ -97,7 +92,7 @@ export default function SettingsTab({ theme, setTheme }: { theme: Theme; setThem
           <span style={{ fontSize: 12, color: T.dim, ...ui }}>Yahoo Finance · FRED</span>
         </Row>
         <div style={{ paddingTop: 14, fontSize: 11.5, color: T.muted, ...ui, lineHeight: 1.55 }}>
-          Tool · Fund Analytics. Research tool only - not investment advice.
+          ALCA Wealth · Investment Intelligence for Financial Advisors. Research aid - verify before client use.
         </div>
       </Card>
     </div>

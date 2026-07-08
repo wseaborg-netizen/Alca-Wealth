@@ -7,19 +7,22 @@
  */
 
 // ── In-memory fallback (local dev) ──────────────────────────────────────────
-interface MemEntry { value: string; updatedAt: number }
+// Honors a per-key TTL (mirrors Redis `ex`) so short-lived data (market: 15m)
+// and long-lived data (profiles/history: 24h) expire correctly in dev, not on
+// a single blanket window.
+interface MemEntry { value: string; expiresAt: number }
 const MEM: Map<string, MemEntry> = new Map();
-const TTL_MS = 24 * 60 * 60 * 1000; // 24h
+const DEFAULT_TTL_SECONDS = 24 * 60 * 60; // 24h
 
 function memGet<T>(key: string): T | null {
   const entry = MEM.get(key);
   if (!entry) return null;
-  if (Date.now() - entry.updatedAt > TTL_MS) { MEM.delete(key); return null; }
+  if (Date.now() > entry.expiresAt) { MEM.delete(key); return null; }
   try { return JSON.parse(entry.value) as T; } catch { return null; }
 }
 
-function memSet(key: string, value: unknown): void {
-  MEM.set(key, { value: JSON.stringify(value), updatedAt: Date.now() });
+function memSet(key: string, value: unknown, ttlSeconds = DEFAULT_TTL_SECONDS): void {
+  MEM.set(key, { value: JSON.stringify(value), expiresAt: Date.now() + ttlSeconds * 1000 });
 }
 
 // ── Upstash Redis (production) ───────────────────────────────────────────────
@@ -56,19 +59,34 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
 }
 
 export async function cacheSet(key: string, value: unknown, ttlSeconds = TTL_SECONDS): Promise<void> {
+  // Strip internal helpers like _ttlOverride before storing (applies to both backends).
+  if (typeof value === "object" && value !== null && "_ttlOverride" in value) {
+    const { _ttlOverride, ...rest } = value as Record<string, unknown>;
+    ttlSeconds = Math.floor((_ttlOverride as number) / 1000) || TTL_SECONDS;
+    value = rest;
+  }
   const redis = getRedis();
-  if (!redis) { memSet(key, value); return; }
+  if (!redis) { memSet(key, value, ttlSeconds); return; }
   try {
-    // Strip internal helpers like _ttlOverride before storing
-    if (typeof value === "object" && value !== null && "_ttlOverride" in value) {
-      const { _ttlOverride, ...rest } = value as Record<string, unknown>;
-      ttlSeconds = Math.floor((_ttlOverride as number) / 1000) || TTL_SECONDS;
-      value = rest;
-    }
     await redis.set(key, value, { ex: ttlSeconds });
   } catch {
-    memSet(key, value);
+    memSet(key, value, ttlSeconds);
   }
+}
+
+// ── Request coalescing ───────────────────────────────────────────────────────
+// Deduplicates concurrent identical fetches within one server instance: if two
+// components request the same ticker before the first resolves, they share one
+// in-flight promise instead of both hitting the provider. Complements the cache
+// (which dedups across time; this dedups across concurrency).
+const inflight = new Map<string, Promise<unknown>>();
+
+export function coalesce<T>(key: string, fn: () => Promise<T>): Promise<T> {
+  const existing = inflight.get(key);
+  if (existing) return existing as Promise<T>;
+  const p = fn().finally(() => inflight.delete(key));
+  inflight.set(key, p);
+  return p;
 }
 
 export async function cacheDelete(key: string): Promise<void> {

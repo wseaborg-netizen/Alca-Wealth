@@ -1,8 +1,35 @@
 @import "tailwindcss";
 
+/* ── shadcn/ui semantic tokens (Tailwind v4) - mapped onto the ALCA palette so
+   utilities like bg-card / border-input / bg-primary exist for components in
+   src/components/ui. Both themes resolve through the --c-* vars below. ── */
+@theme inline {
+  --color-background: var(--c-bg);
+  --color-foreground: var(--c-text);
+  --color-card: var(--c-panel);
+  --color-card-foreground: var(--c-text);
+  --color-popover: var(--c-panel);
+  --color-popover-foreground: var(--c-text);
+  --color-primary: var(--c-accent);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--c-panel3);
+  --color-secondary-foreground: var(--c-text);
+  --color-muted: var(--c-panel3);
+  --color-muted-foreground: var(--c-muted);
+  --color-accent: var(--c-panel2);
+  --color-accent-foreground: var(--c-text);
+  --color-destructive: var(--c-red);
+  --color-destructive-foreground: #ffffff;
+  --color-border: var(--c-line);
+  --color-input: var(--c-line2);
+  --color-ring: var(--c-accent);
+}
+
 /* ── Lynx - Theme tokens (black/white brand) ── */
 :root, [data-theme="light"] {
-  --c-bg: #FFFFFF;
+  /* Layered depth: app canvas (light gray) → sidebar (a step darker) → cards (white) */
+  --c-bg: #F5F5F7;
+  --c-sidebar: #EDEDF0;
   --c-panel: #FFFFFF;
   --c-panel2: #FAFAFA;
   --c-panel3: #F4F4F5;
@@ -10,11 +37,32 @@
   --c-line2: #D8D8DF;
   --c-text: #0A0A0B;
   --c-dim: #52525B;
-  --c-muted: #A1A1AA;
-  /* Lynx brand - black */
-  --c-accent: #0A0A0B;
-  --c-accentD: #262626;
-  --c-blueL: #F0F0F2;
+  --c-muted: #71717A; /* 4.5:1+ on white and --c-bg (WCAG AA for small labels) */
+  /* ALCA brand - institutional teal */
+  --c-accent: #0E7490;
+  --c-accentD: #0B5A70;
+  --c-blueL: #E7F2F5;
+  /* Elevation scale - the only four shadows in the product. 0 = flush,
+     1 = resting card, 2 = raised/hover, 3 = overlay (modals, dark heroes). */
+  --elev-0: none;
+  --elev-1: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.03);
+  --elev-2: 0 4px 10px rgba(16, 24, 40, 0.07), 0 2px 4px rgba(16, 24, 40, 0.05);
+  --elev-3: 0 12px 32px rgba(16, 24, 40, 0.14), 0 4px 10px rgba(16, 24, 40, 0.08);
+  --c-card-shadow: var(--elev-1);
+  /* Motion tokens - one rhythm across the product (Soft UI: 150-300ms, ease-out enter) */
+  --dur-fast: 150ms;
+  --dur-base: 220ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Chrome - the dark application frame (sidebar + header). Deliberately the
+     same in both themes: the frame is ALCA's constant, the canvas adapts. */
+  --c-chrome: #0E0F13;
+  --c-chrome-hover: rgba(255, 255, 255, 0.07);
+  --c-chrome-line: rgba(255, 255, 255, 0.08);
+  --c-chrome-text: #F2F2F4;
+  --c-chrome-dim: rgba(255, 255, 255, 0.66);
+  --c-chrome-muted: rgba(255, 255, 255, 0.42);
+  --c-chrome-accent: #5EEAD4;
+  --c-chrome-active-bg: rgba(94, 234, 212, 0.10);
   --c-data: #0E7490;
   --c-dataD: #155E75;
   --c-dataL: #ECFEFF;
@@ -22,9 +70,13 @@
   --c-amber: #B45309;
   --c-red: #DC2626;
   --c-green: #16A34A;
+  /* Type roles: one modern sans across the whole product (Geist). Mono handles figures. */
+  --font-display: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-text: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
 }
 [data-theme="dark"] {
   --c-bg: #0A0A0B;
+  --c-sidebar: #101012;
   --c-panel: #111113;
   --c-panel2: #1A1A1D;
   --c-panel3: #222226;
@@ -32,11 +84,17 @@
   --c-line2: #38383D;
   --c-text: #F4F4F5;
   --c-dim: #A1A1AA;
-  --c-muted: #71717A;
-  /* Lynx brand - white in dark mode */
-  --c-accent: #EFEFEF;
-  --c-accentD: #FFFFFF;
-  --c-blueL: #27272A;
+  --c-muted: #7E7E89; /* lifted for 4.5:1+ on dark surfaces */
+  /* ALCA brand - brighter teal in dark mode */
+  --c-accent: #2DD4BF;
+  --c-accentD: #5EEAD4;
+  --c-blueL: #0F2D2C;
+  /* Dark mode: elevation reads through surface lightness, not shadow */
+  --elev-0: none;
+  --elev-1: none;
+  --elev-2: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --elev-3: 0 16px 40px rgba(0, 0, 0, 0.55);
+  --c-card-shadow: var(--elev-1);
   --c-data: #2DD4BF;
   --c-dataD: #5EEAD4;
   --c-dataL: #10302E;
@@ -58,11 +116,11 @@ body {
   margin: 0;
   background: var(--c-bg);
   color: var(--c-text);
-  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-text);
   font-size: 14px;
   font-weight: 400;
   line-height: 1.5;
-  letter-spacing: -0.004em;
+  letter-spacing: -0.006em;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
   transition: background 0.2s, color 0.2s;
@@ -76,7 +134,7 @@ body {
 select option {
   background: var(--c-panel);
   color: var(--c-text);
-  font-family: 'Geist', sans-serif;
+  font-family: var(--font-text);
 }
 
 .data {
@@ -84,22 +142,63 @@ select option {
   font-variant-numeric: tabular-nums;
 }
 
-input:focus, select:focus {
+input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--c-accent) !important;
-  box-shadow: 0 0 0 3px rgba(10, 10, 11, 0.08);
+  box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.14);
 }
 
 [data-theme="dark"] input:focus,
-[data-theme="dark"] select:focus {
-  box-shadow: 0 0 0 3px rgba(255,255,255,0.08);
+[data-theme="dark"] select:focus,
+[data-theme="dark"] textarea:focus {
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.18);
 }
 
-tbody tr:hover { background: rgba(10, 10, 11, 0.02); }
+/* Keyboard focus ring for all interactive controls - premium a11y polish */
+button:focus-visible, a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--c-panel), 0 0 0 4px var(--c-accent);
+  border-radius: 8px;
+}
+
+/* ── Skeleton shimmer (loading placeholders) ── */
+@keyframes alca-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+/* ── Guided-builder step transition ── */
+@keyframes alca-step-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.alca-step { animation: alca-step-in 0.26s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* ── Institutional table defaults (inline styles still override where needed) ── */
+table { border-collapse: collapse; width: 100%; }
+thead th {
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--c-muted); text-align: left; padding: 9px 12px;
+  border-bottom: 1px solid var(--c-line);
+}
+tbody td { padding: 10px 12px; border-bottom: 1px solid var(--c-line); }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr { transition: background 0.12s; }
+tbody tr:hover { background: var(--c-panel2); }
 [data-theme="dark"] tbody tr:hover { background: rgba(255,255,255,0.03); }
 
-::selection { background: rgba(10, 10, 11, 0.1); }
-[data-theme="dark"] ::selection { background: rgba(255,255,255,0.15); }
+::selection { background: rgba(14, 116, 144, 0.16); }
+[data-theme="dark"] ::selection { background: rgba(45, 212, 191, 0.22); }
+
+/* ── Reduced motion: ambient/decorative animation off, transitions near-instant ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 /* ── Scroll-rail train animations ── */
 @keyframes af-wheel { to { transform: rotate(360deg); } }

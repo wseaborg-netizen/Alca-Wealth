@@ -4,7 +4,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { T, ui, mono, chartTooltip } from "./tokens";
-import { Btn, Label, Card, Spinner, ErrBanner, KPI } from "./ui";
+import { Btn, Label, Card, Spinner, ErrBanner, KPI, PageHeader } from "./ui";
 import type { FundRecord } from "../lib/funds";
 import { analyzeFund } from "../lib/analysis";
 import { computeTaxEfficiency } from "../lib/tax";
@@ -122,14 +122,8 @@ export default function AnalysisTab({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* Header / input */}
-      <div>
-        <h2 style={{ fontSize: 26, fontWeight: 300, color: T.text, margin: 0,
-          fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", letterSpacing: "0.04em", textTransform: "uppercase" }}>Critical Analysis</h2>
-        <p style={{ fontSize: 12, color: T.dim, marginTop: 4, ...ui }}>
-          A full rundown of one fund - strengths, weaknesses, and the current numbers behind them.
-        </p>
-      </div>
+      <PageHeader title="Critical Analysis"
+        subtitle="A full rundown of one fund - strengths, weaknesses, and the current numbers behind them." />
 
       <Card style={{ padding: "18px 22px" }}>
         <Label>Fund ticker</Label>

@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { T, ui } from "./tokens";
+import { PageHeader } from "./ui";
 
 export type RoadmapSpec = {
   id: string; label: string; icon: React.ReactNode;
@@ -10,11 +11,7 @@ export type RoadmapSpec = {
 export default function ComingSoonTab({ spec }: { spec: RoadmapSpec }) {
   return (
     <div style={{ maxWidth: 760, display: "flex", flexDirection: "column", gap: 18 }}>
-      <div>
-        <h2 style={{ fontSize: 26, fontWeight: 300, color: T.text, margin: 0,
-          fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", letterSpacing: "0.04em", textTransform: "uppercase" }}>{spec.label}</h2>
-        <p style={{ fontSize: 12, color: T.dim, marginTop: 4, ...ui }}>A planned addition to Tool - not built yet.</p>
-      </div>
+      <PageHeader title={spec.label} subtitle="A planned addition to ALCA - not built yet." />
 
       <div style={{ background: T.panel, border: `1px solid ${T.line}`, borderRadius: 14, overflow: "hidden" }}>
         {/* dark banner */}

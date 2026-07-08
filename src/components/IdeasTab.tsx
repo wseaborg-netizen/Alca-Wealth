@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { T, ui } from "./tokens";
+import { PageHeader } from "./ui";
 import ScreenTab from "./ScreenTab";
 import { FromFundMode, ProfileMode } from "./RecommendTab";
 
@@ -101,13 +102,13 @@ function CardGraphic({ id, accent }: { id: string; accent: string }) {
 
 function HubCard({ s, onClick }: { s: DiscoverSection; onClick: () => void }) {
   const [hover, setHover] = React.useState(false);
-  const accent = s.tag === "Screener" ? T.data : T.blue;
+  const accent = T.blue;
   return (
     <button onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
-      style={{ textAlign: "left", cursor: "pointer", borderRadius: 14, padding: "16px 16px 18px",
-        background: T.panel, border: `1.5px solid ${hover ? T.blue : T.line}`,
-        boxShadow: hover ? `0 10px 26px rgba(220,38,38,0.10)` : "none",
-        transform: hover ? "translateY(-3px)" : "none",
+      style={{ textAlign: "left", cursor: "pointer", borderRadius: 12, padding: "16px 16px 18px",
+        background: T.panel, border: `1px solid ${hover ? T.blue : T.line}`,
+        boxShadow: hover ? `0 8px 24px rgba(16,24,40,0.08)` : "var(--c-card-shadow)",
+        transform: hover ? "translateY(-2px)" : "none",
         transition: "all 0.16s cubic-bezier(0.4,0,0.2,1)",
         display: "flex", flexDirection: "column", minWidth: 0 }}>
       <CardGraphic id={s.id} accent={accent} />
@@ -121,11 +122,9 @@ function HubCard({ s, onClick }: { s: DiscoverSection; onClick: () => void }) {
           </div>
           <div style={{ fontSize: 15, fontWeight: 600, color: T.text, ...ui }}>{s.label}</div>
         </div>
-        <span style={{ fontSize: 8, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase",
-          color: s.tag === "Screener" ? T.data : T.gold,
-          background: (s.tag === "Screener" ? T.data : T.gold) + "14",
-          border: `1px solid ${(s.tag === "Screener" ? T.data : T.gold)}33`,
-          borderRadius: 5, padding: "3px 6px", whiteSpace: "nowrap", ...ui }}>{s.tag}</span>
+        <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase",
+          color: T.muted, background: T.panel3, border: `1px solid ${T.line2}`,
+          borderRadius: 5, padding: "3px 7px", whiteSpace: "nowrap", ...ui }}>{s.tag}</span>
       </div>
       <div style={{ fontSize: 12, color: T.dim, lineHeight: 1.5, ...ui, marginBottom: 11 }}>{s.desc}</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 13 }}>
@@ -161,19 +160,12 @@ export default function IdeasTab({
   const active = DISCOVER_SECTIONS.find((s) => s.id === mode);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-      {/* Section header */}
-      <div>
-        <h2 style={{ fontSize: 26, fontWeight: 300, color: T.text, margin: 0,
-          fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-          {mode === "all" ? "Discover" : `Discover · ${active?.label}`}
-        </h2>
-        <p style={{ fontSize: 12, color: T.dim, marginTop: 4, ...ui }}>
-          {mode === "all"
-            ? "Source funds for clients - screen the universe, find funds like a ticker they hold, or match a client profile."
-            : active?.desc}
-        </p>
-      </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <PageHeader
+        title={mode === "all" ? "Discover" : `Discover · ${active?.label}`}
+        subtitle={mode === "all"
+          ? "Source funds for clients - screen the universe, find funds like a ticker they hold, or match a client profile."
+          : active?.desc} />
 
       {/* Hub landing - all options */}
       {mode === "all" && (

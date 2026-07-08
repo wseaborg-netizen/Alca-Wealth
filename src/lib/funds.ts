@@ -1,11 +1,12 @@
 /**
- * Fund data service - fetches from Yahoo Finance with async cache.
- * Returns a normalized FundRecord with profile + KPIs.
- * Server-side only.
+ * Fund data service - normalizes a FundRecord (profile + KPIs) from the provider
+ * layer in ./fmp. Server-side only.
  *
- * Data priority:
- *   1. Live Yahoo Finance (ER, AUM, inception, name)
- *   2. Static fund-meta.json fallback (for funds Yahoo doesn't cover well)
+ * Data priority (see ./fmp for provider details):
+ *   1. FMP /profile — live name, AUM, inception (primary).
+ *   2. Static fund-meta.json — expense ratio always (FMP Starter doesn't expose
+ *      it), plus name/AUM/inception when FMP has no coverage for a ticker.
+ *   Price + dividend history is FMP-primary with a Tiingo fallback (see ./fmp).
  */
 
 import { cacheGet, cacheSet } from "./cache";
@@ -13,9 +14,21 @@ import { fetchHistory, fetchEtfInfo, fetchMutualFundInfo } from "./fmp";
 import { computeKpis, type KpiResult } from "./kpi";
 export type { KpiResult };
 import fundMetaRaw from "../data/fund-meta.json";
+import universeRaw from "@/../data/universe.json";
 
-// Static fallback - used only when Yahoo returns nothing
+// Static ER/AUM fallback - used when FMP has no coverage for a ticker.
 const FUND_META = fundMetaRaw as unknown as Record<string, { er: number; aum: number } | undefined>;
+
+// Static display-name source: the fund universe carries proper names for ~4.7k
+// tickers. Used as a fallback when FMP returns metadata (AUM/inception) but no
+// real companyName, so we never lock a ticker-as-name record into the cache.
+const NAME_BY_TICKER: Map<string, string> = new Map(
+  (universeRaw as Array<{ ticker: string; name?: string }>).map((u) => [u.ticker, (u.name ?? "").trim()]),
+);
+function staticName(ticker: string): string | null {
+  const n = NAME_BY_TICKER.get(ticker);
+  return n ? n : null;
+}
 
 export interface FundRecord {
   ticker: string;
@@ -62,9 +75,9 @@ const EMPTY_KPI: KpiResult = {
 };
 
 /**
- * Fetch live fund profile (ER, AUM, inception, name) from Yahoo Finance.
- * Mutual funds use the fundProfile module; ETFs use defaultKeyStatistics.
- * Falls back to static JSON if Yahoo returns nothing useful.
+ * Fetch live fund profile (AUM, inception, name) from FMP's /profile endpoint.
+ * Expense ratio isn't exposed on FMP Starter, so it always comes from the static
+ * curated meta. Falls back entirely to static JSON if FMP returns nothing useful.
  */
 async function fetchLiveProfile(ticker: string, vehicle: string): Promise<{
   name: string | null;
@@ -85,10 +98,11 @@ async function fetchLiveProfile(ticker: string, vehicle: string): Promise<{
       const liveName = (live as { name?: string | null }).name ?? null;
       const hasLive = liveName != null || live.aum != null || live.inceptionDate != null || live.expenseRatio != null;
       if (hasLive) {
-        // Live wins for name/AUM/inception; expense ratio isn't on this plan,
-        // so fall back to the curated static value.
+        // Live wins for AUM/inception; expense ratio isn't on this plan, so fall
+        // back to the curated static value. For the display name, prefer FMP's
+        // companyName but fall back to the universe name when FMP omits it.
         return {
-          name: liveName,
+          name: liveName ?? staticName(ticker),
           expenseRatio: live.expenseRatio ?? meta?.er ?? null,
           aum: live.aum ?? (meta ? meta.aum * 1e9 : null),
           inceptionDate: live.inceptionDate,
@@ -102,7 +116,7 @@ async function fetchLiveProfile(ticker: string, vehicle: string): Promise<{
 
   // Static fallback
   return {
-    name: null,
+    name: staticName(ticker),
     expenseRatio: meta?.er ?? null,
     aum: meta ? meta.aum * 1e9 : null,
     inceptionDate: null,
@@ -165,7 +179,11 @@ export async function getRecommendFund(
       dataSource: profile.source,
     };
 
-    await cacheSet(cacheKey, record, 6 * 3600);
+    // If no real name resolved (neither FMP nor the universe had one), cache
+    // briefly so a later request can retry for a name instead of locking
+    // ticker-as-name in for the full window.
+    const nameResolved = name !== ticker;
+    await cacheSet(cacheKey, record, nameResolved ? 6 * 3600 : 60 * 60);
     return record;
   } catch (err) {
     return {
@@ -222,7 +240,11 @@ export async function getFund(
       dataSource: profile.source,
     };
 
-    await cacheSet(cacheKey, record);
+    // If no real name resolved (neither FMP nor the universe had one), cache
+    // briefly so a later request can retry for a name instead of locking
+    // ticker-as-name in for 24h.
+    const nameResolved = name !== ticker;
+    await cacheSet(cacheKey, record, nameResolved ? 24 * 3600 : 60 * 60);
     return record;
   } catch (err) {
     const record: FundRecord = {

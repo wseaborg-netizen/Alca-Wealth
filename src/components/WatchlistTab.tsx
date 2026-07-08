@@ -416,13 +416,13 @@ function PageHeader() {
   return (
     <div style={{ marginBottom: 20 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <h2 style={{ fontSize: 26, fontWeight: 300, color: "var(--c-text)", margin: 0,
-          fontFamily: "'Cormorant Garamond', 'Cormorant', Georgia, serif", letterSpacing: "0.04em", textTransform: "uppercase" }}>Watchlist</h2>
-        <span style={{ fontSize: 10, fontWeight: 600, color: T.data, background: "var(--c-dataL)",
-          border: `1px solid ${T.data}44`, borderRadius: 20, padding: "2px 9px", ...ui,
-          letterSpacing: "0.08em", textTransform: "uppercase" }}>Live</span>
+        <h1 style={{ fontSize: 21, fontWeight: 600, color: "var(--c-text)", margin: 0,
+          ...ui, letterSpacing: "-0.01em", lineHeight: 1.2 }}>Watchlist</h1>
+        <span style={{ fontSize: 9.5, fontWeight: 600, color: T.data, background: "var(--c-dataL)",
+          border: `1px solid ${T.data}44`, borderRadius: 5, padding: "2px 8px", ...ui,
+          letterSpacing: "0.07em", textTransform: "uppercase" }}>Live</span>
       </div>
-      <p style={{ fontSize: 12.5, color: "var(--c-dim)", marginTop: 5, ...ui, lineHeight: 1.55 }}>
+      <p style={{ fontSize: 13, color: "var(--c-dim)", marginTop: 4, ...ui, lineHeight: 1.5 }}>
         Track funds in real time. Tap a factor chip to instantly find replacements in Compare or Analysis.
       </p>
     </div>
