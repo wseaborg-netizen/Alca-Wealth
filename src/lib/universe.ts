@@ -1,17 +1,17 @@
 /**
  * THE fund universe — the single source of funds for the whole app.
  *
- * Loads data/classified_universe.json (clean universe v1) and exposes only the
- * VERIFIED funds. The old data/universe.json is no longer used anywhere.
+ * Loads data/generated/fund-universe.json and exposes only the VERIFIED funds.
+ * This is the ONLY fund-universe source the website reads.
  *
  * Each fund is normalized to the shape the existing routes/UI consume
  * ({ ticker, name, vehicle, category, benchmark }) while carrying the full
- * classification through. `category` is mapped from the new precise
- * primary_category onto the legacy category vocabulary the screener and
- * portfolio sleeves still match on — a compatibility shim so this change swaps
- * only the DATA SOURCE, not the portfolio/screen logic (that migration is later).
+ * classification through. `category` is mapped from the precise primary_category
+ * onto the legacy category vocabulary the screener and portfolio sleeves match
+ * on — a compatibility shim so the data source is centralized here without
+ * touching portfolio/screen logic.
  */
-import raw from "@/../data/classified_universe.json";
+import raw from "@/../data/generated/fund-universe.json";
 
 export interface UniverseFund {
   // Normalized (what current consumers use)

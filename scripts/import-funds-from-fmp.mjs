@@ -1,32 +1,25 @@
 #!/usr/bin/env node
 /**
- * Build a NEW fund universe from a plain ticker list, using FMP only.
+ * Import fund reference data from FMP (`npm run funds:import`).
  *
- * This script is intentionally standalone:
- *   - It does NOT read, merge with, or modify the old data/universe.json.
- *   - It does NOT classify anything (no category/style/benchmark) — identity only.
- *   - It only pulls basic facts FMP returns for each ticker.
+ * Identity only — pulls the basic facts FMP returns per ticker (name, issuer,
+ * fund type). No classification (category/style/benchmark) happens here.
  *
- * Input : data/tickers.txt — one ticker per line. (Override: node ... <path>.)
- * Output: data/new_universe.json          (successful lookups)
- *         data/new_universe_failed.json    (failed / unsupported tickers)
+ * Input : data/input/fund-tickers.txt — one ticker per line. (Override: node ... <path>.)
+ * Output: data/generated/fund-reference-data.json   (successful lookups)
+ *         data/generated/fund-import-failures.json   (failed / unsupported tickers)
  *
- * API key is read from the environment (FMP_API_KEY), then .env.local — never
- * hardcoded.
+ * API key is read from the environment (FMP_API_KEY), then .env.local — never hardcoded.
  */
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { PATHS, ROOT, rel } from "./paths.mjs";
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const OUT_OK = join(ROOT, "data", "new_universe.json");
-const OUT_FAIL = join(ROOT, "data", "new_universe_failed.json");
 const STABLE = "https://financialmodelingprep.com/stable";
 
 // ── API key (env → .env.local), never hardcoded ───────────────────────────────
 function fmpKey() {
   if (process.env.FMP_API_KEY) return process.env.FMP_API_KEY;
-  const envFile = join(ROOT, ".env.local");
+  const envFile = `${ROOT}/.env.local`;
   if (existsSync(envFile)) {
     const m = readFileSync(envFile, "utf8").match(/^FMP_API_KEY=(.*)$/m);
     if (m) return m[1].trim().replace(/^["']|["']$/g, "");
@@ -37,11 +30,7 @@ function fmpKey() {
 // ── Locate the ticker list ────────────────────────────────────────────────────
 function tickersPath() {
   const override = process.argv[2];
-  const candidates = [
-    override && join(ROOT, override),
-    join(ROOT, "data", "tickers.txt"),
-    join(ROOT, "tickers.txt"),
-  ].filter(Boolean);
+  const candidates = [override && `${ROOT}/${override}`, PATHS.inputTickers].filter(Boolean);
   for (const p of candidates) if (existsSync(p)) return p;
   throw new Error(`No ticker file found (looked for: ${candidates.join(", ")})`);
 }
@@ -107,7 +96,7 @@ async function main() {
   const key = fmpKey();
   const path = tickersPath();
   const tickers = readTickers(path);
-  console.log(`Reading ${tickers.length} tickers from: ${path.replace(ROOT + "/", "")}`);
+  console.log(`Reading ${tickers.length} tickers from: ${rel(path)}`);
 
   const ok = [];
   const failed = [];
@@ -121,13 +110,13 @@ async function main() {
   }
   process.stdout.write("\n");
 
-  writeFileSync(OUT_OK, JSON.stringify({ generatedAt: new Date().toISOString(), count: ok.length, funds: ok }, null, 2) + "\n");
-  writeFileSync(OUT_FAIL, JSON.stringify({ generatedAt: new Date().toISOString(), count: failed.length, tickers: failed }, null, 2) + "\n");
+  writeFileSync(PATHS.referenceData, JSON.stringify({ generatedAt: new Date().toISOString(), count: ok.length, funds: ok }, null, 2) + "\n");
+  writeFileSync(PATHS.importFailures, JSON.stringify({ generatedAt: new Date().toISOString(), count: failed.length, tickers: failed }, null, 2) + "\n");
 
   console.log(`\nDone.`);
-  console.log(`  ✓ ${ok.length} written → data/new_universe.json`);
-  console.log(`  ✗ ${failed.length} written → data/new_universe_failed.json`);
+  console.log(`  ✓ ${ok.length} written → ${rel(PATHS.referenceData)}`);
+  console.log(`  ✗ ${failed.length} written → ${rel(PATHS.importFailures)}`);
   if (failed.length) console.log(`    failed: ${failed.slice(0, 12).map((f) => f.ticker).join(", ")}${failed.length > 12 ? " …" : ""}`);
 }
 
-main().catch((e) => { console.error("build-new-universe failed:", e.message); process.exit(1); });
+main().catch((e) => { console.error("funds:import failed:", e.message); process.exit(1); });

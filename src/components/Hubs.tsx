@@ -4,7 +4,7 @@ import { T, ui, mono } from "./tokens";
 import { PageHeader } from "./ui";
 import { loadClients, riskLabel, type Client } from "../lib/client";
 
-// Destinations the hub cards can route to (mapped to real tabs in FundGrid).
+// Destinations the hub cards can route to (mapped to real tabs in AppShell).
 export type HubDest =
   | "discover" | "compare" | "analysis" | "watchlist" | "replacements"
   | "build" | "improve" | "portfolios" | "present" | "opportunity";

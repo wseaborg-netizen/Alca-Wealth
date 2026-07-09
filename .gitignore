@@ -46,6 +46,11 @@ next-env.d.ts
 # Local env
 .env.local
 
-# local universe backup (git history is the real backup)
-data/universe.backup.json
 files.zip
+
+# Generated fund-pipeline intermediates (regenerable via `npm run funds:build`).
+# NOTE: data/generated/fund-universe.json is intentionally NOT ignored — the
+# website imports it at build time, so it must stay committed.
+data/generated/fund-reference-data.json
+data/generated/fund-review-queue.json
+data/generated/fund-import-failures.json

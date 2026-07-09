@@ -1,25 +1,25 @@
 #!/usr/bin/env node
 /**
- * Rule-based classifier for the NEW FMP fund universe.
+ * Rule-based fund classifier (`npm run funds:classify`).
  *
- * Input : data/new_universe.json      ({ funds: [{ ticker, fund_name, issuer, fund_type }] })
- * Output: data/classified_universe.json    (high-confidence, verified: true)
- *         data/classification_review.json   (unclear — verified: false + reason)
+ * Input : data/generated/fund-reference-data.json    ({ funds: [{ ticker, fund_name, issuer, fund_type }] })
+ *         data/config/fund-taxonomy.json              (controlled values — post-classify validation)
+ *         data/config/fund-classification-overrides.json  (manual, fund-specific)
+ * Output: data/generated/fund-universe.json           (high-confidence, verified: true)
+ *         data/generated/fund-review-queue.json        (unclear — verified: false + reason)
  *
  * Rules only. No AI, no network calls, no guessing. If the fund name does not
- * clearly determine a category, the fund is sent to review with a reason and a
- * best-effort suggestion (never written as verified). The old universe file is
- * not read, merged, or modified.
+ * clearly determine a category, the fund is sent to the review queue with a
+ * reason and a best-effort suggestion (never written as verified).
  */
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { PATHS, rel } from "./paths.mjs";
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const IN = join(ROOT, "data", "new_universe.json");
-const OUT_OK = join(ROOT, "data", "classified_universe.json");
-const OUT_REVIEW = join(ROOT, "data", "classification_review.json");
-const OVERRIDES = join(ROOT, "data", "classification_overrides.json");
+const IN = PATHS.referenceData;
+const OUT_OK = PATHS.universe;
+const OUT_REVIEW = PATHS.reviewQueue;
+const OVERRIDES = PATHS.overrides;
+const TAXONOMY = PATHS.taxonomy;
 
 const has = (n, ...subs) => subs.some((s) => n.includes(s));
 
@@ -219,23 +219,25 @@ function classify(fund) {
 
 // ── Run ──
 if (!existsSync(IN)) {
-  console.error(`Input not found: data/new_universe.json — run \`npm run universe:new\` first.`);
+  console.error(`Input not found: ${rel(IN)} — run \`npm run funds:import\` first.`);
   process.exit(1);
 }
 const input = JSON.parse(readFileSync(IN, "utf8"));
 const funds = Array.isArray(input) ? input : (input.funds ?? []);
+// Controlled taxonomy (loaded for a post-classification validity check).
+const taxonomy = existsSync(TAXONOMY) ? JSON.parse(readFileSync(TAXONOMY, "utf8")) : null;
 
 // ── Manual overrides ──────────────────────────────────────────────────────────
 // If a ticker appears here, its classification is used verbatim instead of the
 // rules. Accepts an array of records (each with a `ticker`) OR an object keyed by
-// ticker. The 5 review funds are NOT hardcoded in this script — they live only in
-// data/classification_overrides.json.
+// ticker. Fund-specific classifications live only in
+// data/config/fund-classification-overrides.json — never hardcoded in this script.
 function loadOverrides() {
   const map = new Map();
   if (!existsSync(OVERRIDES)) return map;
   let raw;
   try { raw = JSON.parse(readFileSync(OVERRIDES, "utf8")); } catch (e) {
-    console.error(`classification_overrides.json is not valid JSON: ${e.message}`); process.exit(1);
+    console.error(`${rel(OVERRIDES)} is not valid JSON: ${e.message}`); process.exit(1);
   }
   const records = Array.isArray(raw)
     ? raw
@@ -269,7 +271,7 @@ for (const f of funds) {
   }
 }
 
-// Overrides for tickers not present in new_universe.json (e.g. funds FMP can't
+// Overrides for tickers not present in the reference data (e.g. funds FMP can't
 // find) are still honored — appended so nothing you manually classify is lost.
 for (const [ticker, ov] of overrides) {
   if (usedOverrides.has(ticker)) continue;
@@ -279,6 +281,18 @@ for (const [ticker, ov] of overrides) {
 writeFileSync(OUT_OK, JSON.stringify({ generatedAt: new Date().toISOString(), count: classified.length, funds: classified }, null, 2) + "\n");
 writeFileSync(OUT_REVIEW, JSON.stringify({ generatedAt: new Date().toISOString(), count: review.length, funds: review }, null, 2) + "\n");
 
+// Light taxonomy validity check on the classified output (funds:validate is the strict gate).
+let taxIssues = 0;
+if (taxonomy) {
+  const enums = ["fund_type", "asset_class", "primary_category", "region", "management_style", "portfolio_role", "investment_focus", "benchmark_category"];
+  const nullable = ["market_cap", "style", "style_box"];
+  for (const f of classified) {
+    for (const k of enums) if (!(taxonomy[k] ?? []).includes(f[k])) taxIssues++;
+    for (const k of nullable) if (f[k] != null && !(taxonomy[k] ?? []).includes(f[k])) taxIssues++;
+  }
+}
+
 console.log(`Classified ${funds.length} funds${overrides.size ? ` (${overrides.size} manual override${overrides.size > 1 ? "s" : ""})` : ""}:`);
-console.log(`  ✓ ${classified.length} verified → data/classified_universe.json`);
-console.log(`  ? ${review.length} need review → data/classification_review.json`);
+console.log(`  ✓ ${classified.length} verified → ${rel(OUT_OK)}`);
+console.log(`  ? ${review.length} need review → ${rel(OUT_REVIEW)}`);
+if (taxonomy) console.log(`  taxonomy check: ${taxIssues} invalid value${taxIssues === 1 ? "" : "s"}`);

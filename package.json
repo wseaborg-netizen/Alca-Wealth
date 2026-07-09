@@ -1,5 +1,5 @@
 {
-  "name": "fundgrid",
+  "name": "alca-wealth",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -8,8 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "test": "jest",
-    "universe:new": "node scripts/build-new-universe.mjs",
-    "universe:classify": "node scripts/classify-universe.mjs"
+    "funds:import": "node scripts/import-funds-from-fmp.mjs",
+    "funds:classify": "node scripts/classify-funds.mjs",
+    "funds:build": "npm run funds:import && npm run funds:classify",
+    "funds:validate": "node scripts/validate-funds.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.3.0",

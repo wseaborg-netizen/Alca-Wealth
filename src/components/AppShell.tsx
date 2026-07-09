@@ -168,13 +168,13 @@ const SIDEBAR_CLOSE = 60;
 
 // ── Main component ───────────────────────────────────────────────────────────────
 
-interface FundGridProps {
+interface AppShellProps {
   authMode?: "full" | "preview" | null;
   authUser?: string | null;
   onLogout?: () => void;
 }
 
-export default function FundGrid({ authMode, authUser, onLogout }: FundGridProps = {}) {
+export default function AppShell({ authMode, authUser, onLogout }: AppShellProps = {}) {
   const [tab, setTab]   = useState<TabId>("dashboard");
   const [open, setOpen] = useState(true);
   const [mounted, setMounted] = useState<Set<TabId>>(new Set<TabId>(["dashboard"]));

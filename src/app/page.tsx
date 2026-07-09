@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { T, ui, mono, lynx } from "@/components/tokens";
-import FundGrid from "@/components/FundGrid";
+import AppShell from "@/components/AppShell";
 import {
   AreaChart, Area, ResponsiveContainer,
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Legend,
@@ -377,7 +377,7 @@ export default function Home() {
     // Demo mode: skip the lock screen entirely, go straight to the tool.
     if (SHOW_TOOL_DIRECTLY) return;
     // The lock screen is always a fully black splash - force dark tokens
-    // regardless of the saved theme. (FundGrid restores the user's real theme
+    // regardless of the saved theme. (AppShell restores the user's real theme
     // on its own mount after sign-in.)
     setThemeLocal("dark");
     document.documentElement.setAttribute("data-theme", "dark");
@@ -429,7 +429,7 @@ export default function Home() {
 
   // ── Render app if authed ──────────────────────────────────────────────────
   if (authMode === "full" || authMode === "preview") {
-    return <FundGrid authMode={authMode} authUser={authUser} onLogout={async () => {
+    return <AppShell authMode={authMode} authUser={authUser} onLogout={async () => {
       // In demo mode, keep coworkers inside the tool (don't drop to the hidden lock screen).
       if (SHOW_TOOL_DIRECTLY) return;
       await fetch("/api/auth", { method: "POST", headers: { "Content-Type": "application/json" },
