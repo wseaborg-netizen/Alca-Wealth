@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFund } from "@/lib/funds";
-import universeData from "@/../data/universe.json";
-
-type UniverseEntry = { ticker: string; name: string; category: string; vehicle: string; benchmark: string };
-const UNIVERSE = universeData as UniverseEntry[];
+import { getFund, inferVehicle } from "@/lib/funds";
+import { UNIVERSE } from "@/lib/universe";
 
 export async function GET(
   _req: NextRequest,
@@ -14,9 +11,11 @@ export async function GET(
   const entry = UNIVERSE.find((u) => u.ticker === t);
 
   if (!entry) {
-    // Allow arbitrary tickers for compare view
+    // Allow arbitrary tickers not in the universe. Infer the vehicle from the
+    // ticker rather than assuming ETF, so mutual funds (e.g. ABEYX) aren't
+    // mislabeled. Category stays "Other" — we have no classification for it.
     try {
-      const record = await getFund(t, "ETF", "Other", "SPY");
+      const record = await getFund(t, inferVehicle(t), "Other", "SPY");
       return NextResponse.json(record);
     } catch {
       return NextResponse.json({ error: `Ticker ${t} not found` }, { status: 404 });

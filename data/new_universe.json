@@ -1,0 +1,1968 @@
+{
+  "generatedAt": "2026-07-09T21:07:33.416Z",
+  "count": 327,
+  "funds": [
+    {
+      "ticker": "VTI",
+      "fund_name": "Vanguard Total Stock Market ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VOO",
+      "fund_name": "Vanguard S&P 500 ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IVV",
+      "fund_name": "iShares Core S&P 500 ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SPY",
+      "fund_name": "State Street SPDR S&P 500 ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "ITOT",
+      "fund_name": "iShares Core S&P Total U.S. Stock Market ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SCHB",
+      "fund_name": "Schwab U.S. Broad Market ETF",
+      "issuer": "Schwab",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SPTM",
+      "fund_name": "State Street SPDR Portfolio S&P 1500 Composite Stock Market ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VUG",
+      "fund_name": "Vanguard Growth ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SCHG",
+      "fund_name": "Schwab U.S. Large-Cap Growth ETF",
+      "issuer": "Schwab",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IWF",
+      "fund_name": "iShares Russell 1000 Growth ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "MGK",
+      "fund_name": "Vanguard Mega Cap Growth ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VTV",
+      "fund_name": "Vanguard Value ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SCHV",
+      "fund_name": "Schwab U.S. Large-Cap Value ETF",
+      "issuer": "Schwab",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IWD",
+      "fund_name": "iShares Russell 1000 Value ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VO",
+      "fund_name": "Vanguard Mid-Cap ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IJH",
+      "fund_name": "iShares Core S&P Mid-Cap ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SCHM",
+      "fund_name": "Schwab U.S. Mid-Cap ETF",
+      "issuer": "Schwab",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IWR",
+      "fund_name": "iShares Russell Mid-Cap ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VB",
+      "fund_name": "Vanguard Small-Cap ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IJR",
+      "fund_name": "iShares Core S&P Small-Cap ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SCHA",
+      "fund_name": "Schwab U.S. Small-Cap ETF",
+      "issuer": "Schwab",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IWM",
+      "fund_name": "iShares Russell 2000 ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VBK",
+      "fund_name": "Vanguard Small-Cap Growth ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IWO",
+      "fund_name": "iShares Russell 2000 Growth ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VBR",
+      "fund_name": "Vanguard Small-Cap Value ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IWN",
+      "fund_name": "iShares Russell 2000 Value ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VEA",
+      "fund_name": "Vanguard FTSE Developed Markets ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IEFA",
+      "fund_name": "iShares Core MSCI EAFE ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SCHF",
+      "fund_name": "Schwab International Equity ETF",
+      "issuer": "Schwab",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VXUS",
+      "fund_name": "Vanguard Total International Stock ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IXUS",
+      "fund_name": "iShares Core MSCI Total International Stock ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VWO",
+      "fund_name": "Vanguard FTSE Emerging Markets ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IEMG",
+      "fund_name": "iShares Core MSCI Emerging Markets ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SCHE",
+      "fund_name": "Schwab Emerging Markets Equity ETF",
+      "issuer": "Schwab",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VT",
+      "fund_name": "Vanguard Total World Stock ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "ACWI",
+      "fund_name": "iShares MSCI ACWI ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "BND",
+      "fund_name": "Vanguard Total Bond Market ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "AGG",
+      "fund_name": "iShares Core U.S. Aggregate Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SCHZ",
+      "fund_name": "Schwab U.S. Aggregate Bond ETF",
+      "issuer": "Schwab",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "BSV",
+      "fund_name": "Vanguard Short-Term Bond ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VGSH",
+      "fund_name": "Vanguard Short-Term Treasury ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SHY",
+      "fund_name": "iShares 1-3 Year Treasury Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VGIT",
+      "fund_name": "Vanguard Intermediate-Term Treasury ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IEF",
+      "fund_name": "iShares 7-10 Year Treasury Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VGLT",
+      "fund_name": "Vanguard Long-Term Treasury ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "TLT",
+      "fund_name": "iShares 20+ Year Treasury Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "TIP",
+      "fund_name": "iShares TIPS Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SCHP",
+      "fund_name": "Schwab US TIPS ETF",
+      "issuer": "Schwab",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VTIP",
+      "fund_name": "Vanguard Short-Term Inflation-Protected Securities ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VCIT",
+      "fund_name": "Vanguard Intermediate-Term Corporate Bond ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "LQD",
+      "fund_name": "iShares iBoxx $ Investment Grade Corporate Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VCSH",
+      "fund_name": "Vanguard Short-Term Corporate Bond ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "HYG",
+      "fund_name": "iShares iBoxx $ High Yield Corporate Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "JNK",
+      "fund_name": "State Street SPDR Bloomberg High Yield Bond ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "USHY",
+      "fund_name": "iShares Broad USD High Yield Corporate Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "BNDX",
+      "fund_name": "Vanguard Total International Bond ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "BWX",
+      "fund_name": "SPDR Bloomberg International Treasury Bond ETF",
+      "issuer": "SPDR",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VTEB",
+      "fund_name": "Vanguard Tax-Exempt Bond ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "MUB",
+      "fund_name": "iShares National Muni Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VNQ",
+      "fund_name": "Vanguard Real Estate ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SCHH",
+      "fund_name": "Schwab U.S. REIT ETF",
+      "issuer": "Schwab",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IYR",
+      "fund_name": "iShares U.S. Real Estate ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VIG",
+      "fund_name": "Vanguard Dividend Appreciation ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SCHD",
+      "fund_name": "Schwab U.S. Dividend Equity ETF",
+      "issuer": "Schwab",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "DGRO",
+      "fund_name": "iShares Core Dividend Growth ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "HDV",
+      "fund_name": "iShares Core High Dividend ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VGT",
+      "fund_name": "Vanguard Information Technology ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "XLK",
+      "fund_name": "State Street Technology Select Sector SPDR ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IYW",
+      "fund_name": "iShares U.S. Technology ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VHT",
+      "fund_name": "Vanguard Health Care ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "XLV",
+      "fund_name": "State Street Health Care Select Sector SPDR ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IYH",
+      "fund_name": "iShares U.S. Healthcare ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VFH",
+      "fund_name": "Vanguard Financials ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "XLF",
+      "fund_name": "State Street Financial Select Sector SPDR ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IYF",
+      "fund_name": "iShares U.S. Financials ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VIS",
+      "fund_name": "Vanguard Industrials ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "XLI",
+      "fund_name": "State Street Industrial Select Sector SPDR ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VDE",
+      "fund_name": "Vanguard Energy ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "XLE",
+      "fund_name": "State Street Energy Select Sector SPDR ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VDC",
+      "fund_name": "Vanguard Consumer Staples ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "XLP",
+      "fund_name": "State Street Consumer Staples Select Sector SPDR ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VCR",
+      "fund_name": "Vanguard Consumer Discretionary ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "XLY",
+      "fund_name": "State Street Consumer Discretionary Select Sector SPDR ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VPU",
+      "fund_name": "Vanguard Utilities ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "XLU",
+      "fund_name": "State Street Utilities Select Sector SPDR ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VAW",
+      "fund_name": "Vanguard Materials ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "XLB",
+      "fund_name": "State Street Materials Select Sector SPDR ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VOX",
+      "fund_name": "Vanguard Communication Services ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "XLC",
+      "fund_name": "State Street Communication Services Select Sector SPDR ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "XLRE",
+      "fund_name": "State Street Real Estate Select Sector SPDR ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "GLD",
+      "fund_name": "SPDR Gold Shares",
+      "issuer": "SPDR",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IAU",
+      "fund_name": "iShares Gold Trust",
+      "issuer": "iShares",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "DBC",
+      "fund_name": "Invesco DB Commodity Index Tracking Fund",
+      "issuer": "Invesco",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "PDBC",
+      "fund_name": "Invesco Optimum Yield Diversified Commodity Strategy No K-1 ETF",
+      "issuer": "Invesco",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "USMV",
+      "fund_name": "iShares MSCI USA Min Vol Factor ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SPLV",
+      "fund_name": "Invesco S&P 500 Low Volatility ETF",
+      "issuer": "Invesco",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "RSP",
+      "fund_name": "Invesco S&P 500 Equal Weight ETF",
+      "issuer": "Invesco",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "QQQ",
+      "fund_name": "Invesco QQQ Trust, Series 1",
+      "issuer": "Invesco",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "QQQM",
+      "fund_name": "Invesco NASDAQ 100 ETF",
+      "issuer": "Invesco",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "AVGE",
+      "fund_name": "Avantis All Equity Markets ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "AVUS",
+      "fund_name": "Avantis U.S. Equity ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "AVUV",
+      "fund_name": "Avantis U.S. Small Cap Value ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "AVDV",
+      "fund_name": "Avantis International Small Cap Value ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "AVDE",
+      "fund_name": "Avantis International Equity ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "AVEM",
+      "fund_name": "Avantis Emerging Markets Equity ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "AGTHX",
+      "fund_name": "American Funds The Growth Fund of America Class A",
+      "issuer": "American Funds",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "ANCFX",
+      "fund_name": "American Funds Fundamental Investors",
+      "issuer": "American Funds",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "ANWPX",
+      "fund_name": "American Funds New Perspective Fund Class A",
+      "issuer": "American Funds",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "AIVSX",
+      "fund_name": "American Funds Invmt Co of Amer A",
+      "issuer": "American Funds",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "AWSHX",
+      "fund_name": "American Funds Washington Mutual A",
+      "issuer": "American Funds",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "ABALX",
+      "fund_name": "American Funds American Balanced A",
+      "issuer": "American Funds",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "AEPGX",
+      "fund_name": "American Funds EuroPacific Growth Fund Class A",
+      "issuer": "American Funds",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "CWGIX",
+      "fund_name": "American Funds Capital World Growth and Income Fund Class A",
+      "issuer": "American Funds",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "SMCWX",
+      "fund_name": "American Funds SMALLCAP World Fund Class A",
+      "issuer": "American Funds",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "AMECX",
+      "fund_name": "American Funds The Income Fund of America Class A",
+      "issuer": "American Funds",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "AMCPX",
+      "fund_name": "American Funds AMCAP A",
+      "issuer": "American Funds",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "AMRFX",
+      "fund_name": "American Funds American Mutual Fund",
+      "issuer": "American Funds",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "RERGX",
+      "fund_name": "American Funds EUPAC R6",
+      "issuer": "American Funds",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "RGAGX",
+      "fund_name": "American Funds The Growth Fund of America Class R-6",
+      "issuer": "American Funds",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "NEWFX",
+      "fund_name": "American Funds New World Fund Class A",
+      "issuer": "American Funds",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "BALFX",
+      "fund_name": "American Funds American Balanced F1",
+      "issuer": "American Funds",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "AMPCX",
+      "fund_name": "American Funds AMCAP Fund Class C",
+      "issuer": "American Funds",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VFIAX",
+      "fund_name": "Vanguard 500 Index Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VTSAX",
+      "fund_name": "Vanguard Total Stock Market Index Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VTIAX",
+      "fund_name": "Vanguard Total International Stock Index Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VTMGX",
+      "fund_name": "Vanguard Developed Markets Index Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VEMAX",
+      "fund_name": "Vanguard Emerging Markets Stock Index Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VGSLX",
+      "fund_name": "Vanguard Real Estate Index Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VBTLX",
+      "fund_name": "Vanguard Total Bond Market Index Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VTABX",
+      "fund_name": "Vanguard Total International Bond Index Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VWENX",
+      "fund_name": "Vanguard Wellington Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VWINX",
+      "fund_name": "Vanguard Wellesley Income Fund Investor Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VDIGX",
+      "fund_name": "Vanguard Dividend Growth Fund",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VIGAX",
+      "fund_name": "Vanguard Growth Index Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VMGMX",
+      "fund_name": "Vanguard Mid-Cap Growth Index Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VMVAX",
+      "fund_name": "Vanguard Mid-Cap Value Index Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VSMAX",
+      "fund_name": "Vanguard Small-Cap Index Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VSIAX",
+      "fund_name": "Vanguard Small-Cap Value Index Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VIMAX",
+      "fund_name": "Vanguard Mid-Cap Index Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VSGAX",
+      "fund_name": "Vanguard Small-Cap Growth Index Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VVIAX",
+      "fund_name": "Vanguard Value Index Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VHYAX",
+      "fund_name": "Vanguard High Dividend Yield Index Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FXAIX",
+      "fund_name": "Fidelity 500 Index Fund",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FSKAX",
+      "fund_name": "Fidelity Total Market Index Fund",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FTIHX",
+      "fund_name": "Fidelity Total International Index Fund",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FZROX",
+      "fund_name": "Fidelity ZERO Total Market Index Fund",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FZILX",
+      "fund_name": "Fidelity International Index Fund",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FSPGX",
+      "fund_name": "Fidelity Large Cap Growth Idx",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FLCOX",
+      "fund_name": "Fidelity Large Cap Value Index Fund",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FLCSX",
+      "fund_name": "Fidelity Large Cap Stock",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FCPGX",
+      "fund_name": "Fidelity Small Cap Growth Fund",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FSSNX",
+      "fund_name": "Fidelity Small Cap Index Fund",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FSMDX",
+      "fund_name": "Fidelity Mid Cap Index",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FXNAX",
+      "fund_name": "Fidelity U.S. Bond Index Fund",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FBALX",
+      "fund_name": "Fidelity Balanced Fund",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FPURX",
+      "fund_name": "Fidelity Puritan Fund",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FDGRX",
+      "fund_name": "Fidelity Growth Company Fund Retail Class",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FCNTX",
+      "fund_name": "Fidelity Contrafund",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FFIDX",
+      "fund_name": "Fidelity Fund",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "TRBCX",
+      "fund_name": "T. Rowe Price Blue Chip Growth Fund",
+      "issuer": "T. Rowe Price",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "PRWCX",
+      "fund_name": "T. Rowe Price Capital Appreciation Fund",
+      "issuer": "T. Rowe Price",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "PRDGX",
+      "fund_name": "T. Rowe Price Dividend Growth Fund, Inc.",
+      "issuer": "T. Rowe Price",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "PRGFX",
+      "fund_name": "T. Rowe Price Growth Stock Fund",
+      "issuer": "T. Rowe Price",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "PRNHX",
+      "fund_name": "T. Rowe Price New Horizons Fund",
+      "issuer": "T. Rowe Price",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "RPMGX",
+      "fund_name": "T. Rowe Price Mid-Cap Growth Fund",
+      "issuer": "T. Rowe Price",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "OTCFX",
+      "fund_name": "T. Rowe Price Small-Cap Stock Fund",
+      "issuer": "T. Rowe Price",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "POMIX",
+      "fund_name": "T. Rowe Price Total Equity Market Index Fund",
+      "issuer": "T. Rowe Price",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "PDBZX",
+      "fund_name": "PGIM Total Return Bond Fund Class Z",
+      "issuer": null,
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "DODGX",
+      "fund_name": "Dodge & Cox Funds - Dodge & Cox Stock Fund",
+      "issuer": "Dodge & Cox",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "DODIX",
+      "fund_name": "Dodge & Cox Income Fund - Class I",
+      "issuer": "Dodge & Cox",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "DODFX",
+      "fund_name": "Dodge & Cox International Stock Fund",
+      "issuer": "Dodge & Cox",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "DFUSX",
+      "fund_name": "DFA US Large Company Portfolio",
+      "issuer": null,
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "DFIVX",
+      "fund_name": "DFA International Value Portfolio",
+      "issuer": null,
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "DFSVX",
+      "fund_name": "DFA U.S. Small Cap Value Portfolio",
+      "issuer": null,
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "DFFVX",
+      "fund_name": "DFA U.S. Targeted Value Portfolio",
+      "issuer": null,
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "DFAPX",
+      "fund_name": "DFA Investment Grade I",
+      "issuer": null,
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "DFLVX",
+      "fund_name": "DFA U.S. Large Cap Value Portfolio (The)",
+      "issuer": null,
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "PIMIX",
+      "fund_name": "PIMCO Income Fund",
+      "issuer": "PIMCO",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "PTTRX",
+      "fund_name": "PIMCO Total Return Fund",
+      "issuer": "PIMCO",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "PONAX",
+      "fund_name": "PIMCO Income Fund",
+      "issuer": "PIMCO",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "JCBUX",
+      "fund_name": "JPMorgan Core Bond Fund",
+      "issuer": "JPMorgan",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VASVX",
+      "fund_name": "Vanguard Selected Value Fund",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "ARTGX",
+      "fund_name": "Artisan Global Value Fund Investor Class",
+      "issuer": "Artisan",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "APHKX",
+      "fund_name": "Artisan International Value Fund Institutional Class",
+      "issuer": "Artisan",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "BGRFX",
+      "fund_name": "Baron Growth Fund",
+      "issuer": null,
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "BIL",
+      "fund_name": "State Street SPDR Bloomberg 1-3 Month T-Bill ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SGOV",
+      "fund_name": "iShares 0-3 Month Treasury Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SHV",
+      "fund_name": "iShares Trust iShares 0-1 Year Treasury Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "TFLO",
+      "fund_name": "iShares Treasury Floating Rate Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "USFR",
+      "fund_name": "WisdomTree Floating Rate Treasury Fund",
+      "issuer": "WisdomTree",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "JPST",
+      "fund_name": "JPMorgan Ultra-Short Income ETF",
+      "issuer": "JPMorgan",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "MINT",
+      "fund_name": "PIMCO Enhanced Short Maturity Active Exchange-Traded Fund",
+      "issuer": "PIMCO",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "ICSH",
+      "fund_name": "iShares Ultra Short Duration Bond Active ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "NEAR",
+      "fund_name": "iShares Short Duration Bond Active ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "ULST",
+      "fund_name": "State Street Ultra Short Term Bond ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SPSB",
+      "fund_name": "State Street SPDR Portfolio Short Term Corporate Bond ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IGSB",
+      "fund_name": "iShares 1-5 Year Investment Grade Corporate Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SLQD",
+      "fund_name": "iShares 0-5 Year Investment Grade Corporate Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "FLOT",
+      "fund_name": "iShares Floating Rate Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "FLRN",
+      "fund_name": "State Street SPDR Bloomberg Investment Grade Floating Rate ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VGUS",
+      "fund_name": "Vanguard Ultra-Short Treasury ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VBIL",
+      "fund_name": "Vanguard 0-3 Month Treasury Bill ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SPTS",
+      "fund_name": "State Street SPDR Portfolio Short Term Treasury ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "ISTB",
+      "fund_name": "iShares Core 1-5 Year USD Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "GOVT",
+      "fund_name": "iShares U.S. Treasury Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "USIG",
+      "fund_name": "iShares Broad USD Investment Grade Corporate Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SPIB",
+      "fund_name": "State Street SPDR Portfolio Intermediate Term Corporate Bond ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SUSB",
+      "fund_name": "iShares ESG Aware 1-5 Year USD Corporate Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SPSM",
+      "fund_name": "State Street SPDR Portfolio S&P 600 Small Cap ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VFSTX",
+      "fund_name": "Vanguard Short-Term Investment-Grade Fund Investor Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VFSUX",
+      "fund_name": "Vanguard Short-Term Investment-Grade Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VUBFX",
+      "fund_name": "Vanguard Ultra-Short-Term Bond Fund Investor Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VBIRX",
+      "fund_name": "Vanguard Short-Term Bond Index Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VSBSX",
+      "fund_name": "Vanguard Short-Term Treasury Index Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VFISX",
+      "fund_name": "Vanguard Short-Term Treasury Fund Investor Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FUMBX",
+      "fund_name": "Fidelity Short-Term Treasury Bond Index Fund",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FCONX",
+      "fund_name": "Fidelity Conservative Income Bond Fd",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FSTGX",
+      "fund_name": "Fidelity Intermediate Government Income Fund",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "FNSOX",
+      "fund_name": "Fidelity Short-Term Bond Index Fund",
+      "issuer": "Fidelity",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "MWTIX",
+      "fund_name": "TCW MetWest Total Return Bd I",
+      "issuer": null,
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "MWTRX",
+      "fund_name": "Metropolitan West Total Return Bond Fund",
+      "issuer": null,
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VOE",
+      "fund_name": "Vanguard Mid-Cap Value ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IWS",
+      "fund_name": "iShares Russell Mid-Cap Value ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IJJ",
+      "fund_name": "iShares S&P Mid-Cap 400 Value ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "MDYV",
+      "fund_name": "State Street SPDR S&P 400 Mid Cap Value ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IVOV",
+      "fund_name": "Vanguard S&P Mid-Cap 400 Value ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IMCV",
+      "fund_name": "iShares Morningstar Mid-Cap Value ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "DON",
+      "fund_name": "WisdomTree U.S. MidCap Dividend Fund",
+      "issuer": "WisdomTree",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "RFV",
+      "fund_name": "Invesco S&P MidCap 400 Pure Value ETF",
+      "issuer": "Invesco",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "XMVM",
+      "fund_name": "Invesco S&P MidCap Value with Momentum ETF",
+      "issuer": "Invesco",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "FNK",
+      "fund_name": "First Trust Mid Cap Value AlphaDEX Fund",
+      "issuer": "First Trust",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IVOO",
+      "fund_name": "Vanguard S&P Mid-Cap 400 ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "MDY",
+      "fund_name": "State Street SPDR S&P MIDCAP 400 ETF Trust",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SPMD",
+      "fund_name": "State Street SPDR Portfolio S&P 400 Mid Cap ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IMCB",
+      "fund_name": "iShares Morningstar Mid-Cap ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "XMHQ",
+      "fund_name": "Invesco S&P MidCap Quality ETF",
+      "issuer": "Invesco",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "JHMM",
+      "fund_name": "John Hancock Investments - Multifactor Mid Cap ETF",
+      "issuer": "John Hancock",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VOT",
+      "fund_name": "Vanguard Mid-Cap Growth ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IWP",
+      "fund_name": "iShares Russell Mid-Cap Growth ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IJK",
+      "fund_name": "iShares S&P Mid-Cap 400 Growth ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "MDYG",
+      "fund_name": "State Street SPDR S&P 400 Mid Cap Growth ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IVOG",
+      "fund_name": "Vanguard S&P Mid-Cap 400 Growth ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IMCG",
+      "fund_name": "iShares Morningstar Mid-Cap Growth ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "XMMO",
+      "fund_name": "Invesco S&P MidCap Momentum ETF",
+      "issuer": "Invesco",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "RFG",
+      "fund_name": "Invesco S&P MidCap 400 Pure Growth ETF",
+      "issuer": "Invesco",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "FNY",
+      "fund_name": "First Trust Mid Cap Growth AlphaDEX Fund",
+      "issuer": "First Trust",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "IJS",
+      "fund_name": "iShares S&P Small-Cap 600 Value ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VIOV",
+      "fund_name": "Vanguard S&P Small-Cap 600 Value ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SLYV",
+      "fund_name": "State Street SPDR S&P 600 Small Cap Value ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VTWV",
+      "fund_name": "Vanguard Russell 2000 Value ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "XSVM",
+      "fund_name": "Invesco S&P SmallCap Value with Momentum ETF",
+      "issuer": "Invesco",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SVAL",
+      "fund_name": "iShares US Small Cap Value Factor ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VIOO",
+      "fund_name": "Vanguard S&P Small-Cap 600 ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VTWO",
+      "fund_name": "Vanguard Russell 2000 ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "ISCB",
+      "fund_name": "iShares Morningstar Small-Cap ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IJT",
+      "fund_name": "iShares S&P Small-Cap 600 Growth ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VIOG",
+      "fund_name": "Vanguard S&P Small-Cap 600 Growth ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SLYG",
+      "fund_name": "State Street SPDR S&P 600 Small Cap Growth ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VTWG",
+      "fund_name": "Vanguard Russell 2000 Growth ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "ISCG",
+      "fund_name": "iShares Morningstar Small-Cap Growth ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "XSMO",
+      "fund_name": "Invesco S&P SmallCap Momentum ETF",
+      "issuer": "Invesco",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "DWAS",
+      "fund_name": "Invesco Dorsey Wright SmallCap Momentum ETF",
+      "issuer": "Invesco",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IVE",
+      "fund_name": "iShares S&P 500 Value ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VOOV",
+      "fund_name": "Vanguard S&P 500 Value ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SPYV",
+      "fund_name": "State Street SPDR Portfolio S&P 500 Value ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "RPV",
+      "fund_name": "Invesco S&P 500 Pure Value ETF",
+      "issuer": "Invesco",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "FNDX",
+      "fund_name": "Schwab Fundamental U.S. Large Company ETF",
+      "issuer": "Schwab",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "AVLV",
+      "fund_name": "Avantis U.S. Large Cap Value ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "DFLV",
+      "fund_name": "Dimensional - US Large Cap Value ETF",
+      "issuer": "Dimensional",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SCHX",
+      "fund_name": "Schwab U.S. Large-Cap ETF",
+      "issuer": "Schwab",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VV",
+      "fund_name": "Vanguard Large-Cap ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IWB",
+      "fund_name": "iShares Russell 1000 ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SPYM",
+      "fund_name": "State Street SPDR Portfolio S&P 500 ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IVW",
+      "fund_name": "iShares S&P 500 Growth ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VOOG",
+      "fund_name": "Vanguard S&P 500 Growth ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SPYG",
+      "fund_name": "State Street SPDR Portfolio S&P 500 Growth ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VONG",
+      "fund_name": "Vanguard Russell 1000 Growth ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IWY",
+      "fund_name": "iShares Russell Top 200 Growth ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "RPG",
+      "fund_name": "Invesco S&P 500 Pure Growth ETF",
+      "issuer": "Invesco",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "EDV",
+      "fund_name": "Vanguard Extended Duration Treasury ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SPTL",
+      "fund_name": "State Street SPDR Portfolio Long Term Treasury ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SCHQ",
+      "fund_name": "Schwab Long-Term U.S. Treasury ETF",
+      "issuer": "Schwab",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "GOVZ",
+      "fund_name": "iShares 25+ Year Treasury STRIPS Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "ZROZ",
+      "fund_name": "PIMCO 25+ Year Zero Coupon U.S. Treasury Index Exchange-Traded Fund",
+      "issuer": "PIMCO",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "TLH",
+      "fund_name": "iShares 10-20 Year Treasury Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VUSTX",
+      "fund_name": "Vanguard Long-Term Treasury Fund Investor Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VUSUX",
+      "fund_name": "Vanguard Long-Term Treasury Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "VCLT",
+      "fund_name": "Vanguard Long-Term Corporate Bond ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "IGLB",
+      "fund_name": "iShares 10+ Year Investment Grade Corporate Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "BLV",
+      "fund_name": "Vanguard Long-Term Bond ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SPLB",
+      "fund_name": "State Street SPDR Portfolio Long Term Corporate Bond ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VBLAX",
+      "fund_name": "Vanguard Long-Term Bond Index Fund Admiral Shares",
+      "issuer": "Vanguard",
+      "fund_type": "Mutual Fund"
+    },
+    {
+      "ticker": "SHYG",
+      "fund_name": "iShares 0-5 Year High Yield Corporate Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SJNK",
+      "fund_name": "State Street SPDR Bloomberg Short Term High Yield Bond ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SPHY",
+      "fund_name": "State Street SPDR Portfolio High Yield Bond ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "HYLB",
+      "fund_name": "Xtrackers USD High Yield Corporate Bond ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "ANGL",
+      "fund_name": "VanEck Fallen Angel High Yield Bond ETF",
+      "issuer": "VanEck",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "FALN",
+      "fund_name": "iShares Fallen Angels USD Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "JPHY",
+      "fund_name": "JPMorgan Active High Yield ETF",
+      "issuer": "JPMorgan",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "HYLS",
+      "fund_name": "First Trust Tactical High Yield ETF",
+      "issuer": "First Trust",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "HYS",
+      "fund_name": "PIMCO 0-5 Year High Yield Corporate Bond Index Exchange-Traded Fund",
+      "issuer": "PIMCO",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "HYBB",
+      "fund_name": "iShares BB Rated Corporate Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "BKLN",
+      "fund_name": "Invesco Senior Loan ETF",
+      "issuer": "Invesco",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SRLN",
+      "fund_name": "State Street Blackstone Senior Loan ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "FTSL",
+      "fund_name": "First Trust Senior Loan Fund",
+      "issuer": "First Trust",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "FLBL",
+      "fund_name": "Franklin Senior Loan ETF",
+      "issuer": "Franklin",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "JAAA",
+      "fund_name": "Janus Henderson AAA CLO ETF",
+      "issuer": "Janus Henderson",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "CLOA",
+      "fund_name": "iShares AAA CLO Active ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SUB",
+      "fund_name": "iShares Short-Term National Muni Bond ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SHM",
+      "fund_name": "State Street SPDR Nuveen ICE Short Term Municipal Bond ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "JMST",
+      "fund_name": "JPMorgan Ultra-Short Municipal Income ETF",
+      "issuer": "JPMorgan",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "MEAR",
+      "fund_name": "iShares Short Maturity Municipal Bond Active ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VTES",
+      "fund_name": "Vanguard Short-Term Tax-Exempt Bond ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "MUNI",
+      "fund_name": "PIMCO Intermediate Municipal Bond Active Exchange-Traded Fund",
+      "issuer": "PIMCO",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "ITM",
+      "fund_name": "VanEck Intermediate Muni ETF",
+      "issuer": "VanEck",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "TFI",
+      "fund_name": "State Street SPDR Nuveen ICE Municipal Bond ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "PZA",
+      "fund_name": "Invesco National AMT-Free Municipal Bond ETF",
+      "issuer": "Invesco",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "FLMB",
+      "fund_name": "Franklin Municipal Green Bond ETF",
+      "issuer": "Franklin",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "HYD",
+      "fund_name": "VanEck High Yield Muni ETF",
+      "issuer": "VanEck",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "HYMB",
+      "fund_name": "State Street SPDR Nuveen ICE High Yield Municipal Bond ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "BAB",
+      "fund_name": "Invesco Taxable Municipal Bond ETF",
+      "issuer": "Invesco",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "MBB",
+      "fund_name": "iShares MBS ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "VMBS",
+      "fund_name": "Vanguard Mortgage-Backed Securities ETF",
+      "issuer": "Vanguard",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "SPMB",
+      "fund_name": "State Street SPDR Portfolio Mortgage Backed Bond ETF",
+      "issuer": null,
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "CMBS",
+      "fund_name": "iShares CMBS ETF",
+      "issuer": "iShares",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "JMBS",
+      "fund_name": "Janus Henderson Mortgage-Backed Securities ETF",
+      "issuer": "Janus Henderson",
+      "fund_type": "ETF"
+    },
+    {
+      "ticker": "CORP",
+      "fund_name": "PIMCO Investment Grade Corporate Bond Index Exchange-Traded Fund",
+      "issuer": "PIMCO",
+      "fund_type": "ETF"
+    }
+  ]
+}

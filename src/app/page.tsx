@@ -6,7 +6,7 @@ import {
   AreaChart, Area, ResponsiveContainer,
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Legend,
 } from "recharts";
-import universeData from "@/../data/universe.json";
+import { UNIVERSE } from "@/lib/universe";
 
 const ACC = "#0A0A0B";    // Tool brand, black
 const ACC_DARK = "#EFEFEF"; // Tool brand, dark mode
@@ -18,7 +18,7 @@ const ACC_DARK = "#EFEFEF"; // Tool brand, dark mode
 const SHOW_TOOL_DIRECTLY = true;
 
 // Live fund count - derived from the universe so the stat never goes stale.
-const UNIVERSE_COUNT = (universeData as unknown[]).length;
+const UNIVERSE_COUNT = UNIVERSE.length;
 
 const STATS = [
   { value: UNIVERSE_COUNT.toLocaleString("en-US"), label: "Funds" },

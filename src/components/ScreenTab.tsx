@@ -7,10 +7,7 @@ import {
 import { T, mono, chartTooltip } from "./tokens";
 import { Btn, Label, Select, Spinner, ErrBanner, KPI, PriorityChip, SectionHeader, Card, RankBadge, ScoreBadge, PercentileBar } from "./ui";
 import { ui } from "./tokens";
-import universeData from "@/../data/universe.json";
-
-type UniverseEntry = { ticker: string; name: string; category: string; vehicle: string; benchmark: string };
-const UNIVERSE = universeData as UniverseEntry[];
+import { UNIVERSE } from "@/lib/universe";
 
 const ASSET = ["Any", "US Equity", "International Equity", "Fixed Income", "Allocation / Balanced", "Sector / Thematic", "Alternatives"];
 const VEHICLE = ["Either", "Mutual Fund", "ETF"];
@@ -87,7 +84,7 @@ const FI_ROWS = ["High", "Med", "Low"] as const;
 const FI_CELLS: Record<string, string[]> = {
   "High|Short":    ["Ultrashort Bond", "Short-Term Bond"],
   "High|Interm.":  ["Intermediate Government", "Intermediate Core Bond", "Inflation-Protected Bond", "Muni National Intermediate"],
-  "High|Long":     ["Long Government"],
+  "High|Long":     ["Long Government", "Long-Term Bond"],
   "Med|Short":     ["Short-Term Bond"],
   "Med|Interm.":   ["Intermediate Core Plus Bond", "Corporate Bond", "Multisector Bond", "World Bond"],
   "Med|Long":      ["Corporate Bond", "Preferred Stock"],

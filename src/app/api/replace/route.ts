@@ -3,13 +3,10 @@
  * returns ranked alternatives in the same category.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { getRecommendFund, getBenchmarkHistory, BENCHMARKS } from "@/lib/funds";
+import { getRecommendFund, getBenchmarkHistory, BENCHMARKS, inferVehicle } from "@/lib/funds";
 import { computePercentiles, compositeScore } from "@/lib/kpi";
 import { cacheGet } from "@/lib/cache";
-import universeData from "@/../data/universe.json";
-
-type UniverseEntry = { ticker: string; name: string; category: string; vehicle: string; benchmark: string };
-const UNIVERSE = universeData as UniverseEntry[];
+import { UNIVERSE } from "@/lib/universe";
 
 const REASON_PRIORITIES: Record<string, string[]> = {
   cost:      ["Low cost"],
@@ -36,7 +33,7 @@ export async function POST(req: NextRequest) {
   let currentFund;
   try {
     const ticker = entry?.ticker ?? currentTicker.toUpperCase();
-    const vehicle = entry?.vehicle ?? "ETF";
+    const vehicle = entry?.vehicle ?? inferVehicle(currentTicker.toUpperCase());
     const category = entry?.category ?? "US Equity Large Blend";
     const benchmark = entry?.benchmark ?? "SPY";
     currentFund = await getRecommendFund(ticker, vehicle, category, benchmark);

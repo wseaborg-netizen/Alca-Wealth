@@ -2,9 +2,9 @@
 import React from "react";
 import { T, ui, mono } from "./tokens";
 import { Card, PageHeader } from "./ui";
-import universeData from "@/../data/universe.json";
+import { UNIVERSE } from "@/lib/universe";
 
-const UNIVERSE_COUNT = (universeData as unknown[]).length;
+const UNIVERSE_COUNT = UNIVERSE.length;
 
 export type Theme = "light" | "dark";
 

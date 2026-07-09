@@ -6,10 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getRecommendFund, getBenchmarkHistory, BENCHMARKS } from "@/lib/funds";
 import { computePercentiles, compositeScore } from "@/lib/kpi";
 import { cacheGet } from "@/lib/cache";
-import universeData from "@/../data/universe.json";
-
-type UniverseEntry = { ticker: string; name: string; category: string; vehicle: string; benchmark: string };
-const UNIVERSE = universeData as UniverseEntry[];
+import { UNIVERSE } from "@/lib/universe";
 
 export interface ClientProfile {
   riskTolerance: "conservative" | "moderate" | "aggressive";

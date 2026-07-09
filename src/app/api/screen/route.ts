@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFund, getBenchmarkHistory, BENCHMARKS } from "@/lib/funds";
 import { computePercentiles, compositeScore } from "@/lib/kpi";
-import universeData from "@/../data/universe.json";
-
-
-type UniverseEntry = {
-  ticker: string;
-  name: string;
-  category: string;
-  vehicle: string;
-  benchmark: string;
-};
-
-const UNIVERSE = universeData as UniverseEntry[];
+import { UNIVERSE } from "@/lib/universe";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();

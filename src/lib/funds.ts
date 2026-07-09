@@ -14,20 +14,18 @@ import { fetchHistory, fetchEtfInfo, fetchMutualFundInfo } from "./fmp";
 import { computeKpis, type KpiResult } from "./kpi";
 export type { KpiResult };
 import fundMetaRaw from "../data/fund-meta.json";
-import universeRaw from "@/../data/universe.json";
+import { NAME_BY_TICKER } from "./universe";
 
-// Static ER/AUM fallback - used when FMP has no coverage for a ticker.
+// Static ER/AUM fallback - expense ratios only (the classified universe carries
+// no numeric fields by design; FMP Starter doesn't expose ER). Not a fund list.
 const FUND_META = fundMetaRaw as unknown as Record<string, { er: number; aum: number } | undefined>;
 
-// Static display-name source: the fund universe carries proper names for ~4.7k
-// tickers. Used as a fallback when FMP returns metadata (AUM/inception) but no
-// real companyName, so we never lock a ticker-as-name record into the cache.
-const NAME_BY_TICKER: Map<string, string> = new Map(
-  (universeRaw as Array<{ ticker: string; name?: string }>).map((u) => [u.ticker, (u.name ?? "").trim()]),
-);
+// Display-name fallback sourced from the verified universe (@/lib/universe), used
+// when FMP returns metadata without a real companyName so we never lock a
+// ticker-as-name record into the cache.
 function staticName(ticker: string): string | null {
-  const n = NAME_BY_TICKER.get(ticker);
-  return n ? n : null;
+  const n = NAME_BY_TICKER.get(ticker.toUpperCase());
+  return n && n.trim() ? n : null;
 }
 
 export interface FundRecord {
@@ -48,6 +46,15 @@ export interface FundRecord {
 }
 
 export const BENCHMARKS = ["SPY", "AGG", "VXUS"] as const;
+
+/**
+ * Best-guess vehicle for a ticker that isn't in the universe. US open-end mutual
+ * funds use 5-character symbols ending in "X" (ABEYX, VFIAX, FXAIX); ETFs don't.
+ * Used only as a fallback so unknown funds aren't blindly labeled "ETF".
+ */
+export function inferVehicle(ticker: string): "ETF" | "Mutual Fund" {
+  return /^[A-Z]{4}X$/.test(ticker.toUpperCase()) ? "Mutual Fund" : "ETF";
+}
 
 function formatAum(aum: number | null): string {
   if (!aum) return "-";

@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFund, getRecommendFund, getBenchmarkHistory, BENCHMARKS, type FundRecord } from "@/lib/funds";
+import { getFund, getRecommendFund, getBenchmarkHistory, BENCHMARKS, inferVehicle, type FundRecord } from "@/lib/funds";
 import { computePercentiles } from "@/lib/kpi";
 import { cacheGet } from "@/lib/cache";
-import universeData from "@/../data/universe.json";
-
-
-type UniverseEntry = { ticker: string; name: string; category: string; vehicle: string; benchmark: string };
-const UNIVERSE = universeData as UniverseEntry[];
+import { UNIVERSE, type UniverseFund } from "@/lib/universe";
 
 const MAX_FUNDS = 6;
 const MAX_COLD_PEERS = 16; // budget for cold peer fetches across all categories
@@ -27,7 +23,7 @@ export async function POST(req: NextRequest) {
   const records = await Promise.all(
     limited.map(async (t) => {
       const entry = UNIVERSE.find((u) => u.ticker === t);
-      return getFund(t, entry?.vehicle ?? "ETF", entry?.category ?? "Other", entry?.benchmark ?? "SPY");
+      return getFund(t, entry?.vehicle ?? inferVehicle(t), entry?.category ?? "Other", entry?.benchmark ?? "SPY");
     })
   );
 
@@ -38,7 +34,7 @@ export async function POST(req: NextRequest) {
   const comparedTickers = new Set(limited);
 
   // Build a peer fetch plan, warm-first, capped to a cold budget.
-  const peerPlan: { ticker: string; entry: UniverseEntry; cold: boolean }[] = [];
+  const peerPlan: { ticker: string; entry: UniverseFund; cold: boolean }[] = [];
   for (const cat of distinctCats) {
     const peers = UNIVERSE.filter((u) => u.category === cat && !comparedTickers.has(u.ticker));
     const warmFlags = await Promise.all(peers.map((p) => cacheGet(`fund:rec:${p.ticker}`).then((v) => !!v)));

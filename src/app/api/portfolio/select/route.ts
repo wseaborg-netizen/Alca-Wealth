@@ -12,10 +12,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFund, getBenchmarkHistory, BENCHMARKS } from "@/lib/funds";
 import { computePercentiles, compositeScore } from "@/lib/kpi";
-import universeData from "@/../data/universe.json";
-
-type UniverseEntry = { ticker: string; name: string; category: string; vehicle: string; benchmark: string };
-const UNIVERSE = universeData as UniverseEntry[];
+import { UNIVERSE } from "@/lib/universe";
 
 // Goal -> which factors the score should weight (keys map into PRIORITY_MAP).
 const GOAL_PRIORITIES: Record<string, string[]> = {
