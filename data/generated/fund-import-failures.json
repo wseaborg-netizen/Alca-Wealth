@@ -1,10 +1,5 @@
 {
-  "generatedAt": "2026-07-09T21:28:06.811Z",
-  "count": 1,
-  "tickers": [
-    {
-      "ticker": "VTEI",
-      "reason": "not found / unsupported by FMP"
-    }
-  ]
+  "generatedAt": "2026-07-09T21:42:50.351Z",
+  "count": 0,
+  "tickers": []
 }

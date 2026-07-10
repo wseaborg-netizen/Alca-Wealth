@@ -117,6 +117,14 @@ function classify(fund) {
     return { confidence: "high", fields: bondFields("Government Bond", "US Treasury", "Defensive") };
   if (has(n, "treasury", "government bond", "gnma", "u.s. government", "government income", "government securities"))
     return { confidence: "high", fields: bondFields("Government Bond", "US Treasury") };
+  // Agency mortgage-backed securities (MBS / CMBS) — government-agency guaranteed,
+  // the same family as GNMA above. Benchmarked to the Aggregate, where MBS is a core sector.
+  if (has(n, "mortgage-backed", "mortgage backed", "cmbs") || /\bmbs\b/.test(n))
+    return { confidence: "high", fields: bondFields("Government Bond", "US Aggregate Bond") };
+  // AAA CLO ETFs — investment-grade, floating-rate, ultra-short duration cash-plus
+  // vehicles (same use case as ultra-short income funds below).
+  if (has(n, "aaa clo"))
+    return { confidence: "high", fields: bondFields("Short-Term Bond", "US Aggregate Bond", "Defensive") };
   // Ultra-short / short-maturity — defensive, cash-like short bonds (before corporate,
   // so "Short-Term Investment-Grade" lands in Short-Term rather than Corporate).
   if (has(n, "ultra-short", "ultra short", "ultrashort", "short maturity", "enhanced short"))
@@ -124,7 +132,12 @@ function classify(fund) {
   if (has(n, "conservative income", "short-term investment", "short term investment", "1-5 year", "1-5yr", "1-3 year", "limited duration", "limited-term")
       || (has(n, "short-term", "short term", "short duration", "low duration", "limited term") && has(n, "bond", "income", "fixed", "investment")))
     return { confidence: "high", fields: bondFields("Short-Term Bond", "US Aggregate Bond") };
-  if (has(n, "high yield", "high-yield") && has(n, "bond", "income", "credit"))
+  // Fallen angels = bonds downgraded from investment grade → high yield.
+  if (has(n, "fallen angel"))
+    return { confidence: "high", fields: bondFields("High Yield Bond", "High Yield Bond") };
+  // "High yield" in a fund name is unambiguously high-yield credit. (Muni and
+  // short-term high-yield funds are already caught by the rules above.)
+  if (has(n, "high yield", "high-yield"))
     return { confidence: "high", fields: bondFields("High Yield Bond", "High Yield Bond") };
   if (has(n, "bank loan", "senior loan", "floating rate", "leveraged loan"))
     return { confidence: "high", fields: bondFields("Bank Loan", "High Yield Bond") };
