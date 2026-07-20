@@ -1,0 +1,324 @@
+/**
+ * Typed database access for saved work — SERVER-SIDE ONLY.
+ *
+ * Every helper uses the cookie-session Supabase client, so Postgres RLS is
+ * the authorization boundary: a user can only touch rows in firms where they
+ * hold a membership. Nothing here uses the service-role key.
+ *
+ * PII policy: names/labels stored through this layer must be anonymous,
+ * de-identified labels — never real client names or account identifiers.
+ */
+import { createServerClient } from "./supabase";
+
+export interface Firm { id: string; name: string }
+export interface FirmMember { firm_id: string; user_id: string; role: "owner" | "admin" | "member" }
+export interface SavedComparisonRow {
+  id: string; firm_id: string; name: string; tickers: string[]; updated_at: string;
+}
+export interface SavedPortfolioRow {
+  id: string; firm_id: string; name: string; payload: Record<string, unknown>; updated_at: string;
+}
+export interface SavedModelScenarioRow {
+  id: string; firm_id: string; name: string; tool: string; subject: string;
+  assumptions: Record<string, unknown>; extra: Record<string, unknown> | null;
+  version: number; updated_at: string;
+}
+
+type Supa = Awaited<ReturnType<typeof createServerClient>>;
+
+/** Current user, or null. */
+export async function getSessionUser(supabase?: Supa) {
+  const sb = supabase ?? await createServerClient();
+  const { data: { user } } = await sb.auth.getUser();
+  return user;
+}
+
+/** The user's default firm (first membership; owner membership is created at
+    signup). Returns null when logged out or not provisioned. */
+export async function getDefaultFirm(sb: Supa): Promise<Firm | null> {
+  const { data } = await sb
+    .from("firm_members")
+    .select("firm_id, firms(id, name)")
+    .order("created_at", { ascending: true })
+    .limit(1);
+  const row = data?.[0] as { firms?: Firm | Firm[] } | undefined;
+  const firm = Array.isArray(row?.firms) ? row?.firms[0] : row?.firms;
+  return firm ?? null;
+}
+
+/** Auth + firm context for API routes; null when not a full session. */
+export async function requireFirmContext() {
+  const sb = await createServerClient();
+  const user = await getSessionUser(sb);
+  if (!user) return null;
+  const firm = await getDefaultFirm(sb);
+  if (!firm) return null;
+  return { sb, user, firm };
+}
+
+// ── Fund lists (Commonly Used / Watchlist defaults + custom lists) ──────────
+
+export interface FundListRow {
+  id: string; name: string; type: "common" | "watchlist" | "custom"; updated_at: string;
+  items: FundListItemRow[];
+}
+export interface FundListItemRow {
+  ticker: string; fund_name: string | null; category: string | null;
+  note: string | null; added_at: string;
+}
+
+/** Get-or-create the two default lists; returns all lists with items. */
+export async function listsGetAll(sb: Supa, firmId: string, userId: string): Promise<FundListRow[]> {
+  for (const [name, type] of [["Watchlist", "watchlist"], ["Commonly Used Funds", "common"]] as const) {
+    const { data } = await sb.from("watchlists").select("id").eq("firm_id", firmId).eq("type", type).limit(1);
+    if (!data?.length) await sb.from("watchlists").insert({ firm_id: firmId, created_by: userId, name, type });
+  }
+  const { data: lists, error } = await sb.from("watchlists")
+    .select("id, name, type, updated_at, watchlist_items(ticker, fund_name, category, note, added_at)")
+    .eq("firm_id", firmId).order("created_at", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (lists ?? []).map((l) => ({
+    id: l.id as string, name: l.name as string, type: (l.type ?? "custom") as FundListRow["type"],
+    updated_at: l.updated_at as string,
+    items: ((l.watchlist_items ?? []) as FundListItemRow[])
+      .sort((a, b) => (b.added_at ?? "").localeCompare(a.added_at ?? "")),
+  }));
+}
+
+export async function listCreate(sb: Supa, firmId: string, userId: string, name: string): Promise<string> {
+  const { data, error } = await sb.from("watchlists")
+    .insert({ firm_id: firmId, created_by: userId, name: name.trim().slice(0, 80), type: "custom" })
+    .select("id").single();
+  if (error) throw new Error(error.message);
+  return data.id as string;
+}
+
+export async function listRename(sb: Supa, firmId: string, listId: string, name: string) {
+  const { error } = await sb.from("watchlists").update({ name: name.trim().slice(0, 80) })
+    .eq("firm_id", firmId).eq("id", listId).eq("type", "custom"); // defaults keep their names
+  if (error) throw new Error(error.message);
+}
+
+export async function listDelete(sb: Supa, firmId: string, listId: string) {
+  // Custom lists only — default lists are permanent. Items cascade.
+  const { error } = await sb.from("watchlists").delete()
+    .eq("firm_id", firmId).eq("id", listId).eq("type", "custom");
+  if (error) throw new Error(error.message);
+}
+
+export async function listItemAdd(sb: Supa, firmId: string, userId: string, listId: string,
+  item: { ticker: string; fundName?: string | null; category?: string | null; note?: string | null }) {
+  // RLS guarantees the list belongs to the user's firm; upsert dedupes.
+  const { error } = await sb.from("watchlist_items").upsert({
+    watchlist_id: listId, ticker: item.ticker.toUpperCase(), added_by: userId,
+    fund_name: item.fundName ?? null, category: item.category ?? null, note: item.note ?? null,
+  }, { onConflict: "watchlist_id,ticker" });
+  if (error) throw new Error(error.message);
+}
+
+export async function listItemRemove(sb: Supa, listId: string, ticker: string) {
+  const { error } = await sb.from("watchlist_items").delete()
+    .eq("watchlist_id", listId).eq("ticker", ticker.toUpperCase());
+  if (error) throw new Error(error.message);
+}
+
+export async function listItemNote(sb: Supa, listId: string, ticker: string, note: string | null) {
+  const { error } = await sb.from("watchlist_items").update({ note: note?.slice(0, 500) ?? null })
+    .eq("watchlist_id", listId).eq("ticker", ticker.toUpperCase());
+  if (error) throw new Error(error.message);
+}
+
+// ── Fund requests (Add Missing Fund) ────────────────────────────────────────
+// Firm-scoped, RLS-enforced. Records an advisor's request for a ticker not in
+// the verified universe + the outcome of the automated checks. Never mutates
+// the universe.
+
+export interface FundRequestRow {
+  id: string; ticker: string; normalized_ticker: string; status: string;
+  fund_name: string | null; fmp_supported: boolean; already_in_universe: boolean;
+  classification_status: string | null; failure_reason: string | null;
+  admin_note: string | null; requested_at: string; updated_at: string;
+}
+
+const FUND_REQUEST_COLS =
+  "id, ticker, normalized_ticker, status, fund_name, fmp_supported, already_in_universe, " +
+  "classification_status, failure_reason, admin_note, requested_at, updated_at";
+
+/** All fund requests visible to the caller's firm (newest first). */
+export async function fundRequestsList(sb: Supa, firmId: string): Promise<FundRequestRow[]> {
+  const { data, error } = await sb.from("fund_requests")
+    .select(FUND_REQUEST_COLS).eq("firm_id", firmId)
+    .order("requested_at", { ascending: false }).limit(200);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as FundRequestRow[];
+}
+
+/** One request by normalized ticker (firm-scoped), or null. */
+export async function fundRequestByTicker(sb: Supa, firmId: string, normalized: string): Promise<FundRequestRow | null> {
+  const { data, error } = await sb.from("fund_requests")
+    .select(FUND_REQUEST_COLS).eq("firm_id", firmId).eq("normalized_ticker", normalized.toUpperCase())
+    .order("requested_at", { ascending: false }).limit(1);
+  if (error) throw new Error(error.message);
+  return (data?.[0] as unknown as FundRequestRow) ?? null;
+}
+
+/** Existing ACTIVE (open) request for this ticker, if any — used to dedupe. */
+export async function fundRequestActive(sb: Supa, firmId: string, normalized: string,
+  activeStatuses: string[]): Promise<FundRequestRow | null> {
+  const { data, error } = await sb.from("fund_requests")
+    .select(FUND_REQUEST_COLS).eq("firm_id", firmId).eq("normalized_ticker", normalized.toUpperCase())
+    .in("status", activeStatuses).limit(1);
+  if (error) throw new Error(error.message);
+  return (data?.[0] as unknown as FundRequestRow) ?? null;
+}
+
+export async function fundRequestCreate(sb: Supa, firmId: string, userId: string, r: {
+  ticker: string; normalizedTicker: string; status: string; fundName: string | null;
+  fmpSupported: boolean; alreadyInUniverse: boolean; classificationStatus: string | null;
+  failureReason: string | null;
+}): Promise<FundRequestRow> {
+  const { data, error } = await sb.from("fund_requests").insert({
+    firm_id: firmId, created_by: userId,
+    ticker: r.ticker, normalized_ticker: r.normalizedTicker.toUpperCase(), status: r.status,
+    fund_name: r.fundName, fmp_supported: r.fmpSupported, already_in_universe: r.alreadyInUniverse,
+    classification_status: r.classificationStatus, failure_reason: r.failureReason,
+  }).select(FUND_REQUEST_COLS).single();
+  if (error) throw new Error(error.message);
+  return data as unknown as FundRequestRow;
+}
+
+/** Status counts for the firm — used by System Health (informational). */
+export async function fundRequestCounts(sb: Supa, firmId: string): Promise<{
+  total: number; pending: number; readyForReview: number; unsupported: number; needsClassification: number;
+}> {
+  const { data, error } = await sb.from("fund_requests").select("status").eq("firm_id", firmId);
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as { status: string }[];
+  const n = (s: string) => rows.filter((r) => r.status === s).length;
+  return {
+    total: rows.length, pending: n("pending"), readyForReview: n("ready_for_review"),
+    unsupported: n("unsupported"), needsClassification: n("needs_classification"),
+  };
+}
+
+// ── Legacy single-watchlist API (WatchlistTab) — now the default Watchlist ───
+
+async function defaultWatchlistId(sb: Supa, firmId: string): Promise<string | null> {
+  const { data } = await sb.from("watchlists").select("id").eq("firm_id", firmId).eq("type", "watchlist").limit(1);
+  if (data?.[0]?.id) return data[0].id as string;
+  const { data: created } = await sb.from("watchlists")
+    .insert({ firm_id: firmId, name: "Watchlist", type: "watchlist" }).select("id").single();
+  return (created?.id as string) ?? null;
+}
+
+export async function watchlistGet(sb: Supa, firmId: string): Promise<string[]> {
+  const wl = await defaultWatchlistId(sb, firmId);
+  if (!wl) return [];
+  const { data } = await sb.from("watchlist_items")
+    .select("ticker, added_at").eq("watchlist_id", wl)
+    .order("added_at", { ascending: false });
+  return (data ?? []).map((r) => r.ticker as string);
+}
+
+export async function watchlistAdd(sb: Supa, firmId: string, userId: string, ticker: string) {
+  const wl = await defaultWatchlistId(sb, firmId);
+  if (!wl) throw new Error("no watchlist");
+  const { error } = await sb.from("watchlist_items")
+    .upsert({ watchlist_id: wl, ticker: ticker.toUpperCase(), added_by: userId },
+      { onConflict: "watchlist_id,ticker" });
+  if (error) throw new Error(error.message);
+}
+
+export async function watchlistRemove(sb: Supa, firmId: string, ticker: string) {
+  const wl = await defaultWatchlistId(sb, firmId);
+  if (!wl) return;
+  const { error } = await sb.from("watchlist_items")
+    .delete().eq("watchlist_id", wl).eq("ticker", ticker.toUpperCase());
+  if (error) throw new Error(error.message);
+}
+
+// ── Saved model scenarios ────────────────────────────────────────────────────
+
+export async function scenariosList(sb: Supa, firmId: string): Promise<SavedModelScenarioRow[]> {
+  const { data, error } = await sb.from("saved_model_scenarios")
+    .select("id, firm_id, name, tool, subject, assumptions, extra, version, updated_at")
+    .eq("firm_id", firmId).order("updated_at", { ascending: false }).limit(100);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as SavedModelScenarioRow[];
+}
+
+export async function scenarioUpsert(sb: Supa, firmId: string, userId: string,
+  s: { id?: string; name: string; tool: string; subject: string; assumptions: Record<string, unknown>; extra?: Record<string, unknown> | null; version?: number }) {
+  const row = { firm_id: firmId, created_by: userId, name: s.name, tool: s.tool,
+    subject: s.subject, assumptions: s.assumptions, extra: s.extra ?? null, version: s.version ?? 2,
+    ...(s.id ? { id: s.id } : {}) };
+  const { data, error } = await sb.from("saved_model_scenarios").upsert(row).select("id").single();
+  if (error) throw new Error(error.message);
+  return data?.id as string;
+}
+
+export async function scenarioDelete(sb: Supa, firmId: string, id: string) {
+  const { error } = await sb.from("saved_model_scenarios").delete().eq("firm_id", firmId).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+// ── Saved portfolios (anonymous labels only) ─────────────────────────────────
+
+export async function portfoliosList(sb: Supa, firmId: string): Promise<SavedPortfolioRow[]> {
+  const { data, error } = await sb.from("saved_portfolios")
+    .select("id, firm_id, name, payload, updated_at")
+    .eq("firm_id", firmId).order("updated_at", { ascending: false }).limit(100);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as SavedPortfolioRow[];
+}
+
+export async function portfolioUpsert(sb: Supa, firmId: string, userId: string,
+  p: { id?: string; name: string; payload: Record<string, unknown> }) {
+  const row = { firm_id: firmId, created_by: userId, name: p.name, payload: p.payload,
+    ...(p.id ? { id: p.id } : {}) };
+  const { data, error } = await sb.from("saved_portfolios").upsert(row).select("id").single();
+  if (error) throw new Error(error.message);
+  return data?.id as string;
+}
+
+export async function portfolioDelete(sb: Supa, firmId: string, id: string) {
+  const { error } = await sb.from("saved_portfolios").delete().eq("firm_id", firmId).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+// ── Saved comparisons ────────────────────────────────────────────────────────
+
+export async function comparisonsList(sb: Supa, firmId: string): Promise<SavedComparisonRow[]> {
+  const { data, error } = await sb.from("saved_comparisons")
+    .select("id, firm_id, name, tickers, updated_at")
+    .eq("firm_id", firmId).order("updated_at", { ascending: false }).limit(100);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as SavedComparisonRow[];
+}
+
+export async function comparisonUpsert(sb: Supa, firmId: string, userId: string,
+  c: { id?: string; name: string; tickers: string[] }) {
+  const row = { firm_id: firmId, created_by: userId, name: c.name,
+    tickers: c.tickers.map((t) => t.toUpperCase()), ...(c.id ? { id: c.id } : {}) };
+  const { data, error } = await sb.from("saved_comparisons").upsert(row).select("id").single();
+  if (error) throw new Error(error.message);
+  return data?.id as string;
+}
+
+export async function comparisonDelete(sb: Supa, firmId: string, id: string) {
+  const { error } = await sb.from("saved_comparisons").delete().eq("firm_id", firmId).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+// ── User preferences ─────────────────────────────────────────────────────────
+
+export async function prefsGet(sb: Supa, userId: string): Promise<Record<string, unknown>> {
+  const { data } = await sb.from("user_preferences").select("prefs").eq("user_id", userId).limit(1);
+  return (data?.[0]?.prefs as Record<string, unknown>) ?? {};
+}
+
+export async function prefsSet(sb: Supa, userId: string, prefs: Record<string, unknown>) {
+  const { error } = await sb.from("user_preferences")
+    .upsert({ user_id: userId, prefs, updated_at: new Date().toISOString() });
+  if (error) throw new Error(error.message);
+}

@@ -2,7 +2,7 @@
  * Market & fund data provider layer — FMP-first, with narrow fallbacks.
  *
  * ── Provider priority (see each function for specifics) ──────────────────────
- *   Market index quotes + sparklines … FMP (quote + light EOD)   → Yahoo fallback
+ *   Market index quotes + sparklines … FMP (quote + light EOD)
  *   Fund / ETF profile (name/AUM/inception) … FMP (/profile)     → static meta
  *   Price + dividend history … FMP (/historical + /dividends)    → Tiingo fallback
  *   Expense ratio … NOT provided by FMP Starter (etf-info empty) → static meta only
@@ -93,7 +93,7 @@ export interface FmpDividendItem {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  MARKET DATA (dashboard) — FMP primary; the route adds a Yahoo fallback.
+//  MARKET DATA (dashboard) — FMP is the sole provider.
 // ════════════════════════════════════════════════════════════════════════════
 
 export interface MarketQuote {
@@ -130,7 +130,7 @@ function windowsFromSeries(asc: number[], dates: string[], includeSpark: boolean
 /**
  * FMP market quote for a dashboard ticker (index or ETF). Uses light EOD history
  * (one call, ~1y) so we can compute 1d/1w/1m/YTD changes and — when requested —
- * a ~6-month sparkline. Returns null on any miss so the route can fall back to Yahoo.
+ * a ~6-month sparkline. Returns null on any miss.
  */
 export async function fetchMarketQuoteFmp(ticker: string, includeSpark = false): Promise<MarketQuote | null> {
   const from = yearsAgoISO(1);
@@ -187,6 +187,40 @@ export async function fetchMutualFundInfo(ticker: string): Promise<{
   const info = await fetchEtfInfo(ticker);
   if (!info) return null;
   return { expenseRatio: info.expenseRatio, aum: info.aum, inceptionDate: info.inceptionDate };
+}
+
+// ── Support check (Add Missing Fund) ──────────────────────────────────────────
+// Answers a single question for the fund-request workflow: can FMP return
+// usable identity for this ticker? Returns SAFE fields only — never the API key
+// or the raw provider payload. `inconclusive` distinguishes "provider didn't
+// respond / no key" (retryable) from a definitive "unsupported".
+
+export interface FundSupport {
+  supported: boolean;
+  inconclusive: boolean;      // provider unavailable / no key — not a real "no"
+  name: string | null;
+  assetType: string | null;   // "ETF" | "Mutual Fund" | "Unknown"
+  reason: string | null;
+}
+
+export async function fetchFundSupport(ticker: string): Promise<FundSupport> {
+  if (!FMP_KEY) {
+    return { supported: false, inconclusive: true, name: null, assetType: null,
+      reason: "Provider not configured — could not check." };
+  }
+  const rows = await fmpFetchJson(`${STABLE}/profile?symbol=${encodeURIComponent(ticker)}`);
+  if (rows == null) {
+    // Network error, plan limit, or FMP "Error Message" — retryable, not a "no".
+    return { supported: false, inconclusive: true, name: null, assetType: null,
+      reason: "Provider did not respond — try again shortly." };
+  }
+  const p = Array.isArray(rows) ? (rows[0] as Record<string, unknown> | undefined) : null;
+  if (!p || !p.companyName) {
+    return { supported: false, inconclusive: false, name: null, assetType: null,
+      reason: "Not found or not supported by the data provider." };
+  }
+  const assetType = p.isEtf ? "ETF" : p.isFund ? "Mutual Fund" : "Unknown";
+  return { supported: true, inconclusive: false, name: String(p.companyName), assetType, reason: null };
 }
 
 // ════════════════════════════════════════════════════════════════════════════

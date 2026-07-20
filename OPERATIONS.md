@@ -1007,3 +1007,49 @@ If any box is unchecked and you do not know why, **do not deploy.** Leave it for
 - **App Build card** reads deployment metadata only (Vercel commit/env, never a
   shell). With no metadata (local dev) it shows a warning to verify via
   CI/Vercel.
+- **Fund Requests card** (informational) shows Add Missing Fund status — see below.
+
+## Add Missing Fund — fund requests (backend foundation)
+
+When an advisor searches a ticker that isn't in the verified universe, they can
+**request** it. The request is tracked so it can be reviewed and, later, fed into
+the offline fund pipeline. **This never mutates the verified universe on its own.**
+
+- **Migration:** `supabase/migrations/20260719120000_fund_requests.sql` — creates
+  the firm-scoped `fund_requests` table (same RLS pattern as saved work:
+  `is_firm_member(firm_id)`, audit + `updated_at` triggers, no anon access). A
+  partial-unique index blocks duplicate *active* requests per firm+ticker.
+  **Run it in the Supabase SQL editor / `supabase db push` before this ships.**
+- **API:**
+  - `POST /api/fund-requests` — body `{ ticker }`. Normalizes the ticker (trim /
+    uppercase / shape-validate → 400 on junk), checks the universe, then FMP,
+    dedupes any open request, and records the result. Requires a signed-in
+    session (401 otherwise).
+  - `GET /api/fund-requests` — the firm's requests (RLS-scoped).
+  - `GET /api/fund-requests/[ticker]` — one request's status + whether the ticker
+    is already in the universe.
+- **How a ticker flows:**
+  1. Already verified → status **already_available**, returns the existing fund
+     metadata, stores **no** request.
+  2. FMP has usable data but it's not in the universe → **ready_for_review**
+     (`fmp_supported=true`, `classification_status=pending`).
+  3. FMP can't return usable data → **unsupported** with a reason.
+  4. Provider unavailable / no key → **pending** (retryable — *this* is what the
+     health card flags as "stuck").
+- **Statuses:** `pending` · `already_available` · `fmp_supported` (reserved) ·
+  `needs_classification` (reserved) · `ready_for_review` · `approved` · `rejected`
+  · `unsupported`. Active (block duplicates): pending, fmp_supported,
+  needs_classification, ready_for_review.
+- **Inspect requests:** in Supabase → `select ticker, status, fund_name,
+  failure_reason, requested_at from fund_requests order by requested_at desc;`
+  (or an owner/admin can read them via `GET /api/fund-requests`).
+- **Approve / add a ticker manually (today):** review the `ready_for_review`
+  rows, add the good tickers to `data/input/fund-tickers.txt`, run
+  `npm run funds:build` then `npm run funds:validate`, and commit the regenerated
+  `data/generated/*`. Then mark the row `approved` (e.g. `update fund_requests set
+  status='approved', admin_note='added <date>' where normalized_ticker='XXXX';`).
+  A future task can automate this hand-off and wire an admin UI.
+- **Health:** the **Fund Requests** card is informational — healthy for normal
+  backlogs (it reports `readyForReview` / `unsupported` counts), and warns only
+  when `pending` (stuck) requests exist. No FMP key or raw provider payload is
+  ever returned by the support check.

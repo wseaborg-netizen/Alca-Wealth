@@ -21,7 +21,7 @@ const ROOT = path.resolve(__dirname, "../..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8");
 
 const ALLOWED = new Set(["healthy", "warning", "error"]);
-const EXPECTED_KEYS = ["fundUniverse", "fmpData", "scoringEngine", "savedLists", "portfolioBuilder", "apiRoutes", "appBuild"];
+const EXPECTED_KEYS = ["fundUniverse", "fmpData", "scoringEngine", "savedLists", "fundRequests", "portfolioBuilder", "apiRoutes", "appBuild"];
 
 function assertNormalized(c: HealthCheckResult) {
   expect(typeof c.key).toBe("string");
@@ -33,7 +33,7 @@ function assertNormalized(c: HealthCheckResult) {
 }
 
 describe("runSystemHealth: normalized, safe, isolated", () => {
-  test("returns the seven checks, all normalized with only allowed statuses", async () => {
+  test("returns all checks, all normalized with only allowed statuses", async () => {
     const health = await runSystemHealth({ signedIn: false });
     expect(health.checks.map((c) => c.key)).toEqual(EXPECTED_KEYS);
     for (const c of health.checks) assertNormalized(c);
@@ -60,7 +60,7 @@ describe("runSystemHealth: normalized, safe, isolated", () => {
       listsGetAll: async () => { throw new Error("boom — simulated DB failure"); },
     };
     const health = await runSystemHealth(ctx);
-    expect(health.checks).toHaveLength(7);
+    expect(health.checks).toHaveLength(EXPECTED_KEYS.length);
     const saved = health.checks.find((c) => c.key === "savedLists")!;
     expect(saved.status).toBe("error");
     // The raw error text is never surfaced to the client.
@@ -79,6 +79,30 @@ describe("runSystemHealth: normalized, safe, isolated", () => {
     for (const banned of ["ticker", "note", "fund_name", "watchlist_item"]) {
       expect(blob).not.toContain(banned);
     }
+  });
+
+  test("fund-requests check is informational — healthy on a normal backlog, warns only when stuck", async () => {
+    const healthyCtx: HealthAuthContext = {
+      signedIn: true,
+      fundRequestCounts: async () => ({ pending: 0, readyForReview: 3, unsupported: 1, total: 4 }),
+    };
+    const ok = (await runSystemHealth(healthyCtx)).checks.find((c) => c.key === "fundRequests")!;
+    expect(ok.status).toBe("healthy");
+    expect((ok.details as { readyForReview: number }).readyForReview).toBe(3);
+
+    const stuckCtx: HealthAuthContext = {
+      signedIn: true,
+      fundRequestCounts: async () => ({ pending: 2, readyForReview: 0, unsupported: 0, total: 2 }),
+    };
+    const stuck = (await runSystemHealth(stuckCtx)).checks.find((c) => c.key === "fundRequests")!;
+    expect(stuck.status).toBe("warning");
+    expect(stuck.summary.toLowerCase()).toMatch(/stuck|retry/);
+  });
+
+  test("signed-out fund-requests check exposes no request data", async () => {
+    const fr = (await runSystemHealth({ signedIn: false })).checks.find((c) => c.key === "fundRequests")!;
+    expect(fr.status).toBe("warning");
+    expect(JSON.stringify(fr.details)).not.toMatch(/ticker|fund_name/i);
   });
 
   test("signed-in saved-lists check reports counts only, never contents", async () => {

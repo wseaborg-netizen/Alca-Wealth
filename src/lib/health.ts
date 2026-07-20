@@ -47,6 +47,7 @@ export interface SystemHealthResponse {
 export interface HealthAuthContext {
   signedIn: boolean;
   listsGetAll?: () => Promise<{ name: string; type: string; itemCount: number }[]>;
+  fundRequestCounts?: () => Promise<{ pending: number; readyForReview: number; unsupported: number; total: number }>;
 }
 
 const PROBE_TICKER = "VTI";
@@ -243,6 +244,39 @@ async function checkSavedLists(ctx: HealthAuthContext): Promise<CheckBody> {
   return { status: "healthy", summary: "Signed-in user can read workspace lists; defaults present.", details };
 }
 
+// ── 4b. Fund Requests (Add Missing Fund) — informational ──────────────────────
+// Normal pending review is NOT a problem, so this stays healthy for ordinary
+// backlogs. It only warns when requests are STUCK — status "pending" means the
+// provider check could not complete and the request needs a retry.
+
+async function checkFundRequests(ctx: HealthAuthContext): Promise<CheckBody> {
+  if (!ctx.signedIn) {
+    return { status: "warning", summary: "Not signed in — fund requests not checked.", details: { signedIn: false } };
+  }
+  if (!ctx.fundRequestCounts) {
+    return { status: "warning", summary: "Signed in, but no workspace/firm is provisioned.", details: { signedIn: true, workspace: false } };
+  }
+  const c = await ctx.fundRequestCounts();
+  const details = {
+    total: c.total, pending: c.pending, readyForReview: c.readyForReview, unsupported: c.unsupported,
+  };
+  if (c.pending > 0) {
+    return {
+      status: "warning",
+      summary: `${c.pending} fund request(s) stuck — provider check did not complete; needs a retry.`,
+      details,
+    };
+  }
+  if (c.total === 0) {
+    return { status: "healthy", summary: "No fund requests outstanding.", details };
+  }
+  return {
+    status: "healthy",
+    summary: `Fund requests healthy — ${c.readyForReview} awaiting review, ${c.unsupported} unsupported.`,
+    details,
+  };
+}
+
 // ── 5. Portfolio Builder ──────────────────────────────────────────────────────
 
 function checkPortfolioBuilder(): CheckBody {
@@ -338,11 +372,12 @@ export async function runSystemHealth(ctx: HealthAuthContext): Promise<SystemHea
     probe = null;
   }
 
-  const [universe, fmp, scoring, savedLists, portfolio] = await Promise.all([
+  const [universe, fmp, scoring, savedLists, fundRequests, portfolio] = await Promise.all([
     safeCheck("fundUniverse", "Fund Universe", async () => checkFundUniverse()),
     safeCheck("fmpData", "FMP Data", async () => checkFmpData(probe)),
     safeCheck("scoringEngine", "Scoring Engine", () => checkScoringEngine(probe)),
     safeCheck("savedLists", "Saved Lists / Supabase", () => checkSavedLists(ctx)),
+    safeCheck("fundRequests", "Fund Requests", () => checkFundRequests(ctx)),
     safeCheck("portfolioBuilder", "Portfolio Builder", async () => checkPortfolioBuilder()),
   ]);
 
@@ -350,7 +385,7 @@ export async function runSystemHealth(ctx: HealthAuthContext): Promise<SystemHea
     checkApiRoutes(universe, fmp, savedLists));
   const appBuild = await safeCheck("appBuild", "App Build", async () => checkAppBuild());
 
-  const checks = [universe, fmp, scoring, savedLists, portfolio, apiRoutes, appBuild];
+  const checks = [universe, fmp, scoring, savedLists, fundRequests, portfolio, apiRoutes, appBuild];
   return {
     generatedAt: new Date().toISOString(),
     overall: worst(checks.map((c) => c.status)),
