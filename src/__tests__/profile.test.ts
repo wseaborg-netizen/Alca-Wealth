@@ -73,6 +73,17 @@ describe("profile migration", () => {
     expect(mig).toContain("first_name");
     expect(mig).toContain("handle_new_user");
   });
+
+  test("profiles has own-row INSERT/SELECT/UPDATE policies (upsert needs INSERT)", () => {
+    const auth = read("supabase/migrations/20260716120000_auth_saved_work.sql");
+    const insertFix = read("supabase/migrations/20260722000000_profiles_insert_policy.sql");
+    // SELECT + UPDATE come from the original auth migration...
+    expect(auth).toMatch(/create policy profiles_select on profiles for select to authenticated using \(id = auth\.uid\(\)\)/);
+    expect(auth).toMatch(/create policy profiles_update on profiles for update to authenticated/);
+    // ...and the INSERT policy (the bug fix) lets upsert create a user's own row.
+    expect(insertFix).toMatch(/create policy profiles_insert on profiles for insert to authenticated\s+with check \(id = auth\.uid\(\)\)/);
+    expect(insertFix).not.toMatch(/to anon\b/);
+  });
 });
 
 // ── Routes + UI wiring ────────────────────────────────────────────────────────
