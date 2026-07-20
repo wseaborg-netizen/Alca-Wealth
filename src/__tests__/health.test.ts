@@ -1,0 +1,141 @@
+/**
+ * System Health — internal diagnostics.
+ * Network is isolated (getFund mocked) so these run deterministically offline.
+ * Covers: normalized shape, per-check isolation, allowed statuses, signed-out
+ * saved-list safety, no-shell build check, auth-gated route, and no
+ * service-role key in the client Settings component.
+ */
+import * as fs from "fs";
+import * as path from "path";
+
+// Isolate the provider layer: the probe fetch must never hit the network here.
+jest.mock("@/lib/funds", () => ({
+  getFund: jest.fn(async () => { throw new Error("network isolated in test"); }),
+  inferVehicle: () => "ETF",
+  getRecommendFund: jest.fn(),
+}));
+
+import { runSystemHealth, type HealthCheckResult, type HealthAuthContext } from "@/lib/health";
+
+const ROOT = path.resolve(__dirname, "../..");
+const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8");
+
+const ALLOWED = new Set(["healthy", "warning", "error"]);
+const EXPECTED_KEYS = ["fundUniverse", "fmpData", "scoringEngine", "savedLists", "portfolioBuilder", "apiRoutes", "appBuild"];
+
+function assertNormalized(c: HealthCheckResult) {
+  expect(typeof c.key).toBe("string");
+  expect(typeof c.label).toBe("string");
+  expect(ALLOWED.has(c.status)).toBe(true);
+  expect(typeof c.summary).toBe("string");
+  expect(() => new Date(c.checkedAt).toISOString()).not.toThrow();
+  expect(Number.isNaN(new Date(c.checkedAt).getTime())).toBe(false);
+}
+
+describe("runSystemHealth: normalized, safe, isolated", () => {
+  test("returns the seven checks, all normalized with only allowed statuses", async () => {
+    const health = await runSystemHealth({ signedIn: false });
+    expect(health.checks.map((c) => c.key)).toEqual(EXPECTED_KEYS);
+    for (const c of health.checks) assertNormalized(c);
+    expect(ALLOWED.has(health.overall)).toBe(true);
+    expect(() => new Date(health.generatedAt).toISOString()).not.toThrow();
+  });
+
+  test("fund universe check is healthy (data loads without a network)", async () => {
+    const { checks } = await runSystemHealth({ signedIn: false });
+    const u = checks.find((c) => c.key === "fundUniverse")!;
+    expect(u.status).not.toBe("error");
+    expect((u.details as { verifiedFunds: number }).verifiedFunds).toBeGreaterThan(0);
+  });
+
+  test("FMP check degrades to error (not a crash) when the probe fails", async () => {
+    const fmp = (await runSystemHealth({ signedIn: false })).checks.find((c) => c.key === "fmpData")!;
+    expect(fmp.status).toBe("error");
+    expect(fmp.summary).toBeTruthy();
+  });
+
+  test("a single failing check is isolated — the others still return", async () => {
+    const ctx: HealthAuthContext = {
+      signedIn: true,
+      listsGetAll: async () => { throw new Error("boom — simulated DB failure"); },
+    };
+    const health = await runSystemHealth(ctx);
+    expect(health.checks).toHaveLength(7);
+    const saved = health.checks.find((c) => c.key === "savedLists")!;
+    expect(saved.status).toBe("error");
+    // The raw error text is never surfaced to the client.
+    expect(JSON.stringify(saved)).not.toContain("boom");
+    expect(JSON.stringify(saved)).not.toContain("simulated DB failure");
+    // Other checks are unaffected and still normalized.
+    for (const c of health.checks) assertNormalized(c);
+    expect(health.overall).toBe("error");
+  });
+
+  test("signed-out saved-lists check exposes no list data", async () => {
+    const saved = (await runSystemHealth({ signedIn: false })).checks.find((c) => c.key === "savedLists")!;
+    expect(saved.status).toBe("warning");
+    const blob = JSON.stringify(saved.details ?? {}).toLowerCase();
+    expect(blob).toContain("\"signedin\":false".toLowerCase());
+    for (const banned of ["ticker", "note", "fund_name", "watchlist_item"]) {
+      expect(blob).not.toContain(banned);
+    }
+  });
+
+  test("signed-in saved-lists check reports counts only, never contents", async () => {
+    const ctx: HealthAuthContext = {
+      signedIn: true,
+      listsGetAll: async () => [
+        { name: "", type: "watchlist", itemCount: 3 },
+        { name: "", type: "common", itemCount: 5 },
+      ],
+    };
+    const saved = (await runSystemHealth(ctx)).checks.find((c) => c.key === "savedLists")!;
+    expect(saved.status).toBe("healthy");
+    const d = saved.details as { listCount: number; hasWatchlist: boolean; hasCommon: boolean };
+    expect(d.listCount).toBe(2);
+    expect(d.hasWatchlist).toBe(true);
+    expect(d.hasCommon).toBe(true);
+    // No ticker/name/note field ever leaves the check.
+    expect(JSON.stringify(saved.details)).not.toMatch(/ticker|note|fund_name/i);
+  });
+});
+
+describe("build check never shells out", () => {
+  test("health module imports no process-spawning APIs", () => {
+    const src = read("src/lib/health.ts");
+    for (const banned of ["child_process", "execSync", "spawnSync", "spawn(", "exec("]) {
+      expect(src).not.toContain(banned);
+    }
+  });
+
+  test("build check surfaces metadata, not build execution", async () => {
+    const build = (await runSystemHealth({ signedIn: false })).checks.find((c) => c.key === "appBuild")!;
+    expect(ALLOWED.has(build.status)).toBe(true);
+    expect(build.summary.toLowerCase()).toMatch(/build/);
+  });
+});
+
+describe("route + client-component security", () => {
+  test("/api/health/system requires auth and returns 401 when signed out", () => {
+    const src = read("src/app/api/health/system/route.ts");
+    expect(src).toContain("getSessionUser");
+    expect(src).toContain("status: 401");
+    expect(src).not.toMatch(/SUPABASE_SERVICE_ROLE_KEY|getSupabaseAdmin/);
+  });
+
+  test("the client Settings component never imports the service-role key or the server health module", () => {
+    const src = read("src/components/SettingsTab.tsx");
+    expect(src).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
+    expect(src).not.toContain("getSupabaseAdmin");
+    expect(src).not.toMatch(/from ["']@\/lib\/health["']/); // reads over the API, not the server module
+    expect(src).not.toMatch(/from ["']@\/lib\/db["']/);
+  });
+
+  test("Settings renders the System Health section and a Refresh Health control", () => {
+    const src = read("src/components/SettingsTab.tsx");
+    expect(src).toContain("System Health");
+    expect(src).toContain("Refresh Health");
+    expect(src).toContain("SystemHealthSection");
+    expect(src).toContain("/api/health/system");
+  });
+});
