@@ -1130,3 +1130,28 @@ a live `COUNT`, never hardcoded) and runs a classifier + taxonomy self-test —
 per-fund peer rank on the Analysis page stay limited until the fund is folded into
 the static base. The screener still scores it within its category group inside the
 filtered result set.
+
+## Advisor Hub — alerts, SEC monitoring, command center
+
+- **Top-right account** shows the profile name (first+last → display_name →
+  email prefix → "Advisor") over **"Personal Workspace"** — no email-based or
+  fake firm/role labels. Fed by `/api/profile`, passed to `TopNav` via
+  `accountName`. Settings/Profile + Sign out unchanged.
+- **Advisor Overview** is a command center (`DashboardTab` + `/api/advisor-overview`):
+  personalized header + system-health chip + verified-fund count, Today's
+  Attention Queue (real unread SEC alerts / fund requests needing review /
+  needs-classification / unresolved CIK), Quick Actions (real routes only),
+  Saved-list + Fund-universe + System-health snapshots, recent activity (honest
+  empty states — no fabricated activity), with Market Pulse kept but secondary.
+- **Alerts** (Tools → Alerts, `AlertsTab`): SEC filing feed, monitoring status,
+  monitored saved funds, and a **Refresh SEC Alerts** button. See
+  [docs/sec-edgar-monitoring.md](docs/sec-edgar-monitoring.md) for the full SEC
+  monitoring design (endpoints, forms, caching/rate-limiting, alert rules,
+  CIK limitations, no-fake-alert policy, what's real vs future).
+- **Migration** `20260723000000_advisor_alerts.sql` — `monitored_entities`,
+  `sec_filings`, `advisor_alerts` (firm-scoped RLS with INSERT-capable policies;
+  unique constraints for filing + alert dedup). Apply via the Supabase CLI
+  (`db push`).
+- **System Health** gains a **SEC Monitoring** card: red only when
+  `SEC_USER_AGENT` is missing; unresolved CIKs and "no alerts / no refresh yet"
+  are informational, never errors.

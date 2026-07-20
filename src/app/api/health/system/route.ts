@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireFirmContext, listsGetAll, fundRequestCounts, dynamicFundCount } from "@/lib/db";
+import { requireFirmContext, listsGetAll, fundRequestCounts, dynamicFundCount, monitoredEntityCounts, alertCounts } from "@/lib/db";
 import { getSessionUser } from "@/lib/db";
 import { runSystemHealth, type HealthAuthContext } from "@/lib/health";
 
@@ -31,6 +31,10 @@ export async function GET() {
         },
         fundRequestCounts: () => fundRequestCounts(ctx.sb, ctx.firm.id),
         dynamicFundCount: () => dynamicFundCount(ctx.sb),
+        monitoringCounts: async () => {
+          const [me, ac] = await Promise.all([monitoredEntityCounts(ctx.sb, ctx.firm.id), alertCounts(ctx.sb, ctx.firm.id)]);
+          return { monitored: me.active, unresolvedCik: me.unresolvedCik, alerts: ac.total };
+        },
       }
     : { signedIn: true };
 

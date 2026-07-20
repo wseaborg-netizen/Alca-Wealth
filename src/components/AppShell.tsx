@@ -17,6 +17,7 @@ import HomeTab from "./HomeTab";
 import ModelTab, { type ModelMode } from "./ModelTab";
 import ListsTab from "./ListsTab";
 import ExpansionTab from "./ExpansionTab";
+import AlertsTab from "./AlertsTab";
 import TopNav, { type NavSection } from "./TopNav";
 
 // ── Roadmap / idea tabs (placeholders - not built yet) ──────────────────────────
@@ -71,6 +72,20 @@ interface AppShellProps {
 export default function AppShell({ authMode, authUser, authWorkspace, onLogout }: AppShellProps = {}) {
   const [tab, setTab]   = useState<TabId>("home");
   const [mounted, setMounted] = useState<Set<TabId>>(new Set<TabId>(["home", "dashboard"]));
+
+  // Profile display name for the top-right (name, not email-based workspace).
+  const [accountName, setAccountName] = useState<string | null>(null);
+  useEffect(() => {
+    if (authMode !== "full") return;
+    let alive = true;
+    fetch("/api/profile", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (!alive || !d) return;
+      const p = d.profile as { first_name?: string | null; last_name?: string | null; display_name?: string | null } | null;
+      const full = [p?.first_name, p?.last_name].filter(Boolean).join(" ").trim();
+      setAccountName(full || p?.display_name || (d.greeting as string) || null);
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, [authMode]);
 
   // Shared "focus fund" + tray - the glue that carries data across tabs
   const [compareTickers, setCompareTickers] = useState<string[]>([]);
@@ -249,6 +264,7 @@ export default function AppShell({ authMode, authUser, authWorkspace, onLogout }
         authMode={authMode}
         authUser={authUser}
         authWorkspace={authWorkspace}
+        accountName={accountName}
         onLogout={onLogout}
         canBack={canBack}
         canForward={canForward}
@@ -383,8 +399,14 @@ export default function AppShell({ authMode, authUser, authWorkspace, onLogout }
             <ModelTab mode={modelMode} setMode={setModelMode} onReturnToPortfolio={() => switchTab("portfolio")} />
           </div>
         )}
-        {/* Roadmap tabs - placeholders */}
-        {ROADMAP.filter((r) => r.id === tab).map((r) => (
+        {/* Alerts — SEC filing monitoring (real) */}
+        {mounted.has("alerts") && (
+          <div style={{ display: tab === "alerts" ? "block" : "none" }}>
+            <AlertsTab onAnalyze={goAnalyze} />
+          </div>
+        )}
+        {/* Roadmap tabs - placeholders (alerts is real, above) */}
+        {ROADMAP.filter((r) => r.id === tab && r.id !== "alerts").map((r) => (
           <ComingSoonTab key={r.id} spec={r} />
         ))}
       </main>

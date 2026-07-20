@@ -21,7 +21,7 @@ const ROOT = path.resolve(__dirname, "../..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8");
 
 const ALLOWED = new Set(["healthy", "warning", "error"]);
-const EXPECTED_KEYS = ["fundUniverse", "fmpData", "scoringEngine", "savedLists", "fundRequests", "portfolioBuilder", "apiRoutes", "appBuild"];
+const EXPECTED_KEYS = ["fundUniverse", "fmpData", "scoringEngine", "savedLists", "fundRequests", "secAlerts", "portfolioBuilder", "apiRoutes", "appBuild"];
 
 function assertNormalized(c: HealthCheckResult) {
   expect(typeof c.key).toBe("string");
@@ -102,6 +102,32 @@ describe("runSystemHealth: normalized, safe, isolated", () => {
     const stuck = (await runSystemHealth(stuckCtx)).checks.find((c) => c.key === "fundRequests")!;
     expect(stuck.status).toBe("warning");
     expect(stuck.summary.toLowerCase()).toMatch(/stuck|retry/);
+  });
+
+  test("SEC monitoring check: red without a User-Agent, healthy/warning with one", async () => {
+    const saved = process.env.SEC_USER_AGENT;
+    const savedContact = process.env.SEC_CONTACT_EMAIL;
+    try {
+      delete process.env.SEC_USER_AGENT; delete process.env.SEC_CONTACT_EMAIL;
+      const noUa = (await runSystemHealth({ signedIn: false })).checks.find((c) => c.key === "secAlerts")!;
+      expect(noUa.status).toBe("error");
+
+      process.env.SEC_USER_AGENT = "Alca Wealth test@example.com";
+      const withUa = (await runSystemHealth({
+        signedIn: true,
+        monitoringCounts: async () => ({ monitored: 3, unresolvedCik: 0, alerts: 0 }),
+      })).checks.find((c) => c.key === "secAlerts")!;
+      expect(withUa.status).toBe("healthy");                 // no alerts is NOT an error
+
+      const unresolved = (await runSystemHealth({
+        signedIn: true,
+        monitoringCounts: async () => ({ monitored: 3, unresolvedCik: 2, alerts: 0 }),
+      })).checks.find((c) => c.key === "secAlerts")!;
+      expect(unresolved.status).toBe("warning");             // unresolved CIK is yellow, not red
+    } finally {
+      if (saved === undefined) delete process.env.SEC_USER_AGENT; else process.env.SEC_USER_AGENT = saved;
+      if (savedContact === undefined) delete process.env.SEC_CONTACT_EMAIL; else process.env.SEC_CONTACT_EMAIL = savedContact;
+    }
   });
 
   test("signed-out fund-requests check exposes no request data", async () => {

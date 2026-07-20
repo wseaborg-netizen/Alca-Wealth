@@ -7,7 +7,7 @@ import { greetingName } from "@/lib/profile";
 
 export type DashTab = "find" | "analysis" | "comparison" | "recommendation" | "discover"
   | "research" | "workspace" | "portfolio" | "murderboard" | "watchlist" | "model"
-  | "model-fund" | "model-project" | "model-scenarios";
+  | "model-fund" | "model-project" | "model-scenarios" | "expansion" | "lists" | "alerts";
 
 interface MarketItem {
   ticker: string; label: string; group: string;
@@ -16,6 +16,17 @@ interface MarketItem {
   spark6m?: number[];
 }
 interface MarketData { items: MarketItem[]; fetchedAt: number; }
+
+interface Overview {
+  ok: boolean;
+  userSummary: { greeting: string; workspace: string };
+  attentionItems: { type: string; severity: string; title: string; count: number; href: string }[];
+  savedListSummary: { commonCount: number; watchlistCount: number; customListCount: number; totalFunds: number; topTickers: string[] };
+  recentActivity: { kind: string; label: string; ticker: string | null; severity: string; at: string; href: string | null }[];
+  expansionSummary: { static: number; dynamic: number; merged: number; pendingRequests: number; readyForReview: number; needsClassification: number; unsupported: number };
+  alertCounts: { unread: number; total: number };
+}
+interface HealthResp { overall: "healthy" | "warning" | "error"; checks: { key: string; label: string; status: "healthy" | "warning" | "error" }[]; generatedAt: string }
 
 // ── Advisor Overview — the "Enter Platform" landing surface ──────────────────
 // A light, calm advisor overview: soft-gray page, white cards, dark charcoal
@@ -264,12 +275,145 @@ function SectionLabel({ children, right }: { children: React.ReactNode; right?: 
   );
 }
 
+const HEALTH_DOT: Record<"healthy" | "warning" | "error", string> = { healthy: "#22c55e", warning: "#f59e0b", error: "#ef4444" };
+const SEV_DOT: Record<string, string> = { info: "#3b82f6", watch: "#f59e0b", warning: "#f59e0b", critical: "#ef4444" };
+
+// ── Command center (real data only; honest empty states) ─────────────────────
+function CommandCenter({ overview, health, go, isMobile }: {
+  overview: Overview | null; health: HealthResp | null; go: (t: DashTab) => void; isMobile: boolean;
+}) {
+  const card: React.CSSProperties = { background: T.panel, border: `1px solid ${T.line}`, borderRadius: 14, padding: "16px 18px" };
+  const h = (_s?: string) => ({ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: T.muted, ...ui, margin: "0 0 10px" });
+
+  const QUICK: { label: string; tab: DashTab }[] = [
+    { label: "Analyze Fund", tab: "analysis" }, { label: "Screen Funds", tab: "find" },
+    { label: "Build Portfolio", tab: "portfolio" }, { label: "Add Missing Fund", tab: "expansion" },
+    { label: "Open Saved Lists", tab: "lists" }, { label: "View Alerts", tab: "alerts" },
+  ];
+  const warnings = health?.checks.filter((c) => c.status !== "healthy") ?? [];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Attention queue */}
+      <div style={card}>
+        <h3 style={h("a")}>Today’s attention queue</h3>
+        {overview && overview.attentionItems.length === 0 && warnings.length === 0 ? (
+          <div style={{ fontSize: 13, color: T.dim, ...ui }}>No urgent items right now.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {(overview?.attentionItems ?? []).map((it, i) => (
+              <button key={i} onClick={() => { if (it.type === "sec_alerts" || it.type === "unresolved_cik") go("alerts"); else go("expansion"); }}
+                style={{ display: "flex", alignItems: "center", gap: 10, textAlign: "left", background: "none",
+                  border: `1px solid ${T.line}`, borderRadius: 9, padding: "9px 12px", cursor: "pointer" }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: SEV_DOT[it.severity] ?? T.blue, flexShrink: 0 }} />
+                <span style={{ fontSize: 12.5, color: T.text, ...ui, flex: 1 }}>{it.title}</span>
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: T.text, ...mono }}>{it.count}</span>
+              </button>
+            ))}
+            {warnings.map((c) => (
+              <div key={c.key} style={{ display: "flex", alignItems: "center", gap: 10, border: `1px solid ${T.line}`, borderRadius: 9, padding: "9px 12px" }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: HEALTH_DOT[c.status], flexShrink: 0 }} />
+                <span style={{ fontSize: 12.5, color: T.dim, ...ui }}>System Health: {c.label} needs attention</span>
+              </div>
+            ))}
+            {!overview && <div style={{ fontSize: 12.5, color: T.muted, ...ui }}>Loading…</div>}
+          </div>
+        )}
+      </div>
+
+      {/* Quick actions */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {QUICK.map((q) => (
+          <button key={q.label} onClick={() => go(q.tab)}
+            style={{ padding: "9px 14px", borderRadius: 9, border: `1px solid ${T.line2}`, background: T.panel,
+              color: T.text, fontSize: 12.5, fontWeight: 600, cursor: "pointer", ...ui }}>{q.label}</button>
+        ))}
+      </div>
+
+      {/* Snapshots: saved lists · expansion · health */}
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 12 }}>
+        <div style={card}>
+          <h3 style={h("s")}>Saved lists</h3>
+          {overview ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <Stat label="Commonly Used Funds" value={overview.savedListSummary.commonCount} />
+              <Stat label="Watchlist" value={overview.savedListSummary.watchlistCount} />
+              <Stat label="Custom lists" value={overview.savedListSummary.customListCount} />
+              {overview.savedListSummary.topTickers.length > 0 && (
+                <div style={{ fontSize: 11, color: T.muted, ...mono, marginTop: 4 }}>{overview.savedListSummary.topTickers.slice(0, 6).join(" · ")}</div>
+              )}
+              <button onClick={() => go("lists")} style={linkBtn}>Open Saved Lists →</button>
+            </div>
+          ) : <Muted />}
+        </div>
+        <div style={card}>
+          <h3 style={h("e")}>Fund universe</h3>
+          {overview ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <Stat label="Verified (merged)" value={overview.expansionSummary.merged} hi />
+              <Stat label="Static base" value={overview.expansionSummary.static} />
+              <Stat label="Dynamic added" value={overview.expansionSummary.dynamic} />
+              <Stat label="Pending requests" value={overview.expansionSummary.pendingRequests} />
+              <Stat label="Needs classification" value={overview.expansionSummary.needsClassification} />
+              <button onClick={() => go("expansion")} style={linkBtn}>Open Expansion →</button>
+            </div>
+          ) : <Muted />}
+        </div>
+        <div style={card}>
+          <h3 style={h("h")}>System health</h3>
+          {health ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <Stat label="Healthy" value={health.checks.filter((c) => c.status === "healthy").length} />
+              <Stat label="Warnings" value={health.checks.filter((c) => c.status === "warning").length} />
+              <Stat label="Errors" value={health.checks.filter((c) => c.status === "error").length} />
+              <div style={{ fontSize: 10.5, color: T.muted, ...ui, marginTop: 2 }}>Checked {new Date(health.generatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+            </div>
+          ) : <Muted />}
+        </div>
+      </div>
+
+      {/* Recent activity */}
+      <div style={card}>
+        <h3 style={h("r")}>Pick up where you left off</h3>
+        {overview && overview.recentActivity.length === 0 ? (
+          <div style={{ fontSize: 12.5, color: T.dim, ...ui }}>No recent activity yet. Save a fund or run an SEC refresh to get started.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {(overview?.recentActivity ?? []).map((a, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12.5, color: T.dim, ...ui }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: SEV_DOT[a.severity] ?? T.muted }} />
+                {a.ticker && <span style={{ color: T.blue, fontWeight: 700, ...mono }}>{a.ticker}</span>}
+                <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.label}</span>
+                <span style={{ fontSize: 10.5, color: T.muted, ...mono }}>{new Date(a.at).toLocaleDateString()}</span>
+              </div>
+            ))}
+            {!overview && <Muted />}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const linkBtn: React.CSSProperties = { marginTop: 6, alignSelf: "flex-start", background: "none", border: "none", color: T.blue, fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0, fontFamily: "var(--font-text)" };
+function Stat({ label, value, hi }: { label: string; value: number; hi?: boolean }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+      <span style={{ fontSize: 12, color: T.dim, ...ui }}>{label}</span>
+      <span style={{ fontSize: 14, fontWeight: 700, color: hi ? T.data : T.text, ...mono }}>{value.toLocaleString()}</span>
+    </div>
+  );
+}
+function Muted() { return <div style={{ fontSize: 12.5, color: T.muted, ...ui }}>Loading…</div>; }
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 export default function DashboardTab({ onNavigate, userEmail }: { onNavigate?: (t: DashTab) => void; userEmail?: string | null } = {}) {
   const [market, setMarket] = useState<MarketData | null>(null);
   const [mktLoading, setMktLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [greeting, setGreeting] = useState<string | null>(null);
+  const [overview, setOverview] = useState<Overview | null>(null);
+  const [health, setHealth] = useState<HealthResp | null>(null);
   const isNarrow = useMediaQuery("(max-width: 1080px)");
   const isMobile = useMediaQuery("(max-width: 720px)");
 
@@ -288,6 +432,16 @@ export default function DashboardTab({ onNavigate, userEmail }: { onNavigate?: (
       .catch(() => { if (alive) setGreeting(greetingName(null, userEmail ?? null)); });
     return () => { alive = false; };
   }, [userEmail]);
+
+  // Command-center aggregation (real, firm-scoped) + full System Health status.
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/advisor-overview", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null)).then((d) => { if (alive && d?.ok) setOverview(d as Overview); }).catch(() => {});
+    fetch("/api/health/system", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null)).then((d) => { if (alive && d?.checks) setHealth(d as HealthResp); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   const go = (t: DashTab) => onNavigate?.(t);
 
@@ -325,11 +479,27 @@ export default function DashboardTab({ onNavigate, userEmail }: { onNavigate?: (
                 Advisor Overview
               </h1>
               <p style={{ fontSize: 14, color: T.dim, ...ui, margin: "8px 0 0" }}>
-                Live markets, your workspaces, and what needs attention.
+                Here’s what needs attention across your workspace.
               </p>
             </div>
-            {time && <span style={{ fontSize: 11, color: T.muted, ...mono }}>Data as of {time} · delayed</span>}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+              {health && (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700,
+                  color: HEALTH_DOT[health.overall], background: `${HEALTH_DOT[health.overall]}18`,
+                  border: `1px solid ${HEALTH_DOT[health.overall]}44`, borderRadius: 999, padding: "3px 10px", ...ui }}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: HEALTH_DOT[health.overall] }} />
+                  System {health.overall}
+                </span>
+              )}
+              {overview && <span style={{ fontSize: 11, color: T.muted, ...mono }}>{overview.expansionSummary.merged.toLocaleString()} verified funds</span>}
+              {time && <span style={{ fontSize: 11, color: T.muted, ...mono }}>Data as of {time} · delayed</span>}
+            </div>
           </div>
+        </Reveal>
+
+        {/* ── Command center: attention · quick actions · snapshots ── */}
+        <Reveal delay={40}>
+          <CommandCenter overview={overview} health={health} go={go} isMobile={isMobile} />
         </Reveal>
 
         {/* ── 1 · Compact market strip (charcoal data surface) ── */}

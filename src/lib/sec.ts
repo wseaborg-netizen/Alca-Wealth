@@ -30,7 +30,7 @@ const SCOPE_FEED_TTL = 6 * 60 * 60;
 const MAX_BODY_BYTES = 20 * 1024 * 1024; // company_tickers_mf.json is ~10MB
 
 export const FUND_FORMS = [
-  "485BPOS", "485APOS", "N-1A", "497", "497K", "N-CSR", "N-CSRS", "N-PORT-P", "N-CEN",
+  "485BPOS", "485APOS", "N-1A", "497", "497K", "N-CSR", "N-CSRS", "N-PORT", "N-PORT-P", "N-CEN", "N-PX",
 ] as const;
 
 // ── Identity ──────────────────────────────────────────────────────────────────

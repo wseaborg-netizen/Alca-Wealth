@@ -54,6 +54,8 @@ export interface HealthAuthContext {
   }>;
   /** Verified dynamic-fund count (Expansion Hub overlay). */
   dynamicFundCount?: () => Promise<number>;
+  /** SEC monitoring counts (Advisor Hub alerts). */
+  monitoringCounts?: () => Promise<{ monitored: number; unresolvedCik: number; alerts: number }>;
 }
 
 const PROBE_TICKER = "VTI";
@@ -300,6 +302,28 @@ async function checkFundRequests(ctx: HealthAuthContext): Promise<CheckBody> {
   };
 }
 
+// ── 4c. SEC Monitoring / Alerts ───────────────────────────────────────────────
+// Red only when SEC can't run at all (no User-Agent). Unresolved CIKs and "no
+// refresh yet / no alerts" are informational, never errors.
+
+function checkSecAlerts(ctx: HealthAuthContext): Promise<CheckBody> {
+  const secConfigured = !!(process.env.SEC_USER_AGENT?.trim() || process.env.SEC_CONTACT_EMAIL?.trim());
+  return (async () => {
+    if (!secConfigured) {
+      return { status: "error", summary: "SEC_USER_AGENT is not configured — SEC monitoring is disabled.", details: { secUserAgent: false } };
+    }
+    if (!ctx.signedIn || !ctx.monitoringCounts) {
+      return { status: "warning", summary: "SEC User-Agent configured; monitoring counts unavailable (not signed in / no workspace).", details: { secUserAgent: true } };
+    }
+    const c = await ctx.monitoringCounts();
+    const details = { secUserAgent: true, monitored: c.monitored, unresolvedCik: c.unresolvedCik, alerts: c.alerts };
+    if (c.unresolvedCik > 0) {
+      return { status: "warning", summary: `SEC monitoring active; ${c.unresolvedCik} monitored fund(s) have no SEC CIK match.`, details };
+    }
+    return { status: "healthy", summary: `SEC User-Agent configured; ${c.monitored} monitored, ${c.alerts} alert(s).`, details };
+  })();
+}
+
 // ── 5. Portfolio Builder ──────────────────────────────────────────────────────
 
 function checkPortfolioBuilder(): CheckBody {
@@ -399,12 +423,13 @@ export async function runSystemHealth(ctx: HealthAuthContext): Promise<SystemHea
   let dynamicCount = 0;
   if (ctx.dynamicFundCount) { try { dynamicCount = await ctx.dynamicFundCount(); } catch { dynamicCount = 0; } }
 
-  const [universe, fmp, scoring, savedLists, fundRequests, portfolio] = await Promise.all([
+  const [universe, fmp, scoring, savedLists, fundRequests, secAlerts, portfolio] = await Promise.all([
     safeCheck("fundUniverse", "Fund Universe", async () => checkFundUniverse(dynamicCount)),
     safeCheck("fmpData", "FMP Data", async () => checkFmpData(probe)),
     safeCheck("scoringEngine", "Scoring Engine", () => checkScoringEngine(probe)),
     safeCheck("savedLists", "Saved Lists / Supabase", () => checkSavedLists(ctx)),
     safeCheck("fundRequests", "Fund Requests", () => checkFundRequests(ctx)),
+    safeCheck("secAlerts", "SEC Monitoring", () => checkSecAlerts(ctx)),
     safeCheck("portfolioBuilder", "Portfolio Builder", async () => checkPortfolioBuilder()),
   ]);
 
@@ -412,7 +437,7 @@ export async function runSystemHealth(ctx: HealthAuthContext): Promise<SystemHea
     checkApiRoutes(universe, fmp, savedLists));
   const appBuild = await safeCheck("appBuild", "App Build", async () => checkAppBuild());
 
-  const checks = [universe, fmp, scoring, savedLists, fundRequests, portfolio, apiRoutes, appBuild];
+  const checks = [universe, fmp, scoring, savedLists, fundRequests, secAlerts, portfolio, apiRoutes, appBuild];
   return {
     generatedAt: new Date().toISOString(),
     overall: worst(checks.map((c) => c.status)),

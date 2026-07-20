@@ -238,6 +238,144 @@ export async function profileUpsert(sb: Supa, userId: string, email: string | nu
   return data as unknown as ProfileRow;
 }
 
+// ── Monitoring + alerts (Advisor Hub) ───────────────────────────────────────
+
+export interface MonitoredEntityRow {
+  id: string; ticker: string; normalized_ticker: string; entity_name: string | null;
+  entity_type: string; cik: string | null; cik_source: string; active: boolean;
+  source_type: string; source_id: string | null; last_checked_at: string | null;
+  last_success_at: string | null; last_error: string | null;
+}
+const ME_COLS = "id, ticker, normalized_ticker, entity_name, entity_type, cik, cik_source, active, source_type, source_id, last_checked_at, last_success_at, last_error";
+
+export async function monitoredEntitiesList(sb: Supa, firmId: string): Promise<MonitoredEntityRow[]> {
+  const { data, error } = await sb.from("monitored_entities").select(ME_COLS).eq("firm_id", firmId).order("normalized_ticker");
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as MonitoredEntityRow[];
+}
+
+/** Upsert a monitored entity by (firm, ticker) — no duplicate active rows. */
+export async function monitoredEntityUpsert(sb: Supa, firmId: string, userId: string, e: {
+  ticker: string; entityName?: string | null; entityType?: string; cik?: string | null;
+  cikSource?: string; sourceType?: string; sourceId?: string | null;
+}): Promise<MonitoredEntityRow> {
+  const t = e.ticker.toUpperCase();
+  const row: Record<string, unknown> = {
+    firm_id: firmId, created_by: userId, ticker: t, normalized_ticker: t, active: true,
+    source_type: e.sourceType ?? "saved_list", source_id: e.sourceId ?? null,
+  };
+  if (e.entityName !== undefined) row.entity_name = e.entityName;
+  if (e.entityType !== undefined) row.entity_type = e.entityType;
+  if (e.cik !== undefined) row.cik = e.cik;
+  if (e.cikSource !== undefined) row.cik_source = e.cikSource;
+  const { data, error } = await sb.from("monitored_entities").upsert(row, { onConflict: "firm_id,normalized_ticker" }).select(ME_COLS).single();
+  if (error) throw new Error(error.message);
+  return data as unknown as MonitoredEntityRow;
+}
+
+export async function monitoredEntitySetStatus(sb: Supa, firmId: string, id: string, s: {
+  cik?: string | null; cikSource?: string; entityName?: string | null; lastCheckedAt?: string;
+  lastSuccessAt?: string | null; lastError?: string | null;
+}): Promise<void> {
+  const patch: Record<string, unknown> = {};
+  if (s.cik !== undefined) patch.cik = s.cik;
+  if (s.cikSource !== undefined) patch.cik_source = s.cikSource;
+  if (s.entityName !== undefined) patch.entity_name = s.entityName;
+  if (s.lastCheckedAt !== undefined) patch.last_checked_at = s.lastCheckedAt;
+  if (s.lastSuccessAt !== undefined) patch.last_success_at = s.lastSuccessAt;
+  if (s.lastError !== undefined) patch.last_error = s.lastError;
+  const { error } = await sb.from("monitored_entities").update(patch).eq("firm_id", firmId).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function monitoredEntityCounts(sb: Supa, firmId: string): Promise<{ total: number; active: number; unresolvedCik: number }> {
+  const { data, error } = await sb.from("monitored_entities").select("active, cik").eq("firm_id", firmId);
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as { active: boolean; cik: string | null }[];
+  return {
+    total: rows.length,
+    active: rows.filter((r) => r.active).length,
+    unresolvedCik: rows.filter((r) => r.active && !r.cik).length,
+  };
+}
+
+export interface SecFilingRow { id: string; cik: string; accession_number: string; form_type: string | null; filing_date: string | null; ticker: string | null; entity_name: string | null; filing_url: string | null }
+
+/** Insert a filing if new; returns { row, isNew }. Dedup by (cik, accession). */
+export async function secFilingUpsert(sb: Supa, f: {
+  cik: string; ticker: string | null; entityName: string | null; accessionNumber: string;
+  formType: string | null; filingDate: string | null; primaryDocument: string | null;
+  filingUrl: string | null; secIndexUrl: string | null; rawMetadata?: Record<string, unknown> | null;
+}): Promise<{ row: SecFilingRow; isNew: boolean }> {
+  const existing = await sb.from("sec_filings").select("id, cik, accession_number, form_type, filing_date, ticker, entity_name, filing_url")
+    .eq("cik", f.cik).eq("accession_number", f.accessionNumber).limit(1);
+  if (existing.data?.[0]) return { row: existing.data[0] as unknown as SecFilingRow, isNew: false };
+  const { data, error } = await sb.from("sec_filings").insert({
+    cik: f.cik, ticker: f.ticker, entity_name: f.entityName, accession_number: f.accessionNumber,
+    form_type: f.formType, filing_date: f.filingDate || null, primary_document: f.primaryDocument,
+    filing_url: f.filingUrl, sec_index_url: f.secIndexUrl, raw_metadata: f.rawMetadata ?? null,
+  }).select("id, cik, accession_number, form_type, filing_date, ticker, entity_name, filing_url").single();
+  if (error) throw new Error(error.message);
+  return { row: data as unknown as SecFilingRow, isNew: true };
+}
+
+export interface AdvisorAlertRow {
+  id: string; alert_type: string; severity: string; status: string; source: string;
+  ticker: string | null; fund_name: string | null; cik: string | null; title: string;
+  summary: string | null; reason: string | null; action_label: string | null; action_href: string | null;
+  related_filing_id: string | null; created_at: string; read_at: string | null;
+}
+const ALERT_COLS = "id, alert_type, severity, status, source, ticker, fund_name, cik, title, summary, reason, action_label, action_href, related_filing_id, created_at, read_at";
+
+export async function alertsList(sb: Supa, firmId: string, opts?: { includeArchived?: boolean; limit?: number }): Promise<AdvisorAlertRow[]> {
+  let q = sb.from("advisor_alerts").select(ALERT_COLS).eq("firm_id", firmId);
+  if (!opts?.includeArchived) q = q.neq("status", "archived");
+  const { data, error } = await q.order("created_at", { ascending: false }).limit(opts?.limit ?? 100);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as AdvisorAlertRow[];
+}
+
+/** Insert an alert unless one with the same dedupe_key already exists for the
+    firm. Returns the row when newly created, or null when a duplicate. */
+export async function alertInsertDedup(sb: Supa, firmId: string, userId: string, a: {
+  alertType: string; severity: string; source: string; ticker?: string | null; fundName?: string | null;
+  cik?: string | null; title: string; summary?: string | null; reason?: string | null;
+  actionLabel?: string | null; actionHref?: string | null; relatedFilingId?: string | null;
+  relatedListId?: string | null; dedupeKey?: string | null; metadata?: Record<string, unknown> | null;
+}): Promise<AdvisorAlertRow | null> {
+  if (a.dedupeKey) {
+    const dup = await sb.from("advisor_alerts").select("id").eq("firm_id", firmId).eq("dedupe_key", a.dedupeKey).limit(1);
+    if (dup.data?.[0]) return null;
+  }
+  const { data, error } = await sb.from("advisor_alerts").insert({
+    firm_id: firmId, created_by: userId, alert_type: a.alertType, severity: a.severity, source: a.source,
+    ticker: a.ticker ?? null, fund_name: a.fundName ?? null, cik: a.cik ?? null, title: a.title,
+    summary: a.summary ?? null, reason: a.reason ?? null, action_label: a.actionLabel ?? null,
+    action_href: a.actionHref ?? null, related_filing_id: a.relatedFilingId ?? null,
+    related_list_id: a.relatedListId ?? null, dedupe_key: a.dedupeKey ?? null, metadata: a.metadata ?? null,
+  }).select(ALERT_COLS).single();
+  if (error) {
+    if (/duplicate key|unique/i.test(error.message)) return null; // race → treat as dedup
+    throw new Error(error.message);
+  }
+  return data as unknown as AdvisorAlertRow;
+}
+
+export async function alertSetStatus(sb: Supa, firmId: string, id: string, status: "read" | "archived" | "unread"): Promise<boolean> {
+  const patch: Record<string, unknown> = { status };
+  if (status === "read") patch.read_at = new Date().toISOString();
+  const { data, error } = await sb.from("advisor_alerts").update(patch).eq("firm_id", firmId).eq("id", id).select("id");
+  if (error) throw new Error(error.message);
+  return !!data?.length;
+}
+
+export async function alertCounts(sb: Supa, firmId: string): Promise<{ unread: number; total: number }> {
+  const { data, error } = await sb.from("advisor_alerts").select("status").eq("firm_id", firmId).neq("status", "archived");
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as { status: string }[];
+  return { unread: rows.filter((r) => r.status === "unread").length, total: rows.length };
+}
+
 // ── Dynamic universe funds (Expansion Hub) ──────────────────────────────────
 // Verified rows are the shared runtime universe overlay; merged with the static
 // universe server-side (src/lib/universeServer.ts). RLS lets any authenticated
