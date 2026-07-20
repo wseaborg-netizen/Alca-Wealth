@@ -321,7 +321,7 @@ export default function AppShell({ authMode, authUser, authWorkspace, onLogout }
           />
         </div>
         <div style={{ display: tab === "dashboard" ? "block" : "none" }}>
-          <DashboardTab onNavigate={dashNavigate} userEmail={authUser ?? null} />
+          <DashboardTab onNavigate={dashNavigate} userEmail={authUser ?? null} onAnalyze={goAnalyze} />
         </div>
         {mounted.has("research") && (
           <div style={{ display: tab === "research" ? "block" : "none" }}><ResearchHubTab go={hubGo} onAnalyze={goAnalyze} /></div>

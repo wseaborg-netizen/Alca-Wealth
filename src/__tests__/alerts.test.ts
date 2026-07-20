@@ -127,14 +127,17 @@ describe("Advisor Hub + top-right wiring", () => {
     expect(nav).toContain("accountName");
     expect(nav).not.toMatch(/\{authUser\}\s*Workspace|\$\{authUser\}\s*Workspace/);
   });
-  test("Advisor Overview has the command-center sections and real quick actions", () => {
+  test("Advisor Overview command center: Daily Desk, personal alerts, hubs (real routes)", () => {
     const d = read("src/components/DashboardTab.tsx");
     expect(d).toContain("Welcome back,");
-    expect(d).toContain("Today’s attention queue");
+    expect(d).toContain("Daily Desk");
+    expect(d).toContain("My Updates & Alerts");
     expect(d).toContain("/api/advisor-overview");
-    for (const label of ["Analyze Fund", "Screen Funds", "Build Portfolio", "Add Missing Fund", "Open Saved Lists", "View Alerts"]) {
-      expect(d).toContain(label);
-    }
+    // four workspace hubs incl. the Advisor Toolkit that absorbs the extra tools
+    for (const cta of ["Enter Research", "Enter Portfolio", "Enter Model", "Enter Toolkit"]) expect(d).toContain(cta);
+    for (const tool of ["Tax Efficiency", "Correlation", "Peer Rankings", "Add Missing Fund", "AI Assistant"]) expect(d).toContain(tool);
+    // removed from this page (APIs remain, cards gone)
+    expect(d).not.toContain("Market Pulse");
   });
   test("Alerts page is mounted under Tools and reachable", () => {
     const shell = read("src/components/AppShell.tsx");

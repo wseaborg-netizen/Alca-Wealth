@@ -1,636 +1,369 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { T, ui, mono } from "./tokens";
-import { AreaChart, Area, ResponsiveContainer, Tooltip } from "recharts";
-import { Reveal, CountUp, useMediaQuery, usePrefersReducedMotion } from "./motion";
+import { AreaChart, Area, ResponsiveContainer } from "recharts";
+import { Reveal, useMediaQuery } from "./motion";
 import { greetingName } from "@/lib/profile";
 
 export type DashTab = "find" | "analysis" | "comparison" | "recommendation" | "discover"
   | "research" | "workspace" | "portfolio" | "murderboard" | "watchlist" | "model"
-  | "model-fund" | "model-project" | "model-scenarios" | "expansion" | "lists" | "alerts";
+  | "model-fund" | "model-project" | "model-scenarios" | "expansion" | "lists" | "alerts"
+  | "tax" | "correlation" | "peers" | "backtest" | "assistant";
 
+// ── Types (all from existing endpoints) ──────────────────────────────────────
 interface MarketItem {
-  ticker: string; label: string; group: string;
-  price: number | null;
-  change1d: number | null; change1w: number | null; change1m: number | null; changeYtd: number | null;
-  spark6m?: number[];
+  ticker: string; label: string; group: string; price: number | null;
+  change1d: number | null; change1w: number | null; change1m: number | null; changeYtd: number | null; spark6m?: number[];
 }
-interface MarketData { items: MarketItem[]; fetchedAt: number; }
-
+interface MarketData { items: MarketItem[]; fetchedAt: number }
+interface Quote { change1d: number; change1w: number; change1m: number; changeYtd: number }
+interface DeskFund { ticker: string; name: string | null; category: string | null; quote: Quote | null; hasAlert: boolean }
 interface Overview {
   ok: boolean;
-  userSummary: { greeting: string; workspace: string };
   attentionItems: { type: string; severity: string; title: string; count: number; href: string }[];
-  savedListSummary: { commonCount: number; watchlistCount: number; customListCount: number; totalFunds: number; topTickers: string[] };
   recentActivity: { kind: string; label: string; ticker: string | null; severity: string; at: string; href: string | null }[];
-  expansionSummary: { static: number; dynamic: number; merged: number; pendingRequests: number; readyForReview: number; needsClassification: number; unsupported: number };
+  coreFunds: DeskFund[]; watchlistFunds: DeskFund[];
   alertCounts: { unread: number; total: number };
 }
-interface HealthResp { overall: "healthy" | "warning" | "error"; checks: { key: string; label: string; status: "healthy" | "warning" | "error" }[]; generatedAt: string }
-
-// ── Advisor Overview — the "Enter Platform" landing surface ──────────────────
-// A light, calm advisor overview: soft-gray page, white cards, dark charcoal
-// reserved for the market data strip. Market data comes from /api/market
-// (Financial Modeling Prep).
-
-// Charcoal palette — used ONLY inside the dark market strip.
-const STRIP_BG   = "linear-gradient(150deg, #101216 0%, #15171C 100%)";
-const STRIP_LINE = "rgba(255,255,255,0.09)";
-const STRIP_TXT  = "#F4F5F7";
-const STRIP_DIM  = "rgba(244,245,247,0.66)";
-const STRIP_MUT  = "rgba(244,245,247,0.4)";
-const UP   = "#34D399";
-const DOWN = "#F87171";
+interface HealthResp { overall: "healthy" | "warning" | "error"; checks: { key: string; status: "healthy" | "warning" | "error" }[] }
 
 // ── Formatters ────────────────────────────────────────────────────────────────
-const fmtPrice = (v: number | null) =>
-  v == null ? "-" : v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtPct = (v: number | null) =>
-  v == null ? "-" : (v >= 0 ? "+" : "") + (v * 100).toFixed(2) + "%";
-const pctColDark = (v: number | null) => (v == null ? STRIP_MUT : v >= 0 ? UP : DOWN);
-const pctColLight = (v: number | null) => (v == null ? T.muted : v >= 0 ? T.green : T.red);
-
-/** Tiny glow sparkline for the market strip (dark surface). */
-function StripSpark({ data, lineColor, height = 44 }: { data: number[]; lineColor: string; height?: number }) {
-  const pts = data.map((v, i) => ({ i, v }));
-  const gid = `gs-${lineColor.replace(/[^a-zA-Z0-9]/g, "")}`;
-  return (
-    <div style={{ filter: `drop-shadow(0 0 5px ${lineColor}45)` }}>
-      <ResponsiveContainer width="100%" height={height}>
-        <AreaChart data={pts} margin={{ top: 3, right: 0, left: 0, bottom: 0 }}>
-          <defs>
-            <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={lineColor} stopOpacity={0.22} />
-              <stop offset="100%" stopColor={lineColor} stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <Tooltip content={({ active, payload }) => {
-            if (!active || !payload?.length) return null;
-            return <div style={{ background: "#16181E", border: `1px solid rgba(255,255,255,0.16)`, borderRadius: 6, padding: "4px 8px" }}>
-              <span style={{ fontSize: 11.5, fontWeight: 600, color: "#fff", ...mono }}>${fmtPrice(payload[0]?.value as number)}</span>
-            </div>;
-          }} cursor={{ stroke: lineColor + "55", strokeWidth: 1 }} />
-          <Area type="monotone" dataKey="v" stroke={lineColor} strokeWidth={1.6} fill={`url(#${gid})`} dot={false} isAnimationActive={false} />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-/** One index cell in the compact market strip. */
-function IndexCell({ item }: { item: MarketItem | null }) {
-  if (!item) return (
-    <div style={{ flex: 1, minWidth: 210, padding: "14px 18px", display: "flex", alignItems: "center",
-      justifyContent: "center", color: STRIP_MUT, fontSize: 11.5, ...ui }}>Loading…</div>
-  );
-  const c = item.change1d != null && item.change1d >= 0 ? UP : DOWN;
-  return (
-    <div style={{ flex: 1, minWidth: 210, padding: "13px 18px 10px", display: "flex", flexDirection: "column", gap: 6 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <span style={{ fontSize: 10.5, fontWeight: 600, color: STRIP_DIM, textTransform: "uppercase", letterSpacing: "0.12em", ...ui, whiteSpace: "nowrap" }}>
-          {item.label}
-        </span>
-        <span style={{ fontSize: 9, color: STRIP_MUT, ...mono }}>{item.ticker.replace("^", "")}</span>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 9, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 21, fontWeight: 600, color: STRIP_TXT, ...mono, letterSpacing: "-0.02em" }}>
-          $<CountUp value={item.price ?? 0} decimals={2} duration={1100} />
-        </span>
-        <span style={{ fontSize: 11.5, fontWeight: 600, color: c, background: `${c}1A`, borderRadius: 999, padding: "2px 9px", ...mono }}>
-          {fmtPct(item.change1d)}
-        </span>
-      </div>
-      {item.spark6m && item.spark6m.length > 10
-        ? <StripSpark data={item.spark6m} lineColor={c} />
-        : <div style={{ height: 44 }} />}
-      <div style={{ display: "flex", gap: 14 }}>
-        {([["1W", item.change1w], ["1M", item.change1m], ["YTD", item.changeYtd]] as [string, number | null][]).map(([l, v]) => (
-          <span key={l} style={{ fontSize: 9.5, color: STRIP_MUT, ...ui }}>
-            {l} <span style={{ fontWeight: 600, color: pctColDark(v), ...mono }}>{fmtPct(v)}</span>
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** Slim pill for the secondary ticker row — light surface. */
-function TickerPill({ item }: { item: MarketItem }) {
-  return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 12px",
-      background: T.panel, border: `1px solid ${T.line}`, borderRadius: 99, whiteSpace: "nowrap",
-      boxShadow: "var(--c-card-shadow)" }}>
-      <span style={{ fontSize: 11, fontWeight: 600, color: T.data, ...mono }}>{item.ticker}</span>
-      <span style={{ fontSize: 11, color: T.dim, ...mono }}>${fmtPrice(item.price)}</span>
-      <span style={{ fontSize: 11, fontWeight: 600, color: pctColLight(item.change1d), ...mono }}>{fmtPct(item.change1d)}</span>
-    </span>
-  );
-}
-
-/** Slow looping ticker row — no native scrollbar, pause on hover, edge fades.
-    Reduced motion: a stationary wrapped row instead. Real data only. */
-function TickerMarquee({ items }: { items: MarketItem[] }) {
-  const reduced = usePrefersReducedMotion();
-  if (reduced) {
-    return (
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        {items.map((it) => <TickerPill key={it.ticker} item={it} />)}
-      </div>
-    );
-  }
-  const dur = Math.max(36, items.length * 7); // slow & restrained, scales with count
-  const half = (hidden: boolean) => (
-    <div aria-hidden={hidden || undefined} style={{ display: "flex", gap: 8, paddingRight: 8 }}>
-      {items.map((it) => <TickerPill key={it.ticker + (hidden ? "-b" : "")} item={it} />)}
-    </div>
-  );
-  return (
-    <div className="alca-ticker" style={{ position: "relative", overflow: "hidden", padding: "2px 0" }}>
-      <style>{`
-        @keyframes alca-ticker { to { transform: translateX(-50%); } }
-        .alca-ticker:hover .alca-ticker-track { animation-play-state: paused; }
-      `}</style>
-      <div className="alca-ticker-track"
-        style={{ display: "flex", width: "max-content", willChange: "transform",
-          animation: `alca-ticker ${dur}s linear infinite` }}>
-        {half(false)}
-        {half(true)}
-      </div>
-      {/* edge fades into the page background */}
-      <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: 56, pointerEvents: "none",
-        background: "linear-gradient(90deg, var(--c-bg), transparent)" }} />
-      <div style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: 56, pointerEvents: "none",
-        background: "linear-gradient(270deg, var(--c-bg), transparent)" }} />
-    </div>
-  );
-}
-
-// ── Workspace card glyphs — quiet visual identity per workspace (light) ───────
-const GlyphResearch = (
-  <svg width="132" height="44" viewBox="0 0 132 44" aria-hidden>
-    {[["0", 96, "#0E7490"], ["16", 72, "#0891B2"], ["32", 52, "#155E75"]].map(([y, w, c]) => (
-      <g key={y as string}>
-        <rect x="0" y={y as string} width="132" height="9" rx="4.5" fill="var(--c-panel3)" />
-        <rect x="0" y={y as string} width={w as number} height="9" rx="4.5" fill={c as string} opacity="0.85" />
-      </g>
-    ))}
-  </svg>
-);
-const GlyphPortfolio = (() => {
-  const R = 16, C = 2 * Math.PI * R;
-  const segs = [[0.4, "#0E7490"], [0.26, "#0891B2"], [0.2, "#155E75"], [0.14, "var(--c-line2)"]] as [number, string][];
-  let acc = 0;
-  return (
-    <svg width="132" height="44" viewBox="0 0 132 44" aria-hidden>
-      <g transform="translate(22,22)">
-        {segs.map(([f, c], i) => {
-          const el = <circle key={i} r={R} fill="none" stroke={c} strokeWidth="7"
-            strokeDasharray={`${f * C} ${C - f * C}`} strokeDashoffset={-acc * C} transform="rotate(-90)" opacity="0.9" />;
-          acc += f; return el;
-        })}
-      </g>
-      {[["52", 66], ["52", 46, 14], ["52", 30, 28]].map(([x, w, y = 0], i) => (
-        <rect key={i} x={x as string} y={8 + (y as number)} width={w as number} height="8" rx="4"
-          fill={["#0E7490", "#0891B2", "#155E75"][i]} opacity="0.7" />
-      ))}
-    </svg>
-  );
-})();
-const GlyphModel = (
-  <svg width="132" height="44" viewBox="0 0 132 44" aria-hidden>
-    <path d="M4 38 C 30 34, 48 28, 62 22" fill="none" stroke="#0E7490" strokeWidth="2" strokeLinecap="round" />
-    <path d="M62 22 C 84 14, 106 8, 128 4" fill="none" stroke="#0891B2" strokeWidth="1.8" strokeLinecap="round" />
-    <path d="M62 22 C 84 18, 106 15, 128 13" fill="none" stroke="#0E7490" strokeWidth="1.8" strokeLinecap="round" />
-    <path d="M62 22 C 84 24, 106 27, 128 30" fill="none" stroke="#155E75" strokeWidth="1.8" strokeLinecap="round" strokeDasharray="4 3" />
-    <circle cx="62" cy="22" r="3" fill="#0E7490" />
-  </svg>
-);
-
-// ── Workspace cards ───────────────────────────────────────────────────────────
-interface QuickAction { label: string; go: DashTab }
-function WorkspaceCard({ step, title, desc, actions, cta, go, onNavigate, badge, delay, glyph }: {
-  step: string; title: string; desc: string; actions: QuickAction[];
-  cta: string; go: DashTab; onNavigate: (t: DashTab) => void; badge?: string; delay: number;
-  glyph: React.ReactNode;
-}) {
-  const [hover, setHover] = useState(false);
-  return (
-    <Reveal delay={delay} y={18} style={{ display: "flex", minWidth: 0 }}>
-      <div onClick={() => onNavigate(go)} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
-        style={{ position: "relative", overflow: "hidden", cursor: "pointer", width: "100%", minHeight: 360,
-          background: T.panel, border: `1px solid ${hover ? T.line2 : T.line}`, borderRadius: 18,
-          boxShadow: hover ? "var(--elev-2)" : "var(--c-card-shadow)",
-          transform: hover ? "translateY(-2px)" : "none", transition: "all 0.22s var(--ease-out)",
-          padding: "32px 30px 26px", display: "flex", flexDirection: "column", gap: 18 }}>
-        <div style={{ position: "relative" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-            <span style={{ fontSize: 10.5, fontWeight: 700, color: T.blue, ...ui, letterSpacing: "0.18em", textTransform: "uppercase" }}>{step}</span>
-            {badge && (
-              <span style={{ fontSize: 8.5, fontWeight: 700, color: T.amber, background: "rgba(180,83,9,0.08)",
-                border: "1px solid rgba(180,83,9,0.3)", borderRadius: 99, padding: "3px 8px",
-                letterSpacing: "0.1em", textTransform: "uppercase", ...ui, whiteSpace: "nowrap" }}>{badge}</span>
-            )}
-          </div>
-          <h3 style={{ fontSize: 28, fontWeight: 700, color: T.text, ...ui, margin: "12px 0 0", letterSpacing: "-0.02em" }}>{title}</h3>
-          <p style={{ fontSize: 14, color: T.dim, ...ui, margin: "9px 0 0", lineHeight: 1.6 }}>{desc}</p>
-        </div>
-        {/* workspace glyph — quiet identity, not a chart with fake data */}
-        <div style={{ opacity: hover ? 1 : 0.85, transition: "opacity 0.22s" }}>{glyph}</div>
-        {/* quick actions - stopPropagation so they don't double-fire the card */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {actions.map((a) => (
-            <button key={a.label} onClick={(e) => { e.stopPropagation(); onNavigate(a.go); }}
-              style={{ fontSize: 12, fontWeight: 600, color: T.dim, ...ui, background: T.panel,
-                border: `1px solid ${T.line2}`, borderRadius: 9, padding: "8px 14px", cursor: "pointer",
-                transition: "all 0.15s var(--ease-out)" }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = T.text; e.currentTarget.style.borderColor = T.muted; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = T.dim; e.currentTarget.style.borderColor = T.line2; }}>
-              {a.label}
-            </button>
-          ))}
-        </div>
-        <div style={{ flex: 1 }} />
-        <button onClick={(e) => { e.stopPropagation(); onNavigate(go); }}
-          style={{ display: "inline-flex", alignSelf: "flex-start", alignItems: "center", gap: 9,
-            padding: "11px 20px", borderRadius: 10, border: "none", cursor: "pointer",
-            background: hover ? T.blueD : T.blue, color: "#fff", fontSize: 13.5, fontWeight: 600, ...ui,
-            transition: "background 0.18s var(--ease-out)" }}>
-          {cta}
-          <span style={{ transform: hover ? "translateX(3px)" : "none", transition: "transform 0.18s var(--ease-out)" }}>→</span>
-        </button>
-      </div>
-    </Reveal>
-  );
-}
-
-// ── Section heading ───────────────────────────────────────────────────────────
-function SectionLabel({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
-      <span style={{ fontSize: 11, fontWeight: 700, color: T.muted, ...ui, textTransform: "uppercase", letterSpacing: "0.14em" }}>
-        {children}
-      </span>
-      {right}
-    </div>
-  );
-}
-
-const HEALTH_DOT: Record<"healthy" | "warning" | "error", string> = { healthy: "#22c55e", warning: "#f59e0b", error: "#ef4444" };
+const fmtPrice = (v: number | null) => v == null ? "—" : v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtPct = (v: number | null | undefined) => v == null ? "—" : (v >= 0 ? "+" : "") + (v * 100).toFixed(2) + "%";
+const pctCol = (v: number | null | undefined) => (v == null ? T.muted : v >= 0 ? T.green : T.red);
 const SEV_DOT: Record<string, string> = { info: "#3b82f6", watch: "#f59e0b", warning: "#f59e0b", critical: "#ef4444" };
 
-// ── Command center (real data only; honest empty states) ─────────────────────
-function CommandCenter({ overview, health, go, isMobile }: {
-  overview: Overview | null; health: HealthResp | null; go: (t: DashTab) => void; isMobile: boolean;
-}) {
-  const card: React.CSSProperties = { background: T.panel, border: `1px solid ${T.line}`, borderRadius: 14, padding: "16px 18px" };
-  const h = (_s?: string) => ({ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: T.muted, ...ui, margin: "0 0 10px" });
-
-  const QUICK: { label: string; tab: DashTab }[] = [
-    { label: "Analyze Fund", tab: "analysis" }, { label: "Screen Funds", tab: "find" },
-    { label: "Build Portfolio", tab: "portfolio" }, { label: "Add Missing Fund", tab: "expansion" },
-    { label: "Open Saved Lists", tab: "lists" }, { label: "View Alerts", tab: "alerts" },
-  ];
-  const warnings = health?.checks.filter((c) => c.status !== "healthy") ?? [];
-
+// ── Reusable premium card ─────────────────────────────────────────────────────
+function Card({ children, style, hover }: { children: React.ReactNode; style?: React.CSSProperties; hover?: boolean }) {
+  const [h, setH] = useState(false);
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* Attention queue */}
-      <div style={card}>
-        <h3 style={h("a")}>Today’s attention queue</h3>
-        {overview && overview.attentionItems.length === 0 && warnings.length === 0 ? (
-          <div style={{ fontSize: 13, color: T.dim, ...ui }}>No urgent items right now.</div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {(overview?.attentionItems ?? []).map((it, i) => (
-              <button key={i} onClick={() => { if (it.type === "sec_alerts" || it.type === "unresolved_cik") go("alerts"); else go("expansion"); }}
-                style={{ display: "flex", alignItems: "center", gap: 10, textAlign: "left", background: "none",
-                  border: `1px solid ${T.line}`, borderRadius: 9, padding: "9px 12px", cursor: "pointer" }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: SEV_DOT[it.severity] ?? T.blue, flexShrink: 0 }} />
-                <span style={{ fontSize: 12.5, color: T.text, ...ui, flex: 1 }}>{it.title}</span>
-                <span style={{ fontSize: 12.5, fontWeight: 700, color: T.text, ...mono }}>{it.count}</span>
-              </button>
-            ))}
-            {warnings.map((c) => (
-              <div key={c.key} style={{ display: "flex", alignItems: "center", gap: 10, border: `1px solid ${T.line}`, borderRadius: 9, padding: "9px 12px" }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: HEALTH_DOT[c.status], flexShrink: 0 }} />
-                <span style={{ fontSize: 12.5, color: T.dim, ...ui }}>System Health: {c.label} needs attention</span>
-              </div>
-            ))}
-            {!overview && <div style={{ fontSize: 12.5, color: T.muted, ...ui }}>Loading…</div>}
-          </div>
-        )}
-      </div>
+    <div
+      onMouseEnter={hover ? () => setH(true) : undefined}
+      onMouseLeave={hover ? () => setH(false) : undefined}
+      style={{
+        background: T.panel, border: `1px solid ${T.line}`, borderRadius: 18,
+        boxShadow: h ? "var(--elev-3)" : "var(--elev-1)",
+        transform: h ? "translateY(-2px)" : "none", transition: "box-shadow .22s ease, transform .22s ease",
+        ...style,
+      }}>{children}</div>
+  );
+}
+const cardPad: React.CSSProperties = { padding: "22px 24px" };
+const sectionTitle: React.CSSProperties = { fontSize: 16, fontWeight: 700, color: T.text, ...ui, margin: 0, letterSpacing: "-0.01em" };
+const sectionSub: React.CSSProperties = { fontSize: 12.5, color: T.dim, ...ui, margin: "3px 0 0" };
+const smallCap: React.CSSProperties = { fontSize: 10, color: T.muted, ...ui, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" };
 
-      {/* Quick actions */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        {QUICK.map((q) => (
-          <button key={q.label} onClick={() => go(q.tab)}
-            style={{ padding: "9px 14px", borderRadius: 9, border: `1px solid ${T.line2}`, background: T.panel,
-              color: T.text, fontSize: 12.5, fontWeight: 600, cursor: "pointer", ...ui }}>{q.label}</button>
+// ── Index card (market indices — real /api/market) ───────────────────────────
+function IndexCard({ item }: { item: MarketItem | undefined }) {
+  if (!item) return <Card style={{ ...cardPad, minHeight: 150, display: "flex", alignItems: "center", justifyContent: "center", color: T.muted, fontSize: 12, ...ui }}>Loading…</Card>;
+  const up = (item.change1d ?? 0) >= 0;
+  const c = up ? T.green : T.red;
+  const spark = item.spark6m && item.spark6m.length > 8 ? item.spark6m.map((v, i) => ({ i, v })) : null;
+  const gid = `sp-${item.ticker.replace(/[^a-z0-9]/gi, "")}`;
+  return (
+    <Card hover style={{ ...cardPad, display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: T.text, ...ui }}>{item.label}</span>
+        <span style={{ fontSize: 12.5, fontWeight: 700, color: c, ...mono }}>{fmtPct(item.change1d)}</span>
+      </div>
+      <div style={{ fontSize: 26, fontWeight: 700, color: T.text, ...mono, letterSpacing: "-0.02em" }}>{fmtPrice(item.price)}</div>
+      {spark ? (
+        <div style={{ height: 52, margin: "2px -4px 0" }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={spark} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+              <defs><linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={c} stopOpacity={0.2} /><stop offset="100%" stopColor={c} stopOpacity={0} />
+              </linearGradient></defs>
+              <Area type="monotone" dataKey="v" stroke={c} strokeWidth={1.8} fill={`url(#${gid})`} dot={false} isAnimationActive={false} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      ) : <div style={{ height: 52 }} />}
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, ...ui, color: T.muted }}>
+        <span>Today <span style={{ fontWeight: 700, color: c, ...mono }}>{fmtPct(item.change1d)}</span></span>
+        <span>YTD <span style={{ fontWeight: 700, color: pctCol(item.changeYtd), ...mono }}>{fmtPct(item.changeYtd)}</span></span>
+      </div>
+    </Card>
+  );
+}
+
+// ── Desk fund tables ─────────────────────────────────────────────────────────
+function CoreTable({ funds, onAnalyze }: { funds: DeskFund[]; onAnalyze?: (t: string) => void }) {
+  if (funds.length === 0) return <Empty text="No funds in Commonly Used Funds yet. Save funds to see them here." />;
+  return (
+    <table style={{ borderCollapse: "collapse", width: "100%" }}>
+      <thead><tr>{["Fund", "1D", "1W", "1M", "YTD"].map((h, i) => (
+        <th key={h} style={{ ...smallCap, textAlign: i === 0 ? "left" : "right", padding: "0 0 8px", }}>{h}</th>
+      ))}</tr></thead>
+      <tbody>
+        {funds.map((f) => (
+          <tr key={f.ticker} style={{ borderTop: `1px solid ${T.line}` }}>
+            <td style={{ padding: "9px 0" }}>
+              <button onClick={() => onAnalyze?.(f.ticker)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", ...mono, fontSize: 12.5, fontWeight: 700, color: T.blue }}>{f.ticker}</button>
+            </td>
+            {[f.quote?.change1d, f.quote?.change1w, f.quote?.change1m, f.quote?.changeYtd].map((v, i) => (
+              <td key={i} style={{ padding: "9px 0", textAlign: "right", fontSize: 12, fontWeight: 600, color: pctCol(v), ...mono }}>{fmtPct(v)}</td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+function WatchTable({ funds, onAnalyze }: { funds: DeskFund[]; onAnalyze?: (t: string) => void }) {
+  if (funds.length === 0) return <Empty text="Your Watchlist is empty. Add funds to monitor them here." />;
+  return (
+    <table style={{ borderCollapse: "collapse", width: "100%" }}>
+      <thead><tr>
+        {["Ticker", "Category", "1D", "YTD"].map((h, i) => (
+          <th key={h} style={{ ...smallCap, textAlign: i < 2 ? "left" : "right", padding: "0 0 8px" }}>{h}</th>
+        ))}
+        <th style={{ ...smallCap, textAlign: "center", padding: "0 0 8px" }}>Alert</th>
+      </tr></thead>
+      <tbody>
+        {funds.map((f) => (
+          <tr key={f.ticker} style={{ borderTop: `1px solid ${T.line}` }}>
+            <td style={{ padding: "9px 0" }}>
+              <button onClick={() => onAnalyze?.(f.ticker)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", ...mono, fontSize: 12.5, fontWeight: 700, color: T.blue }}>{f.ticker}</button>
+            </td>
+            <td style={{ padding: "9px 8px 9px 0", fontSize: 11.5, color: T.dim, ...ui, maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.category ?? "—"}</td>
+            <td style={{ padding: "9px 0", textAlign: "right", fontSize: 12, fontWeight: 600, color: pctCol(f.quote?.change1d), ...mono }}>{fmtPct(f.quote?.change1d)}</td>
+            <td style={{ padding: "9px 0", textAlign: "right", fontSize: 12, fontWeight: 600, color: pctCol(f.quote?.changeYtd), ...mono }}>{fmtPct(f.quote?.changeYtd)}</td>
+            <td style={{ padding: "9px 0", textAlign: "center" }}>
+              {f.hasAlert ? <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: T.red }} /> : <span style={{ color: T.muted }}>–</span>}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+function Empty({ text }: { text: string }) {
+  return <div style={{ fontSize: 12.5, color: T.muted, ...ui, padding: "14px 0", lineHeight: 1.6 }}>{text}</div>;
+}
+
+// ── Workspace hub card ────────────────────────────────────────────────────────
+function Hub({ title, purpose, accent, items, cta, onCta, go }: {
+  title: string; purpose: string; accent: string; cta: string; onCta: () => void;
+  items: { label: string; tab?: DashTab; disabled?: boolean }[]; go: (t: DashTab) => void;
+}) {
+  return (
+    <Card hover style={{ ...cardPad, display: "flex", flexDirection: "column", gap: 12, height: "100%" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ width: 34, height: 34, borderRadius: 10, background: `${accent}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span style={{ width: 12, height: 12, borderRadius: 4, background: accent }} />
+        </span>
+        <div>
+          <div style={{ fontSize: 14.5, fontWeight: 700, color: T.text, ...ui }}>{title}</div>
+          <div style={{ fontSize: 11.5, color: T.dim, ...ui }}>{purpose}</div>
+        </div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
+        {items.map((it) => (
+          <button key={it.label} disabled={it.disabled || !it.tab}
+            onClick={() => it.tab && go(it.tab)}
+            style={{ textAlign: "left", background: "none", border: "none", padding: "5px 0", ...ui, fontSize: 12.5,
+              color: it.disabled || !it.tab ? T.muted : T.dim, cursor: it.disabled || !it.tab ? "default" : "pointer",
+              display: "flex", alignItems: "center", gap: 7 }}>
+            <span style={{ color: accent, fontSize: 11 }}>›</span>{it.label}{it.disabled ? <span style={{ fontSize: 9.5, color: T.muted }}> (soon)</span> : null}
+          </button>
         ))}
       </div>
-
-      {/* Snapshots: saved lists · expansion · health */}
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 12 }}>
-        <div style={card}>
-          <h3 style={h("s")}>Saved lists</h3>
-          {overview ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <Stat label="Commonly Used Funds" value={overview.savedListSummary.commonCount} />
-              <Stat label="Watchlist" value={overview.savedListSummary.watchlistCount} />
-              <Stat label="Custom lists" value={overview.savedListSummary.customListCount} />
-              {overview.savedListSummary.topTickers.length > 0 && (
-                <div style={{ fontSize: 11, color: T.muted, ...mono, marginTop: 4 }}>{overview.savedListSummary.topTickers.slice(0, 6).join(" · ")}</div>
-              )}
-              <button onClick={() => go("lists")} style={linkBtn}>Open Saved Lists →</button>
-            </div>
-          ) : <Muted />}
-        </div>
-        <div style={card}>
-          <h3 style={h("e")}>Fund universe</h3>
-          {overview ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <Stat label="Verified (merged)" value={overview.expansionSummary.merged} hi />
-              <Stat label="Static base" value={overview.expansionSummary.static} />
-              <Stat label="Dynamic added" value={overview.expansionSummary.dynamic} />
-              <Stat label="Pending requests" value={overview.expansionSummary.pendingRequests} />
-              <Stat label="Needs classification" value={overview.expansionSummary.needsClassification} />
-              <button onClick={() => go("expansion")} style={linkBtn}>Open Expansion →</button>
-            </div>
-          ) : <Muted />}
-        </div>
-        <div style={card}>
-          <h3 style={h("h")}>System health</h3>
-          {health ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <Stat label="Healthy" value={health.checks.filter((c) => c.status === "healthy").length} />
-              <Stat label="Warnings" value={health.checks.filter((c) => c.status === "warning").length} />
-              <Stat label="Errors" value={health.checks.filter((c) => c.status === "error").length} />
-              <div style={{ fontSize: 10.5, color: T.muted, ...ui, marginTop: 2 }}>Checked {new Date(health.generatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
-            </div>
-          ) : <Muted />}
-        </div>
-      </div>
-
-      {/* Recent activity */}
-      <div style={card}>
-        <h3 style={h("r")}>Pick up where you left off</h3>
-        {overview && overview.recentActivity.length === 0 ? (
-          <div style={{ fontSize: 12.5, color: T.dim, ...ui }}>No recent activity yet. Save a fund or run an SEC refresh to get started.</div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {(overview?.recentActivity ?? []).map((a, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12.5, color: T.dim, ...ui }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: SEV_DOT[a.severity] ?? T.muted }} />
-                {a.ticker && <span style={{ color: T.blue, fontWeight: 700, ...mono }}>{a.ticker}</span>}
-                <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.label}</span>
-                <span style={{ fontSize: 10.5, color: T.muted, ...mono }}>{new Date(a.at).toLocaleDateString()}</span>
-              </div>
-            ))}
-            {!overview && <Muted />}
-          </div>
-        )}
-      </div>
-    </div>
+      <button onClick={onCta} style={{ marginTop: 4, padding: "10px 0", borderRadius: 10, border: "none",
+        background: accent, color: "#fff", fontSize: 12.5, fontWeight: 700, cursor: "pointer", ...ui }}>{cta}</button>
+    </Card>
   );
 }
-
-const linkBtn: React.CSSProperties = { marginTop: 6, alignSelf: "flex-start", background: "none", border: "none", color: T.blue, fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0, fontFamily: "var(--font-text)" };
-function Stat({ label, value, hi }: { label: string; value: number; hi?: boolean }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-      <span style={{ fontSize: 12, color: T.dim, ...ui }}>{label}</span>
-      <span style={{ fontSize: 14, fontWeight: 700, color: hi ? T.data : T.text, ...mono }}>{value.toLocaleString()}</span>
-    </div>
-  );
-}
-function Muted() { return <div style={{ fontSize: 12.5, color: T.muted, ...ui }}>Loading…</div>; }
 
 // ── Main ─────────────────────────────────────────────────────────────────────
-export default function DashboardTab({ onNavigate, userEmail }: { onNavigate?: (t: DashTab) => void; userEmail?: string | null } = {}) {
+export default function DashboardTab({ onNavigate, userEmail, onAnalyze }: {
+  onNavigate?: (t: DashTab) => void; userEmail?: string | null; onAnalyze?: (t: string) => void;
+} = {}) {
   const [market, setMarket] = useState<MarketData | null>(null);
-  const [mktLoading, setMktLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [greeting, setGreeting] = useState<string | null>(null);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [health, setHealth] = useState<HealthResp | null>(null);
   const isNarrow = useMediaQuery("(max-width: 1080px)");
   const isMobile = useMediaQuery("(max-width: 720px)");
+  const go = (t: DashTab) => onNavigate?.(t);
 
-  useEffect(() => {
-    fetch("/api/market").then((r) => r.json()).then((d) => { setMarket(d); setMktLoading(false); })
-      .catch(() => { setError("Failed to load market data"); setMktLoading(false); });
-  }, []);
-
-  // Personalized greeting: profile first_name → auth metadata → email prefix →
-  // "Advisor" (the API resolves the chain; email is the client-side fallback).
   useEffect(() => {
     let alive = true;
-    fetch("/api/profile", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
+    fetch("/api/market").then((r) => r.json()).then((d) => { if (alive) setMarket(d); }).catch(() => {});
+    fetch("/api/profile", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (alive) setGreeting((d?.greeting as string) ?? greetingName(null, userEmail ?? null)); })
       .catch(() => { if (alive) setGreeting(greetingName(null, userEmail ?? null)); });
+    fetch("/api/advisor-overview", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive && d?.ok) setOverview(d as Overview); }).catch(() => {});
+    fetch("/api/health/system", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive && d?.checks) setHealth(d as HealthResp); }).catch(() => {});
     return () => { alive = false; };
   }, [userEmail]);
 
-  // Command-center aggregation (real, firm-scoped) + full System Health status.
-  useEffect(() => {
-    let alive = true;
-    fetch("/api/advisor-overview", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null)).then((d) => { if (alive && d?.ok) setOverview(d as Overview); }).catch(() => {});
-    fetch("/api/health/system", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null)).then((d) => { if (alive && d?.checks) setHealth(d as HealthResp); }).catch(() => {});
-    return () => { alive = false; };
-  }, []);
-
-  const go = (t: DashTab) => onNavigate?.(t);
-
-  const find = (t: string) => market?.items.find((i) => i.ticker === t) ?? null;
-  const heroes = [find("^DJI"), find("^IXIC"), find("^GSPC")];
-  const others = market?.items.filter((i) => !["^GSPC", "^DJI", "^IXIC"].includes(i.ticker)) ?? [];
-  const time = market ? new Date(market.fetchedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
-
-  const shimmer: React.CSSProperties = {
-    background: "linear-gradient(90deg, var(--c-panel3) 25%, var(--c-panel2) 37%, var(--c-panel3) 63%)",
-    backgroundSize: "400px 100%", animation: "alca-shimmer 1.4s linear infinite",
-  };
-
-  const opportunityKinds = ["High expenses", "Concentration risk", "Fund overlap", "Style drift", "Replacement candidates", "Portfolio imbalances"];
+  const indices = useMemo(() => {
+    const find = (t: string) => market?.items.find((i) => i.ticker === t);
+    return [find("^DJI"), find("^IXIC"), find("^GSPC")];
+  }, [market]);
+  const time = market ? new Date(market.fetchedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : null;
+  const healthProblems = health ? health.checks.filter((c) => c.status !== "healthy").length : 0;
 
   return (
-    // Full-bleed light canvas with a faint teal wash falling from under the nav.
     <div style={{ margin: "0 -32px", background: T.bg, minHeight: "100vh" }}>
-      <div style={{ position: "absolute", left: 0, right: 0, height: 360, pointerEvents: "none",
-        background: "linear-gradient(180deg, rgba(14,116,144,0.05) 0%, rgba(14,116,144,0) 100%)" }} />
+      <div style={{ maxWidth: 1400, margin: "0 auto", padding: isMobile ? "88px 16px 48px" : "100px 32px 64px",
+        display: "flex", flexDirection: "column", gap: 22 }}>
 
-      <div style={{ position: "relative", maxWidth: 1360, margin: "0 auto",
-        padding: isMobile ? "96px 18px 56px" : "108px 40px 72px",
-        display: "flex", flexDirection: "column", gap: 32 }}>
-
-        {/* ── Header ── */}
+        {/* ── TOP: Welcome + 3 index cards ── */}
         <Reveal>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 14, flexWrap: "wrap" }}>
-            <div>
-              {greeting && (
-                <div style={{ fontSize: 12.5, fontWeight: 600, color: T.blue, ...ui, marginBottom: 6,
-                  letterSpacing: "0.02em" }}>Welcome back, {greeting}</div>
-              )}
-              <h1 style={{ fontSize: isMobile ? 26 : 32, fontWeight: 700, color: T.text, ...ui, margin: 0, letterSpacing: "-0.025em" }}>
-                Advisor Overview
-              </h1>
-              <p style={{ fontSize: 14, color: T.dim, ...ui, margin: "8px 0 0" }}>
-                Here’s what needs attention across your workspace.
-              </p>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-              {health && (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700,
-                  color: HEALTH_DOT[health.overall], background: `${HEALTH_DOT[health.overall]}18`,
-                  border: `1px solid ${HEALTH_DOT[health.overall]}44`, borderRadius: 999, padding: "3px 10px", ...ui }}>
-                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: HEALTH_DOT[health.overall] }} />
-                  System {health.overall}
-                </span>
-              )}
-              {overview && <span style={{ fontSize: 11, color: T.muted, ...mono }}>{overview.expansionSummary.merged.toLocaleString()} verified funds</span>}
-              {time && <span style={{ fontSize: 11, color: T.muted, ...mono }}>Data as of {time} · delayed</span>}
-            </div>
-          </div>
-        </Reveal>
-
-        {/* ── Command center: attention · quick actions · snapshots ── */}
-        <Reveal delay={40}>
-          <CommandCenter overview={overview} health={health} go={go} isMobile={isMobile} />
-        </Reveal>
-
-        {/* ── 1 · Compact market strip (charcoal data surface) ── */}
-        <Reveal delay={60}>
-          {mktLoading ? (
-            <div style={{ border: `1px solid ${T.line}`, borderRadius: 16, height: 128, ...shimmer }} />
-          ) : error || !market ? (
-            <div style={{ background: T.panel, border: `1px solid ${T.line}`, borderRadius: 16, padding: "22px 24px",
-              color: T.red, fontSize: 13, ...ui }}>{error ?? "No market data"}</div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ display: "flex", flexDirection: isNarrow ? "column" : "row",
-                background: STRIP_BG, border: "1px solid #26262B", borderRadius: 16,
-                boxShadow: "var(--elev-2), inset 0 1px 0 rgba(255,255,255,0.05)", overflow: "hidden" }}>
-                {heroes.map((h, i) => (
-                  <React.Fragment key={i}>
-                    {i > 0 && <div style={{ alignSelf: "stretch", width: isNarrow ? "auto" : 1, height: isNarrow ? 1 : "auto", background: STRIP_LINE }} />}
-                    <IndexCell item={h} />
-                  </React.Fragment>
-                ))}
-              </div>
-              {others.length > 0 && <TickerMarquee items={others} />}
-            </div>
-          )}
-        </Reveal>
-
-        {/* ── 2 · Three workspaces ── */}
-        <div>
-          <SectionLabel>Workspaces</SectionLabel>
-          <div style={{ display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "repeat(3, 1fr)", gap: 18, marginTop: 14 }}>
-            <WorkspaceCard step="Step 1 · Research" title="Research"
-              desc="Find, analyze, and compare individual investments."
-              actions={[{ label: "Screen Funds", go: "discover" }, { label: "Compare Funds", go: "comparison" }, { label: "Analyze Fund", go: "analysis" }]}
-              cta="Enter Research" go="research" onNavigate={go} delay={0} glyph={GlyphResearch} />
-            <WorkspaceCard step="Step 2 · Portfolio" title="Portfolio"
-              desc="Build, revise, and analyze complete client portfolios."
-              actions={[{ label: "Create portfolio", go: "portfolio" }, { label: "Review portfolio", go: "murderboard" }, { label: "Open workspace", go: "workspace" }]}
-              cta="Enter Portfolio" go="workspace" onNavigate={go} delay={90} glyph={GlyphPortfolio} />
-            <WorkspaceCard step="Step 3 · Model" title="Model"
-              desc="Test funds and portfolios across benchmarks, assumptions, and market scenarios."
-              actions={[{ label: "Compare Fund", go: "model-fund" }, { label: "Project Portfolio", go: "model-project" }, { label: "Build Scenario", go: "model-scenarios" }]}
-              cta="Enter Model" go="model" onNavigate={go} delay={180} glyph={GlyphModel} />
-          </div>
-        </div>
-
-        {/* ── 3 · Recent Work ── */}
-        <div>
-          <SectionLabel>Recent Work</SectionLabel>
-          <Reveal delay={60}>
-            <div style={{ marginTop: 14, background: T.panel, border: `1px dashed ${T.line2}`, borderRadius: 16,
-              padding: isMobile ? "26px 20px" : "28px 30px", display: "flex", alignItems: "center", gap: 20,
-              flexWrap: "wrap" }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, flexShrink: 0, display: "flex",
-                alignItems: "center", justifyContent: "center", background: "var(--c-blueL)",
-                border: `1px solid ${T.blue}33` }}>
-                <svg width="19" height="19" viewBox="0 0 16 16" fill="none">
-                  <circle cx="8" cy="8" r="6.3" stroke={T.blue} strokeWidth="1.3" />
-                  <path d="M8 4.6V8l2.3 1.5" stroke={T.blue} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              <div style={{ flex: 1, minWidth: 220 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: T.text, ...ui }}>No recent activity yet</div>
-                <div style={{ fontSize: 12.5, color: T.dim, ...ui, marginTop: 4, lineHeight: 1.55, maxWidth: 560 }}>
-                  Funds you analyze, comparisons you run, and portfolios you build will appear here
-                  so you can pick up where you left off.
+          <div style={{ display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "0.9fr 1.5fr", gap: 20 }}>
+            {/* Welcome */}
+            <Card style={{ padding: isMobile ? "26px 24px" : "32px 30px", position: "relative", overflow: "hidden",
+              display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 172 }}>
+              <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none",
+                background: "radial-gradient(120% 90% at 100% 0%, rgba(37,99,235,0.10) 0%, rgba(37,99,235,0) 55%), radial-gradient(90% 90% at 0% 100%, rgba(94,234,212,0.10) 0%, rgba(94,234,212,0) 50%)" }} />
+              <svg aria-hidden viewBox="0 0 400 200" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.5 }}>
+                <path d="M0 150 Q 100 110 200 140 T 400 120" fill="none" stroke="rgba(37,99,235,0.14)" strokeWidth="1.5" />
+                <path d="M0 170 Q 120 130 240 160 T 400 140" fill="none" stroke="rgba(94,234,212,0.14)" strokeWidth="1.5" />
+              </svg>
+              <div style={{ position: "relative" }}>
+                <div style={{ fontSize: 13, color: T.dim, ...ui, marginBottom: 2 }}>Welcome back,</div>
+                <h1 style={{ fontSize: isMobile ? 30 : 38, fontWeight: 700, color: T.text, ...ui, margin: 0, letterSpacing: "-0.03em", lineHeight: 1.05 }}>
+                  {greeting ?? "Advisor"}
+                </h1>
+                <p style={{ fontSize: 13.5, color: T.dim, ...ui, margin: "10px 0 16px", lineHeight: 1.5 }}>
+                  Here’s what needs attention across your workspace.
+                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 600, ...ui, color: T.text }}>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: healthProblems === 0 ? T.green : T.amber }} />
+                    {health ? (healthProblems === 0 ? "All systems operational" : `${healthProblems} item${healthProblems === 1 ? "" : "s"} need attention`) : "Checking systems…"}
+                  </span>
+                  {time && <span style={{ fontSize: 11.5, color: T.muted, ...mono }}>Data as of {time} · delayed</span>}
                 </div>
               </div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <button onClick={() => go("discover")}
-                  style={{ fontSize: 12.5, fontWeight: 600, color: "#fff", ...ui, cursor: "pointer",
-                    background: T.blue, border: "none", borderRadius: 9, padding: "9px 16px",
-                    transition: "background 0.15s" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = T.blueD)}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = T.blue)}>
-                  Start researching
-                </button>
-                <button onClick={() => go("portfolio")}
-                  style={{ fontSize: 12.5, fontWeight: 600, color: T.dim, ...ui, cursor: "pointer",
-                    background: T.panel, border: `1px solid ${T.line2}`, borderRadius: 9, padding: "9px 16px",
-                    transition: "all 0.15s" }}
-                  onMouseEnter={(e) => { e.currentTarget.style.color = T.text; e.currentTarget.style.borderColor = T.muted; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = T.dim; e.currentTarget.style.borderColor = T.line2; }}>
-                  Build a portfolio
-                </button>
-              </div>
+            </Card>
+            {/* 3 index cards */}
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 16 }}>
+              {indices.map((it, i) => <IndexCard key={i} item={it} />)}
             </div>
-          </Reveal>
-        </div>
+          </div>
+        </Reveal>
 
-        {/* ── 4 · Portfolio Opportunities ── */}
-        <div>
-          <SectionLabel>Portfolio Opportunities</SectionLabel>
-          <Reveal delay={60}>
-            <div style={{ marginTop: 14, background: T.panel, border: `1px solid ${T.line}`,
-              borderRadius: 16, padding: "22px 24px 20px", boxShadow: "var(--c-card-shadow)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: T.blue, opacity: 0.85 }} />
-                <span style={{ fontSize: 13.5, fontWeight: 700, color: T.text, ...ui }}>Watching your book</span>
+        {/* ── MAIN: Daily Desk (2/3) + right column (1/3) ── */}
+        <Reveal delay={60}>
+          <div style={{ display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "1.9fr 1fr", gap: 20, alignItems: "start" }}>
+
+            {/* Daily Desk */}
+            <Card style={{ ...cardPad }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+                <div>
+                  <h2 style={sectionTitle}>Daily Desk</h2>
+                  <p style={sectionSub}>Your saved funds, watchlists, and recent activity at a glance.</p>
+                </div>
+                <button onClick={() => go("lists")} style={{ fontSize: 11.5, color: T.dim, ...ui, background: "none",
+                  border: `1px solid ${T.line2}`, borderRadius: 8, padding: "6px 11px", cursor: "pointer", fontWeight: 600 }}>Customize</button>
               </div>
-              <p style={{ fontSize: 12.5, color: T.dim, ...ui, lineHeight: 1.6, margin: "10px 0 0", maxWidth: 720 }}>
-                As client portfolios are added, the feed will flag items that may need attention:
-              </p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 14 }}>
-                {opportunityKinds.map((k) => (
-                  <span key={k} style={{ fontSize: 11, fontWeight: 600, color: T.dim, ...ui,
-                    background: T.panel3, border: `1px solid ${T.line}`, borderRadius: 99, padding: "6px 12px" }}>
-                    {k}
+
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 22, marginTop: 18 }}>
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: T.text, ...ui }}>My Core Funds</span>
+                    <button onClick={() => go("lists")} style={{ fontSize: 11, color: T.blue, ...ui, background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>View all →</button>
+                  </div>
+                  {overview ? <CoreTable funds={overview.coreFunds} onAnalyze={onAnalyze} /> : <Empty text="Loading…" />}
+                </div>
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: T.text, ...ui }}>Watchlist</span>
+                    <button onClick={() => go("watchlist")} style={{ fontSize: 11, color: T.blue, ...ui, background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>View full →</button>
+                  </div>
+                  {overview ? <WatchTable funds={overview.watchlistFunds} onAnalyze={onAnalyze} /> : <Empty text="Loading…" />}
+                </div>
+              </div>
+
+              {/* Recent activity */}
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${T.line}` }}>
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: T.text, ...ui }}>Recent activity</span>
+                {overview && overview.recentActivity.length > 0 ? (
+                  <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
+                    {overview.recentActivity.slice(0, 5).map((a, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, background: T.panel3,
+                        border: `1px solid ${T.line}`, borderRadius: 10, padding: "8px 12px" }}>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: SEV_DOT[a.severity] ?? T.muted }} />
+                        {a.ticker && <span style={{ fontSize: 11.5, fontWeight: 700, color: T.blue, ...mono }}>{a.ticker}</span>}
+                        <span style={{ fontSize: 11.5, color: T.dim, ...ui, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.label}</span>
+                        <span style={{ fontSize: 10, color: T.muted, ...mono }}>{new Date(a.at).toLocaleDateString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : <p style={{ fontSize: 12, color: T.muted, ...ui, margin: "8px 0 0" }}>No recent activity yet. Save a fund or run an SEC refresh to get started.</p>}
+              </div>
+            </Card>
+
+            {/* Right column */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              {/* My Updates / Alerts */}
+              <Card style={{ ...cardPad }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                  <h2 style={sectionTitle}>My Updates & Alerts</h2>
+                  <button onClick={() => go("alerts")} style={{ fontSize: 11.5, color: T.blue, ...ui, background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>View all →</button>
+                </div>
+                <p style={sectionSub}>Personal to your saved funds, watchlist, and monitoring.</p>
+                <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 4 }}>
+                  {overview && (overview.attentionItems.length > 0 || overview.recentActivity.length > 0) ? (
+                    <>
+                      {overview.attentionItems.map((it, i) => (
+                        <button key={`a${i}`} onClick={() => go(it.type === "sec_alerts" || it.type === "unresolved_cik" ? "alerts" : "expansion")}
+                          style={{ display: "flex", alignItems: "center", gap: 10, textAlign: "left", background: "none", border: "none", padding: "9px 0", borderTop: i ? `1px solid ${T.line}` : "none", cursor: "pointer" }}>
+                          <span style={{ width: 8, height: 8, borderRadius: "50%", background: SEV_DOT[it.severity] ?? T.blue, flexShrink: 0 }} />
+                          <span style={{ flex: 1, fontSize: 12.5, color: T.text, ...ui }}>{it.title}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: T.text, ...mono }}>{it.count}</span>
+                        </button>
+                      ))}
+                      {overview.recentActivity.slice(0, 5).map((a, i) => (
+                        <div key={`r${i}`} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderTop: `1px solid ${T.line}` }}>
+                          <span style={{ width: 8, height: 8, borderRadius: "50%", background: SEV_DOT[a.severity] ?? T.muted, flexShrink: 0 }} />
+                          <span style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ fontSize: 12.5, color: T.text, ...ui, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {a.ticker ? <span style={{ color: T.blue, fontWeight: 700, ...mono }}>{a.ticker} </span> : null}{a.label}
+                            </span>
+                          </span>
+                          <span style={{ fontSize: 10, color: T.muted, ...mono, flexShrink: 0 }}>{new Date(a.at).toLocaleDateString()}</span>
+                        </div>
+                      ))}
+                    </>
+                  ) : <p style={{ fontSize: 12.5, color: T.muted, ...ui, padding: "10px 0" }}>No updates right now. Save funds and run an SEC refresh to start monitoring.</p>}
+                </div>
+              </Card>
+
+              {/* Market / Global News — honest empty state (no provider) */}
+              <Card style={{ ...cardPad }}>
+                <h2 style={sectionTitle}>Market & Global News</h2>
+                <p style={sectionSub}>General market headlines.</p>
+                <div style={{ marginTop: 14, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6,
+                  padding: "18px 0", color: T.muted }}>
+                  <span style={{ fontSize: 12.5, color: T.dim, ...ui, fontWeight: 600 }}>No news source connected</span>
+                  <span style={{ fontSize: 11.5, color: T.muted, ...ui, lineHeight: 1.6 }}>
+                    A licensed market-news feed isn’t connected yet, so no headlines are shown here. SEC filing activity for your saved funds appears under Updates & Alerts.
                   </span>
-                ))}
-              </div>
-              <div style={{ height: 1, background: T.line, margin: "18px 0 14px" }} />
-              <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 11.5, color: T.muted, ...ui, lineHeight: 1.55, flex: 1, minWidth: 240 }}>
-                  No findings yet — nothing needs attention, or no portfolios have been analyzed.
-                </span>
-                <button onClick={() => go("murderboard")}
-                  style={{ fontSize: 12, fontWeight: 600, color: T.blue, ...ui, cursor: "pointer",
-                    background: "var(--c-blueL)", border: `1px solid ${T.blue}44`,
-                    borderRadius: 9, padding: "9px 16px", transition: "filter 0.15s" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.97)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.filter = "none")}>
-                  Review a portfolio →
-                </button>
-              </div>
+                </div>
+              </Card>
             </div>
-          </Reveal>
-        </div>
+          </div>
+        </Reveal>
 
-        <p style={{ fontSize: 10, color: T.muted, ...ui, textAlign: "center", margin: 0 }}>
-          Prices delayed · market data via Financial Modeling Prep · Research aid - verify before client use
-        </p>
+        {/* ── Workspace hubs ── */}
+        <Reveal delay={90}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : isNarrow ? "1fr 1fr" : "repeat(4, 1fr)", gap: 18 }}>
+            <Hub title="Research" purpose="Find, analyze & compare." accent="#2563EB" cta="Enter Research" onCta={() => go("research")} go={go}
+              items={[{ label: "Advanced Search", tab: "find" }, { label: "Screener & Filters", tab: "find" }, { label: "Fund Comparison", tab: "comparison" }, { label: "Analyze a Fund", tab: "analysis" }, { label: "Recently Viewed", tab: "research" }]} />
+            <Hub title="Portfolio" purpose="Build & review portfolios." accent="#16A34A" cta="Enter Portfolio" onCta={() => go("portfolio")} go={go}
+              items={[{ label: "My Portfolios", tab: "portfolio" }, { label: "Allocation Review", tab: "portfolio" }, { label: "Performance", tab: "portfolio" }, { label: "Rebalancing", tab: "portfolio" }, { label: "Risk Analysis", tab: "murderboard" }]} />
+            <Hub title="Model" purpose="Test future outcomes." accent="#7C3AED" cta="Enter Model" onCta={() => go("model")} go={go}
+              items={[{ label: "Goal Planning", tab: "model-project" }, { label: "Projections", tab: "model-project" }, { label: "Scenario Analysis", tab: "model-scenarios" }, { label: "Fund vs Benchmark", tab: "model-fund" }, { label: "Monte Carlo", disabled: true }]} />
+            <Hub title="Advisor Toolkit" purpose="Planning tools & analytics." accent="#D97706" cta="Enter Toolkit" onCta={() => go("tax")} go={go}
+              items={[{ label: "Tax Efficiency", tab: "tax" }, { label: "Correlation", tab: "correlation" }, { label: "Peer Rankings", tab: "peers" }, { label: "Backtest", tab: "backtest" }, { label: "Saved Lists", tab: "lists" }, { label: "Add Missing Fund", tab: "expansion" }, { label: "Alerts", tab: "alerts" }, { label: "AI Assistant", tab: "assistant" }]} />
+          </div>
+        </Reveal>
       </div>
     </div>
   );

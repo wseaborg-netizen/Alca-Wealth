@@ -6,6 +6,21 @@ import {
 import { UNIVERSE } from "@/lib/universe";
 import { greetingName } from "@/lib/profile";
 import { secUserAgentConfigured } from "@/lib/monitoring";
+import { fetchMarketQuoteFmp } from "@/lib/fmp";
+import { cacheGet, cacheSet } from "@/lib/cache";
+
+// Real per-fund quote (1D/1W/1M/YTD) via the existing FMP provider, cached 15m
+// per ticker so the overview never re-hammers the API. Null when uncovered.
+const QUOTE_TTL = 15 * 60;
+async function deskQuote(ticker: string): Promise<{ change1d: number; change1w: number; change1m: number; changeYtd: number } | null> {
+  const key = `ovq:${ticker}`;
+  const cached = await cacheGet<{ change1d: number; change1w: number; change1m: number; changeYtd: number } | "none">(key);
+  if (cached) return cached === "none" ? null : cached;
+  const q = await fetchMarketQuoteFmp(ticker).catch(() => null);
+  const val = q ? { change1d: q.change1d, change1w: q.change1w, change1m: q.change1m, changeYtd: q.changeYtd } : null;
+  await cacheSet(key, val ?? "none", QUOTE_TTL);
+  return val;
+}
 
 /**
  * Advisor Overview aggregation — one call powering the command-center page.
@@ -47,6 +62,16 @@ export async function GET() {
       totalFunds, topTickers,
     };
 
+    // Daily Desk tables — REAL saved-list funds enriched with REAL quotes.
+    const commonItems = byType("common").flatMap((l) => l.items).slice(0, 8);
+    const watchItems = byType("watchlist").flatMap((l) => l.items).slice(0, 8);
+    const alertTickers = new Set((alerts ?? []).map((a) => a.ticker).filter(Boolean));
+    const enrich = async (items: typeof commonItems) => Promise.all(items.map(async (it) => ({
+      ticker: it.ticker, name: it.fund_name, category: it.category,
+      quote: await deskQuote(it.ticker), hasAlert: alertTickers.has(it.ticker),
+    })));
+    const [coreFunds, watchlistFunds] = await Promise.all([enrich(commonItems), enrich(watchItems)]);
+
     const expansionSummary = {
       static: UNIVERSE.length, dynamic: dynCount, merged: UNIVERSE.length + dynCount,
       pendingRequests: reqCounts?.pending ?? 0,
@@ -85,6 +110,7 @@ export async function GET() {
 
     return NextResponse.json({
       ok: true, userSummary, attentionItems, savedListSummary, recentActivity,
+      coreFunds, watchlistFunds,
       expansionSummary, healthSummary: healthHint, marketPulse: null, workspaceSummary,
       alertCounts: aCounts, generatedAt: new Date().toISOString(),
     }, { headers: { "Cache-Control": "no-store" } });
