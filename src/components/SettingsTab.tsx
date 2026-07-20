@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { T, ui, mono } from "./tokens";
 import { UNIVERSE, UNIVERSE_GENERATED_AT } from "@/lib/universe";
 import { loadPrefs, savePrefs, applyMotionPref, type Prefs, type LandingPref, type BenchmarkPref, type MotionPref } from "@/lib/prefs";
+import { TIMEZONES, detectBrowserTimezone, type Profile } from "@/lib/profile";
 import pkg from "../../package.json";
 
 // ── Settings drawer ───────────────────────────────────────────────────────────
@@ -78,6 +79,88 @@ function InfoDisclosure({ title, children }: { title: string; children: React.Re
       <summary style={{ fontSize: 12.5, fontWeight: 600, color: T.blue, ...ui, cursor: "pointer" }}>{title}</summary>
       <div style={{ fontSize: 12, color: T.dim, ...ui, lineHeight: 1.6, marginTop: 8 }}>{children}</div>
     </details>
+  );
+}
+
+// ── Profile (minimal signup profile) ─────────────────────────────────────────
+
+function ProfileSection() {
+  const [loaded, setLoaded] = useState(false);
+  const [signedOut, setSignedOut] = useState(false);
+  const [first, setFirst] = useState("");
+  const [last, setLast] = useState("");
+  const [display, setDisplay] = useState("");
+  const [tz, setTz] = useState("America/Chicago");
+  const [saving, setSaving] = useState(false);
+  const [flash, setFlash] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/profile", { cache: "no-store" }).then(async (r) => {
+      if (r.status === 401) { setSignedOut(true); setLoaded(true); return; }
+      const d = await r.json(); const p = d.profile as Profile | null;
+      setFirst(p?.first_name ?? ""); setLast(p?.last_name ?? "");
+      setDisplay(p?.display_name ?? ""); setTz(p?.timezone || detectBrowserTimezone());
+      setLoaded(true);
+    }).catch(() => { setLoaded(true); });
+  }, []);
+
+  const save = async () => {
+    if (!first.trim() || !last.trim()) { setError("First and last name are required."); return; }
+    setSaving(true); setError(null); setFlash(null);
+    try {
+      const r = await fetch("/api/profile", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ firstName: first.trim(), lastName: last.trim(), displayName: display.trim(), timezone: tz }),
+      });
+      if (!r.ok) { const d = await r.json().catch(() => null); setError(d?.error ?? "Could not save."); return; }
+      setFlash("Saved");
+      setTimeout(() => setFlash(null), 1800);
+    } catch { setError("Network error."); }
+    finally { setSaving(false); }
+  };
+
+  if (signedOut) return null;
+
+  const inp: React.CSSProperties = {
+    width: "100%", boxSizing: "border-box", padding: "9px 11px", borderRadius: 8,
+    border: `1px solid ${T.line2}`, background: T.panel, color: T.text, fontSize: 13, ...ui, outline: "none",
+  };
+
+  return (
+    <section aria-label="Profile">
+      <SectionLabel>Profile</SectionLabel>
+      {!loaded ? (
+        <div style={{ fontSize: 12, color: T.dim, ...ui, padding: "10px 0" }}>Loading…</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingTop: 6 }}>
+          <div style={{ display: "flex", gap: 8 }}>
+            <label style={{ flex: 1, fontSize: 11, color: T.muted, ...ui }}>First name
+              <input style={{ ...inp, marginTop: 4 }} value={first} onChange={(e) => setFirst(e.target.value)} /></label>
+            <label style={{ flex: 1, fontSize: 11, color: T.muted, ...ui }}>Last name
+              <input style={{ ...inp, marginTop: 4 }} value={last} onChange={(e) => setLast(e.target.value)} /></label>
+          </div>
+          <label style={{ fontSize: 11, color: T.muted, ...ui }}>Display name
+            <input style={{ ...inp, marginTop: 4 }} value={display} placeholder={`${first} ${last}`.trim()}
+              onChange={(e) => setDisplay(e.target.value)} /></label>
+          <label style={{ fontSize: 11, color: T.muted, ...ui }}>Time zone
+            <select style={{ ...inp, marginTop: 4 }} value={tz} onChange={(e) => setTz(e.target.value)} aria-label="Time zone">
+              {(TIMEZONES.includes(tz) ? TIMEZONES : [tz, ...TIMEZONES]).map((z) => (
+                <option key={z} value={z}>{z.replace(/_/g, " ")}</option>
+              ))}
+            </select></label>
+          {error && <div role="alert" style={{ fontSize: 12, color: T.red, ...ui }}>{error}</div>}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button onClick={() => void save()} disabled={saving}
+              style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: T.blue, color: "#fff",
+                fontSize: 12.5, fontWeight: 600, cursor: saving ? "default" : "pointer", ...ui, opacity: saving ? 0.7 : 1 }}>
+              {saving ? "Saving…" : "Save profile"}
+            </button>
+            {flash && <span style={{ fontSize: 12, color: T.green, ...ui }}>{flash}</span>}
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -335,6 +418,9 @@ export default function SettingsDrawer({ open, onClose, theme, setTheme, environ
               guarantee future results.
             </InfoDisclosure>
           </section>
+
+          {/* ── Profile (authenticated users only) ── */}
+          {(environment === "full" || environment === "preview") && <ProfileSection />}
 
           {/* ── System Health (internal, authenticated users only) ── */}
           {(environment === "full" || environment === "preview") && <SystemHealthSection />}

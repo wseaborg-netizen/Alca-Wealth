@@ -1,12 +1,13 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { T, ui, mono } from "./tokens";
-import {
-  AreaChart, Area, ResponsiveContainer, Tooltip, CartesianGrid, XAxis,
-} from "recharts";
+import { AreaChart, Area, ResponsiveContainer, Tooltip } from "recharts";
+import { Reveal, CountUp, useMediaQuery, usePrefersReducedMotion } from "./motion";
+import { greetingName } from "@/lib/profile";
 
-export type DashTab = "news" | "find" | "analysis" | "comparison" | "recommendation" | "discover"
-  | "research" | "workspace" | "portfolio" | "watchlist" | "present";
+export type DashTab = "find" | "analysis" | "comparison" | "recommendation" | "discover"
+  | "research" | "workspace" | "portfolio" | "murderboard" | "watchlist" | "model"
+  | "model-fund" | "model-project" | "model-scenarios";
 
 interface MarketItem {
   ticker: string; label: string; group: string;
@@ -16,421 +17,451 @@ interface MarketItem {
 }
 interface MarketData { items: MarketItem[]; fetchedAt: number; }
 
-interface NewsItem {
-  uuid: string; title: string; summary: string; publisher: string;
-  link: string; publishedAt: number; tickers: string[]; image: string;
-}
+// ── Advisor Overview — the "Enter Platform" landing surface ──────────────────
+// A light, calm advisor overview: soft-gray page, white cards, dark charcoal
+// reserved for the market data strip. Market data comes from /api/market
+// (Financial Modeling Prep).
+
+// Charcoal palette — used ONLY inside the dark market strip.
+const STRIP_BG   = "linear-gradient(150deg, #101216 0%, #15171C 100%)";
+const STRIP_LINE = "rgba(255,255,255,0.09)";
+const STRIP_TXT  = "#F4F5F7";
+const STRIP_DIM  = "rgba(244,245,247,0.66)";
+const STRIP_MUT  = "rgba(244,245,247,0.4)";
+const UP   = "#34D399";
+const DOWN = "#F87171";
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 const fmtPrice = (v: number | null) =>
   v == null ? "-" : v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtPct = (v: number | null) =>
   v == null ? "-" : (v >= 0 ? "+" : "") + (v * 100).toFixed(2) + "%";
-const col = (v: number | null) => v == null ? T.dim : v >= 0 ? T.green : T.red;
+const pctColDark = (v: number | null) => (v == null ? STRIP_MUT : v >= 0 ? UP : DOWN);
+const pctColLight = (v: number | null) => (v == null ? T.muted : v >= 0 ? T.green : T.red);
 
-// Bright signal colors for figures sitting on the dark terminal cards - the
-// themed T.green/T.red are tuned for white surfaces and go muddy on graphite.
-const UP = "#34D399";
-const DOWN = "#F87171";
-const darkCol = (v: number | null) => v == null ? "rgba(255,255,255,0.45)" : v >= 0 ? UP : DOWN;
-
-function Pct({ v, size = 13, dark = false }: { v: number | null; size?: number; dark?: boolean }) {
-  return <span style={{ fontSize: size, fontWeight: 600, color: dark ? darkCol(v) : col(v), ...mono }}>{fmtPct(v)}</span>;
-}
-
-/** Glow sparkline chart (height configurable) */
-function IndexSpark({ data, lineColor, height = 150, dark = false }: {
-  data: number[]; lineColor: string; height?: number; dark?: boolean;
-}) {
+/** Tiny glow sparkline for the market strip (dark surface). */
+function StripSpark({ data, lineColor, height = 44 }: { data: number[]; lineColor: string; height?: number }) {
   const pts = data.map((v, i) => ({ i, v }));
-  const gid = `g-${lineColor.replace(/[^a-zA-Z0-9]/g, "")}`;
+  const gid = `gs-${lineColor.replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
-    <div style={{ filter: `drop-shadow(0 0 8px ${lineColor}55) drop-shadow(0 0 3px ${lineColor}35)` }}>
+    <div style={{ filter: `drop-shadow(0 0 5px ${lineColor}45)` }}>
       <ResponsiveContainer width="100%" height={height}>
-        <AreaChart data={pts} margin={{ top: 6, right: 2, left: 0, bottom: 0 }}>
+        <AreaChart data={pts} margin={{ top: 3, right: 0, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={lineColor} stopOpacity={dark ? 0.26 : 0.18} />
-              <stop offset="70%" stopColor={lineColor} stopOpacity={0.04} />
+              <stop offset="0%" stopColor={lineColor} stopOpacity={0.22} />
               <stop offset="100%" stopColor={lineColor} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid stroke={dark ? "rgba(255,255,255,0.07)" : T.line} strokeOpacity={dark ? 1 : 0.5} vertical={false} />
-          <XAxis dataKey="i" hide />
           <Tooltip content={({ active, payload }) => {
             if (!active || !payload?.length) return null;
-            return <div style={{ background: dark ? "#1B1D22" : T.panel,
-              border: `1px solid ${dark ? "rgba(255,255,255,0.14)" : T.line}`, borderRadius: 6, padding: "5px 9px" }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: dark ? "#fff" : T.text, ...mono }}>${fmtPrice(payload[0]?.value as number)}</span>
+            return <div style={{ background: "#16181E", border: `1px solid rgba(255,255,255,0.16)`, borderRadius: 6, padding: "4px 8px" }}>
+              <span style={{ fontSize: 11.5, fontWeight: 600, color: "#fff", ...mono }}>${fmtPrice(payload[0]?.value as number)}</span>
             </div>;
           }} cursor={{ stroke: lineColor + "55", strokeWidth: 1 }} />
-          <Area type="monotone" dataKey="v" stroke={lineColor} strokeWidth={3.5} strokeOpacity={0.15} fill="none" dot={false} isAnimationActive={false} />
-          <Area type="monotone" dataKey="v" stroke={lineColor} strokeWidth={1.5} fill={`url(#${gid})`} dot={false} isAnimationActive={false} />
+          <Area type="monotone" dataKey="v" stroke={lineColor} strokeWidth={1.6} fill={`url(#${gid})`} dot={false} isAnimationActive={false} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
   );
 }
 
-/** Index hero (S&P / Dow / Nasdaq) - dark terminal card, same material as the chrome */
-function IndexHero({ item }: { item: MarketItem | null }) {
-  const [hover, setHover] = useState(false);
+/** One index cell in the compact market strip. */
+function IndexCell({ item }: { item: MarketItem | null }) {
   if (!item) return (
-    <div style={{ background: "linear-gradient(150deg, #101216 0%, #15171C 100%)", border: `1px solid #262628`,
-      borderRadius: 14, padding: "20px 22px", height: 224, display: "flex", alignItems: "center",
-      justifyContent: "center", color: "rgba(255,255,255,0.4)", fontSize: 12, ...ui }}>
-      Loading…
-    </div>
+    <div style={{ flex: 1, minWidth: 210, padding: "14px 18px", display: "flex", alignItems: "center",
+      justifyContent: "center", color: STRIP_MUT, fontSize: 11.5, ...ui }}>Loading…</div>
   );
-  const lineColor = item.change1d != null && item.change1d >= 0 ? UP : DOWN;
+  const c = item.change1d != null && item.change1d >= 0 ? UP : DOWN;
   return (
-    <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
-      style={{ background: "linear-gradient(150deg, #101216 0%, #15171C 100%)",
-        border: `1px solid ${hover ? "#34363B" : "#262628"}`, borderRadius: 14, padding: "20px 22px 16px",
-        boxShadow: hover ? "var(--elev-3), inset 0 1px 0 rgba(255,255,255,0.06)" : "var(--elev-2), inset 0 1px 0 rgba(255,255,255,0.06)",
-        transform: hover ? "translateY(-2px)" : "none",
-        transition: "all var(--dur-base) var(--ease-out)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)", textTransform: "uppercase",
-          letterSpacing: "0.14em", ...ui }}>{item.label}</span>
-        <span style={{ fontSize: 9.5, color: "rgba(255,255,255,0.35)", ...mono }}>{item.ticker.replace("^", "")}</span>
+    <div style={{ flex: 1, minWidth: 210, padding: "13px 18px 10px", display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+        <span style={{ fontSize: 10.5, fontWeight: 600, color: STRIP_DIM, textTransform: "uppercase", letterSpacing: "0.12em", ...ui, whiteSpace: "nowrap" }}>
+          {item.label}
+        </span>
+        <span style={{ fontSize: 9, color: STRIP_MUT, ...mono }}>{item.ticker.replace("^", "")}</span>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
-        <span style={{ fontSize: 29, fontWeight: 600, color: "#fff", ...mono, letterSpacing: "-0.02em" }}>${fmtPrice(item.price)}</span>
-        <span style={{ fontSize: 12.5, fontWeight: 600, color: lineColor, background: `${lineColor}1C`,
-          borderRadius: 999, padding: "3px 10px", ...mono }}>{fmtPct(item.change1d)}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 9, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 21, fontWeight: 600, color: STRIP_TXT, ...mono, letterSpacing: "-0.02em" }}>
+          $<CountUp value={item.price ?? 0} decimals={2} duration={1100} />
+        </span>
+        <span style={{ fontSize: 11.5, fontWeight: 600, color: c, background: `${c}1A`, borderRadius: 999, padding: "2px 9px", ...mono }}>
+          {fmtPct(item.change1d)}
+        </span>
       </div>
       {item.spark6m && item.spark6m.length > 10
-        ? <div style={{ marginTop: 4 }}><IndexSpark data={item.spark6m} lineColor={lineColor} height={92} dark /></div>
-        : <div style={{ height: 96 }} />}
-      <div style={{ display: "flex", gap: 22, marginTop: 10 }}>
-        {([["1 Wk", item.change1w], ["1 Mo", item.change1m], ["YTD", item.changeYtd]] as [string, number | null][]).map(([l, v]) => (
-          <div key={l}>
-            <div style={{ fontSize: 8.5, color: "rgba(255,255,255,0.4)", textTransform: "uppercase",
-              letterSpacing: "0.1em", ...ui, marginBottom: 1 }}>{l}</div>
-            <Pct v={v} size={11.5} dark />
-          </div>
+        ? <StripSpark data={item.spark6m} lineColor={c} />
+        : <div style={{ height: 44 }} />}
+      <div style={{ display: "flex", gap: 14 }}>
+        {([["1W", item.change1w], ["1M", item.change1m], ["YTD", item.changeYtd]] as [string, number | null][]).map(([l, v]) => (
+          <span key={l} style={{ fontSize: 9.5, color: STRIP_MUT, ...ui }}>
+            {l} <span style={{ fontWeight: 600, color: pctColDark(v), ...mono }}>{fmtPct(v)}</span>
+          </span>
         ))}
       </div>
     </div>
   );
 }
 
-function MiniMarketTable({ title, items }: { title: string; items: MarketItem[] }) {
+/** Slim pill for the secondary ticker row — light surface. */
+function TickerPill({ item }: { item: MarketItem }) {
   return (
-    <div style={{ background: T.panel, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "hidden",
-      boxShadow: "var(--elev-1)" }}>
-      <div style={{ padding: "8px 14px", borderBottom: `1px solid ${T.line}`, fontSize: 10.5,
-        fontWeight: 600, ...ui, color: T.muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>{title}</div>
-      {items.map((item, idx) => (
-        <div key={item.ticker} style={{ display: "grid", gridTemplateColumns: "48px 1fr 70px 66px", padding: "8px 14px",
-          borderBottom: idx < items.length - 1 ? `1px solid ${T.line}` : "none", alignItems: "center" }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = T.panel2)}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: T.data, ...mono }}>{item.ticker}</div>
-          <div style={{ fontSize: 10, color: T.dim, ...ui, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 6 }}>{item.label}</div>
-          <div style={{ textAlign: "right", fontSize: 11, color: T.text, ...mono }}>${fmtPrice(item.price)}</div>
-          <div style={{ textAlign: "right" }}><span style={{ fontSize: 11, fontWeight: 600, color: col(item.change1d), ...mono }}>{fmtPct(item.change1d)}</span></div>
-        </div>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 12px",
+      background: T.panel, border: `1px solid ${T.line}`, borderRadius: 99, whiteSpace: "nowrap",
+      boxShadow: "var(--c-card-shadow)" }}>
+      <span style={{ fontSize: 11, fontWeight: 600, color: T.data, ...mono }}>{item.ticker}</span>
+      <span style={{ fontSize: 11, color: T.dim, ...mono }}>${fmtPrice(item.price)}</span>
+      <span style={{ fontSize: 11, fontWeight: 600, color: pctColLight(item.change1d), ...mono }}>{fmtPct(item.change1d)}</span>
+    </span>
+  );
+}
+
+/** Slow looping ticker row — no native scrollbar, pause on hover, edge fades.
+    Reduced motion: a stationary wrapped row instead. Real data only. */
+function TickerMarquee({ items }: { items: MarketItem[] }) {
+  const reduced = usePrefersReducedMotion();
+  if (reduced) {
+    return (
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {items.map((it) => <TickerPill key={it.ticker} item={it} />)}
+      </div>
+    );
+  }
+  const dur = Math.max(36, items.length * 7); // slow & restrained, scales with count
+  const half = (hidden: boolean) => (
+    <div aria-hidden={hidden || undefined} style={{ display: "flex", gap: 8, paddingRight: 8 }}>
+      {items.map((it) => <TickerPill key={it.ticker + (hidden ? "-b" : "")} item={it} />)}
+    </div>
+  );
+  return (
+    <div className="alca-ticker" style={{ position: "relative", overflow: "hidden", padding: "2px 0" }}>
+      <style>{`
+        @keyframes alca-ticker { to { transform: translateX(-50%); } }
+        .alca-ticker:hover .alca-ticker-track { animation-play-state: paused; }
+      `}</style>
+      <div className="alca-ticker-track"
+        style={{ display: "flex", width: "max-content", willChange: "transform",
+          animation: `alca-ticker ${dur}s linear infinite` }}>
+        {half(false)}
+        {half(true)}
+      </div>
+      {/* edge fades into the page background */}
+      <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: 56, pointerEvents: "none",
+        background: "linear-gradient(90deg, var(--c-bg), transparent)" }} />
+      <div style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: 56, pointerEvents: "none",
+        background: "linear-gradient(270deg, var(--c-bg), transparent)" }} />
+    </div>
+  );
+}
+
+// ── Workspace card glyphs — quiet visual identity per workspace (light) ───────
+const GlyphResearch = (
+  <svg width="132" height="44" viewBox="0 0 132 44" aria-hidden>
+    {[["0", 96, "#0E7490"], ["16", 72, "#0891B2"], ["32", 52, "#155E75"]].map(([y, w, c]) => (
+      <g key={y as string}>
+        <rect x="0" y={y as string} width="132" height="9" rx="4.5" fill="var(--c-panel3)" />
+        <rect x="0" y={y as string} width={w as number} height="9" rx="4.5" fill={c as string} opacity="0.85" />
+      </g>
+    ))}
+  </svg>
+);
+const GlyphPortfolio = (() => {
+  const R = 16, C = 2 * Math.PI * R;
+  const segs = [[0.4, "#0E7490"], [0.26, "#0891B2"], [0.2, "#155E75"], [0.14, "var(--c-line2)"]] as [number, string][];
+  let acc = 0;
+  return (
+    <svg width="132" height="44" viewBox="0 0 132 44" aria-hidden>
+      <g transform="translate(22,22)">
+        {segs.map(([f, c], i) => {
+          const el = <circle key={i} r={R} fill="none" stroke={c} strokeWidth="7"
+            strokeDasharray={`${f * C} ${C - f * C}`} strokeDashoffset={-acc * C} transform="rotate(-90)" opacity="0.9" />;
+          acc += f; return el;
+        })}
+      </g>
+      {[["52", 66], ["52", 46, 14], ["52", 30, 28]].map(([x, w, y = 0], i) => (
+        <rect key={i} x={x as string} y={8 + (y as number)} width={w as number} height="8" rx="4"
+          fill={["#0E7490", "#0891B2", "#155E75"][i]} opacity="0.7" />
       ))}
-    </div>
+    </svg>
   );
-}
+})();
+const GlyphModel = (
+  <svg width="132" height="44" viewBox="0 0 132 44" aria-hidden>
+    <path d="M4 38 C 30 34, 48 28, 62 22" fill="none" stroke="#0E7490" strokeWidth="2" strokeLinecap="round" />
+    <path d="M62 22 C 84 14, 106 8, 128 4" fill="none" stroke="#0891B2" strokeWidth="1.8" strokeLinecap="round" />
+    <path d="M62 22 C 84 18, 106 15, 128 13" fill="none" stroke="#0E7490" strokeWidth="1.8" strokeLinecap="round" />
+    <path d="M62 22 C 84 24, 106 27, 128 30" fill="none" stroke="#155E75" strokeWidth="1.8" strokeLinecap="round" strokeDasharray="4 3" />
+    <circle cx="62" cy="22" r="3" fill="#0E7490" />
+  </svg>
+);
 
-function timeAgo(ts: number): string {
-  if (!ts) return "";
-  const mins = Math.floor((Date.now() / 1000 - ts) / 60);
-  if (mins < 60) return `${mins}m`;
-  if (mins < 1440) return `${Math.floor(mins / 60)}h`;
-  return `${Math.floor(mins / 1440)}d`;
-}
-
-function FeaturedStory({ item, big }: { item: NewsItem; big: boolean }) {
-  return (
-    <div onClick={() => window.open(item.link, "_blank", "noopener,noreferrer")}
-      style={{ background: T.panel, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "hidden",
-        cursor: "pointer", display: "flex", gap: 0, boxShadow: "var(--elev-1)",
-        transition: "border-color var(--dur-fast) var(--ease-out)" }}
-      onMouseEnter={(e) => (e.currentTarget.style.borderColor = T.blue)}
-      onMouseLeave={(e) => (e.currentTarget.style.borderColor = T.line)}>
-      {item.image && (
-        <img src={item.image} alt="" loading="lazy" referrerPolicy="no-referrer"
-          style={{ width: big ? 150 : 110, height: big ? "auto" : 88, minHeight: big ? 110 : 88,
-            objectFit: "cover", flexShrink: 0, background: T.panel2 }}
-          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-      )}
-      <div style={{ padding: "14px 16px", flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: big ? 14 : 12.5, fontWeight: big ? 600 : 500, color: T.text, lineHeight: 1.45, ...ui, marginBottom: item.summary ? 6 : 0 }}>
-          {item.title}
-        </div>
-        {item.summary && (
-          <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.55, ...ui, marginBottom: 7,
-            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as React.CSSProperties["WebkitBoxOrient"], overflow: "hidden" }}>
-            {item.summary}
-          </div>
-        )}
-        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-          <span style={{ fontSize: 10, color: T.muted, ...ui }}>{item.publisher}</span>
-          <span style={{ fontSize: 10, color: T.muted }}>·</span>
-          <span style={{ fontSize: 10, color: T.muted, ...mono }}>{timeAgo(item.publishedAt)} ago</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SmallStory({ item }: { item: NewsItem }) {
-  return (
-    <div onClick={() => window.open(item.link, "_blank", "noopener,noreferrer")}
-      style={{ padding: "11px 0", borderBottom: `1px solid ${T.line}`, cursor: "pointer", display: "flex", gap: 10, alignItems: "center" }}
-      onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.7")}
-      onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}>
-      {item.image && (
-        <img src={item.image} alt="" loading="lazy" referrerPolicy="no-referrer"
-          style={{ width: 52, height: 52, borderRadius: 6, objectFit: "cover", flexShrink: 0, background: T.panel2 }}
-          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-      )}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12, fontWeight: 500, color: T.text, ...ui, lineHeight: 1.4, marginBottom: 3 }}>{item.title}</div>
-        <div style={{ display: "flex", gap: 5 }}>
-          <span style={{ fontSize: 10, color: T.muted, ...ui }}>{item.publisher}</span>
-          <span style={{ fontSize: 10, color: T.muted }}>·</span>
-          <span style={{ fontSize: 10, color: T.muted, ...mono }}>{timeAgo(item.publishedAt)} ago</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-//  SCROLL PROGRESS RAIL - a little train that rides the left rail, then crosses
-//  the page after the news and rides down the right rail.
-// ════════════════════════════════════════════════════════════════════════════
-const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
-
-/**
- * ScrollProgress - a clean, straight scroll-position indicator hugging the
- * sidebar edge: a thin vertical track, a filled (traveled) portion, and a small
- * handle. Moves linearly with scroll position.
- */
-function ScrollRail({ offset }: { offset: number }) {
-  const [m, setM] = useState({ p: 0, vh: 800 });
-  useEffect(() => {
-    const recalc = () => {
-      const el = document.documentElement;
-      const maxScroll = Math.max(1, el.scrollHeight - el.clientHeight);
-      setM({ p: clamp01(el.scrollTop / maxScroll), vh: window.innerHeight });
-    };
-    recalc();
-    window.addEventListener("scroll", recalc, { passive: true });
-    window.addEventListener("resize", recalc);
-    return () => { window.removeEventListener("scroll", recalc); window.removeEventListener("resize", recalc); };
-  }, []);
-
-  const xRail = offset + 13;
-  const yTop = 92;
-  const yBottom = m.vh - 48;
-  const ty = yTop + m.p * (yBottom - yTop); // linear with scroll
-
-  return (
-    <div style={{ position: "fixed", left: xRail - 8, top: 0, bottom: 0, width: 16, zIndex: 40,
-      pointerEvents: "none" }}>
-      {/* track */}
-      <div style={{ position: "absolute", left: 8, top: yTop, width: 2, height: yBottom - yTop,
-        background: T.line2, borderRadius: 2, transform: "translateX(-50%)" }} />
-      {/* traveled portion */}
-      <div style={{ position: "absolute", left: 8, top: yTop, width: 2, height: ty - yTop,
-        background: T.text, borderRadius: 2, transform: "translateX(-50%)" }} />
-      {/* handle */}
-      <div style={{ position: "absolute", left: 8, top: ty, width: 10, height: 10, borderRadius: "50%",
-        transform: "translate(-50%, -50%)", transition: "top 0.08s linear",
-        background: T.panel, border: `2px solid ${T.text}`, boxShadow: "0 1px 3px rgba(0,0,0,0.28)" }} />
-    </div>
-  );
-}
-// Dark surface language established on the Discover hub cards - now deepened
-// with a navy undertone, layered lighting, and a hover light-sweep. Same
-// material as the app chrome, so the platform reads as one instrument.
-const DARK_BG = "linear-gradient(140deg, #0D0F15 0%, #12161F 60%, #0F131B 100%)";
-const DARK_BORDER = "#262628";
-const DARK_ACCENT = "#5EEAD4";
-
-// ── Command-center workspace "department" card (whole card is clickable) ──────
-function HubHero({ title, subtitle, desc, onOpen }: {
-  title: string; subtitle: string; desc: string; onOpen: () => void;
+// ── Workspace cards ───────────────────────────────────────────────────────────
+interface QuickAction { label: string; go: DashTab }
+function WorkspaceCard({ step, title, desc, actions, cta, go, onNavigate, badge, delay, glyph }: {
+  step: string; title: string; desc: string; actions: QuickAction[];
+  cta: string; go: DashTab; onNavigate: (t: DashTab) => void; badge?: string; delay: number;
+  glyph: React.ReactNode;
 }) {
   const [hover, setHover] = useState(false);
   return (
-    <div onClick={onOpen} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
-      style={{ position: "relative", overflow: "hidden", background: DARK_BG,
-        border: `1px solid ${hover ? "#3A3D45" : DARK_BORDER}`, borderRadius: 18, cursor: "pointer",
-        boxShadow: hover ? "var(--elev-3), inset 0 1px 0 rgba(255,255,255,0.07)" : "var(--elev-2), inset 0 1px 0 rgba(255,255,255,0.07)",
-        transform: hover ? "translateY(-3px)" : "none", transition: "all var(--dur-base) var(--ease-out)",
-        padding: "54px 52px", display: "flex", flexDirection: "column", gap: 32, minWidth: 0, minHeight: 360 }}>
-      {/* dot-grid texture - same language as the Discover hub cards */}
-      <div style={{ position: "absolute", inset: 0, opacity: 0.06, pointerEvents: "none",
-        backgroundImage: "radial-gradient(circle, #FFFFFF 1px, transparent 1px)", backgroundSize: "18px 18px" }} />
-      {/* slow-breathing accent glow - restrained motion, not distracting */}
-      <div style={{ position: "absolute", top: -70, right: -70, width: 300, height: 300, borderRadius: "50%",
-        background: `radial-gradient(circle, ${DARK_ACCENT}2e, transparent 70%)`, filter: "blur(6px)",
-        opacity: hover ? 0.9 : 0.55, transition: "opacity 0.3s ease",
-        animation: "alcaCardGlow 7s ease-in-out infinite", pointerEvents: "none" }} />
-      {/* cool counter-light bottom-left - the second source that makes the surface read as lit */}
-      <div style={{ position: "absolute", bottom: -110, left: -80, width: 340, height: 340, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(14,116,144,0.22), transparent 70%)", filter: "blur(10px)",
-        pointerEvents: "none" }} />
-      {/* hover light-sweep - a sheen that crosses the card once on entry */}
-      <div style={{ position: "absolute", top: 0, bottom: 0, width: "45%", left: hover ? "135%" : "-65%",
-        transform: "skewX(-18deg)", pointerEvents: "none",
-        background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent)",
-        transition: "left 0.8s var(--ease-out)" }} />
-      <div style={{ minWidth: 0, position: "relative" }}>
-        <div style={{ fontSize: 12.5, fontWeight: 600, color: "rgba(255,255,255,0.48)", ...ui, letterSpacing: "0.2em", textTransform: "uppercase" }}>{title}</div>
-        <div style={{ fontSize: 40, fontWeight: 600, color: "#fff", ...ui, marginTop: 16, lineHeight: 1.15, letterSpacing: "-0.02em" }}>{subtitle}</div>
-        <div style={{ fontSize: 15, fontWeight: 400, color: "rgba(255,255,255,0.6)", ...ui, marginTop: 12, lineHeight: 1.55, maxWidth: 420 }}>{desc}</div>
+    <Reveal delay={delay} y={18} style={{ display: "flex", minWidth: 0 }}>
+      <div onClick={() => onNavigate(go)} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+        style={{ position: "relative", overflow: "hidden", cursor: "pointer", width: "100%", minHeight: 360,
+          background: T.panel, border: `1px solid ${hover ? T.line2 : T.line}`, borderRadius: 18,
+          boxShadow: hover ? "var(--elev-2)" : "var(--c-card-shadow)",
+          transform: hover ? "translateY(-2px)" : "none", transition: "all 0.22s var(--ease-out)",
+          padding: "32px 30px 26px", display: "flex", flexDirection: "column", gap: 18 }}>
+        <div style={{ position: "relative" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: T.blue, ...ui, letterSpacing: "0.18em", textTransform: "uppercase" }}>{step}</span>
+            {badge && (
+              <span style={{ fontSize: 8.5, fontWeight: 700, color: T.amber, background: "rgba(180,83,9,0.08)",
+                border: "1px solid rgba(180,83,9,0.3)", borderRadius: 99, padding: "3px 8px",
+                letterSpacing: "0.1em", textTransform: "uppercase", ...ui, whiteSpace: "nowrap" }}>{badge}</span>
+            )}
+          </div>
+          <h3 style={{ fontSize: 28, fontWeight: 700, color: T.text, ...ui, margin: "12px 0 0", letterSpacing: "-0.02em" }}>{title}</h3>
+          <p style={{ fontSize: 14, color: T.dim, ...ui, margin: "9px 0 0", lineHeight: 1.6 }}>{desc}</p>
+        </div>
+        {/* workspace glyph — quiet identity, not a chart with fake data */}
+        <div style={{ opacity: hover ? 1 : 0.85, transition: "opacity 0.22s" }}>{glyph}</div>
+        {/* quick actions - stopPropagation so they don't double-fire the card */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {actions.map((a) => (
+            <button key={a.label} onClick={(e) => { e.stopPropagation(); onNavigate(a.go); }}
+              style={{ fontSize: 12, fontWeight: 600, color: T.dim, ...ui, background: T.panel,
+                border: `1px solid ${T.line2}`, borderRadius: 9, padding: "8px 14px", cursor: "pointer",
+                transition: "all 0.15s var(--ease-out)" }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = T.text; e.currentTarget.style.borderColor = T.muted; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = T.dim; e.currentTarget.style.borderColor = T.line2; }}>
+              {a.label}
+            </button>
+          ))}
+        </div>
+        <div style={{ flex: 1 }} />
+        <button onClick={(e) => { e.stopPropagation(); onNavigate(go); }}
+          style={{ display: "inline-flex", alignSelf: "flex-start", alignItems: "center", gap: 9,
+            padding: "11px 20px", borderRadius: 10, border: "none", cursor: "pointer",
+            background: hover ? T.blueD : T.blue, color: "#fff", fontSize: 13.5, fontWeight: 600, ...ui,
+            transition: "background 0.18s var(--ease-out)" }}>
+          {cta}
+          <span style={{ transform: hover ? "translateX(3px)" : "none", transition: "transform 0.18s var(--ease-out)" }}>→</span>
+        </button>
       </div>
-      <div style={{ flex: 1 }} />
-      <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 600, color: DARK_ACCENT, ...ui, position: "relative" }}>
-        Open Workspace <span style={{ transform: hover ? "translateX(5px)" : "none", transition: "transform var(--dur-fast) var(--ease-out)" }}>→</span>
-      </div>
+    </Reveal>
+  );
+}
+
+// ── Section heading ───────────────────────────────────────────────────────────
+function SectionLabel({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+      <span style={{ fontSize: 11, fontWeight: 700, color: T.muted, ...ui, textTransform: "uppercase", letterSpacing: "0.14em" }}>
+        {children}
+      </span>
+      {right}
     </div>
   );
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────────
-export default function DashboardTab({ onNavigate, railOffset = 60 }: {
-  onNavigate?: (t: DashTab) => void; railOffset?: number;
-} = {}) {
+export default function DashboardTab({ onNavigate, userEmail }: { onNavigate?: (t: DashTab) => void; userEmail?: string | null } = {}) {
   const [market, setMarket] = useState<MarketData | null>(null);
-  const [news, setNews] = useState<NewsItem[]>([]);
   const [mktLoading, setMktLoading] = useState(true);
-  const [newsLoading, setNewsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [greeting, setGreeting] = useState<string | null>(null);
+  const isNarrow = useMediaQuery("(max-width: 1080px)");
+  const isMobile = useMediaQuery("(max-width: 720px)");
 
   useEffect(() => {
     fetch("/api/market").then((r) => r.json()).then((d) => { setMarket(d); setMktLoading(false); })
       .catch(() => { setError("Failed to load market data"); setMktLoading(false); });
-    fetch("/api/news").then((r) => r.json()).then((d) => setNews(d.items ?? [])).catch(() => {}).finally(() => setNewsLoading(false));
   }, []);
 
-  // Skeletons reserve the real layout while data loads - the dashboard never
-  // reflows, it just fills in (CLS-safe, and reads as fast).
-  if (mktLoading) return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-        {[0, 1, 2].map((i) => (
-          <div key={i} style={{ background: "linear-gradient(150deg, #101216 0%, #15171C 100%)",
-            border: "1px solid #262628", borderRadius: 14, padding: "20px 22px", height: 224 }}>
-            {[[90, 11], [150, 26], [0, 0]].map(([w, h], j) => w > 0 ? (
-              <div key={j} style={{ width: w, height: h, borderRadius: 6, marginBottom: 14,
-                background: "linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.12) 37%, rgba(255,255,255,0.06) 63%)",
-                backgroundSize: "400px 100%", animation: "alca-shimmer 1.4s linear infinite" }} />
-            ) : (
-              <div key={j} style={{ height: 100, borderRadius: 8,
-                background: "linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 37%, rgba(255,255,255,0.04) 63%)",
-                backgroundSize: "400px 100%", animation: "alca-shimmer 1.4s linear infinite" }} />
-            ))}
-          </div>
-        ))}
-      </div>
-      {onNavigate && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 24, marginTop: 34 }}>
-          {[0, 1].map((i) => (
-            <div key={i} style={{ background: DARK_BG, border: `1px solid ${DARK_BORDER}`, borderRadius: 18, minHeight: 360 }} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-  if (error || !market) return (
-    <div style={{ padding: "64px 0", textAlign: "center", color: T.red }}>
-      <div style={{ fontSize: 13, ...ui }}>{error ?? "No data"}</div>
-    </div>
-  );
-
-  const find = (t: string) => market.items.find((i) => i.ticker === t) ?? null;
-  const heroes = [find("^DJI"), find("^IXIC"), find("^GSPC")];
-  const equities = market.items.filter((i) => i.group === "Equity" && !["^GSPC", "^DJI", "^IXIC"].includes(i.ticker));
-  const bonds = market.items.filter((i) => i.group === "Fixed Income");
-  const alts = market.items.filter((i) => i.group === "Alternatives");
-  const time = new Date(market.fetchedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
-  const topStories = news.slice(0, 3);
-  const moreStories = news.slice(3, 8);
+  // Personalized greeting: profile first_name → auth metadata → email prefix →
+  // "Advisor" (the API resolves the chain; email is the client-side fallback).
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/profile", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive) setGreeting((d?.greeting as string) ?? greetingName(null, userEmail ?? null)); })
+      .catch(() => { if (alive) setGreeting(greetingName(null, userEmail ?? null)); });
+    return () => { alive = false; };
+  }, [userEmail]);
 
   const go = (t: DashTab) => onNavigate?.(t);
 
+  const find = (t: string) => market?.items.find((i) => i.ticker === t) ?? null;
+  const heroes = [find("^DJI"), find("^IXIC"), find("^GSPC")];
+  const others = market?.items.filter((i) => !["^GSPC", "^DJI", "^IXIC"].includes(i.ticker)) ?? [];
+  const time = market ? new Date(market.fetchedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+
+  const shimmer: React.CSSProperties = {
+    background: "linear-gradient(90deg, var(--c-panel3) 25%, var(--c-panel2) 37%, var(--c-panel3) 63%)",
+    backgroundSize: "400px 100%", animation: "alca-shimmer 1.4s linear infinite",
+  };
+
+  const opportunityKinds = ["High expenses", "Concentration risk", "Fund overlap", "Style drift", "Replacement candidates", "Portfolio imbalances"];
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {onNavigate && <ScrollRail offset={railOffset} />}
+    // Full-bleed light canvas with a faint teal wash falling from under the nav.
+    <div style={{ margin: "0 -32px", background: T.bg, minHeight: "100vh" }}>
+      <div style={{ position: "absolute", left: 0, right: 0, height: 360, pointerEvents: "none",
+        background: "linear-gradient(180deg, rgba(14,116,144,0.05) 0%, rgba(14,116,144,0) 100%)" }} />
 
-      {/* 1 · Market command deck - dark terminal cards, same material as the chrome */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-        {heroes.map((h, i) => <IndexHero key={i} item={h} />)}
-      </div>
+      <div style={{ position: "relative", maxWidth: 1360, margin: "0 auto",
+        padding: isMobile ? "96px 18px 56px" : "108px 40px 72px",
+        display: "flex", flexDirection: "column", gap: 32 }}>
 
-      {/* 2 · The two workspaces - the primary visual focus of the dashboard */}
-      {onNavigate && (
-        <>
-          <style>{`@keyframes alcaCardGlow { 0%, 100% { opacity: 0.4; transform: scale(1); } 50% { opacity: 0.75; transform: scale(1.06); } }`}</style>
-          <div style={{ marginTop: 22, fontSize: 12, fontWeight: 600, color: T.muted, ...ui,
-            textTransform: "uppercase", letterSpacing: "0.09em" }}>Workspaces</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 24 }}>
-            <HubHero title="Research" subtitle="Investment Research"
-              desc="Screen, compare, and evaluate investment opportunities." onOpen={() => go("research")} />
-            <HubHero title="Advisor" subtitle="Portfolio Construction"
-              desc="Build, review, and present client portfolios." onOpen={() => go("workspace")} />
-          </div>
-
-          {/* 3 · Opportunity feed - a quiet pointer to what needs attention, no duplicate nav */}
-          <div style={{ background: T.panel, border: `1px solid ${T.line}`, borderRadius: 14, boxShadow: "var(--elev-1)",
-            padding: "18px 22px", marginTop: 6 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: T.text, ...ui }}>Opportunity Feed</div>
-            <div style={{ fontSize: 12.5, color: T.dim, ...ui, marginTop: 3, maxWidth: 640, lineHeight: 1.5 }}>
-              Portfolios that may need attention - high expenses, risk drift, or replacement candidates - will surface here.
+        {/* ── Header ── */}
+        <Reveal>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 14, flexWrap: "wrap" }}>
+            <div>
+              {greeting && (
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: T.blue, ...ui, marginBottom: 6,
+                  letterSpacing: "0.02em" }}>Welcome back, {greeting}</div>
+              )}
+              <h1 style={{ fontSize: isMobile ? 26 : 32, fontWeight: 700, color: T.text, ...ui, margin: 0, letterSpacing: "-0.025em" }}>
+                Advisor Overview
+              </h1>
+              <p style={{ fontSize: 14, color: T.dim, ...ui, margin: "8px 0 0" }}>
+                Live markets, your workspaces, and what needs attention.
+              </p>
             </div>
+            {time && <span style={{ fontSize: 11, color: T.muted, ...mono }}>Data as of {time} · delayed</span>}
           </div>
-        </>
-      )}
+        </Reveal>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 16, alignItems: "start", marginTop: 8 }}>
-        {/* LEFT - news */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: T.muted, ...ui, textTransform: "uppercase",
-              letterSpacing: "0.09em" }}>Market News</div>
-            <span style={{ fontSize: 10, color: T.muted, ...mono }}>{time}</span>
-          </div>
-          {newsLoading && (
-            <div style={{ background: T.panel, border: `1px solid ${T.line}`, borderRadius: 10, padding: "24px 18px", color: T.muted, fontSize: 12, ...ui }}>Loading headlines…</div>
-          )}
-          {!newsLoading && topStories.length === 0 && (
-            <div style={{ background: T.panel, border: `1px solid ${T.line}`, borderRadius: 10, padding: "24px 18px", color: T.muted, fontSize: 12, ...ui }}>No news available.</div>
-          )}
-          {topStories.map((item, i) => <FeaturedStory key={item.uuid} item={item} big={i === 0} />)}
-          {moreStories.length > 0 && (
-            <div style={{ background: T.panel, border: `1px solid ${T.line}`, borderRadius: 12, padding: "0 18px", boxShadow: "var(--elev-1)" }}>
-              <div style={{ fontSize: 10.5, fontWeight: 600, color: T.muted, ...ui, textTransform: "uppercase",
-                letterSpacing: "0.08em", paddingTop: 12, paddingBottom: 2 }}>More Headlines</div>
-              {moreStories.map((item) => <SmallStory key={item.uuid} item={item} />)}
-              <div style={{ height: 8 }} />
+        {/* ── 1 · Compact market strip (charcoal data surface) ── */}
+        <Reveal delay={60}>
+          {mktLoading ? (
+            <div style={{ border: `1px solid ${T.line}`, borderRadius: 16, height: 128, ...shimmer }} />
+          ) : error || !market ? (
+            <div style={{ background: T.panel, border: `1px solid ${T.line}`, borderRadius: 16, padding: "22px 24px",
+              color: T.red, fontSize: 13, ...ui }}>{error ?? "No market data"}</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", flexDirection: isNarrow ? "column" : "row",
+                background: STRIP_BG, border: "1px solid #26262B", borderRadius: 16,
+                boxShadow: "var(--elev-2), inset 0 1px 0 rgba(255,255,255,0.05)", overflow: "hidden" }}>
+                {heroes.map((h, i) => (
+                  <React.Fragment key={i}>
+                    {i > 0 && <div style={{ alignSelf: "stretch", width: isNarrow ? "auto" : 1, height: isNarrow ? 1 : "auto", background: STRIP_LINE }} />}
+                    <IndexCell item={h} />
+                  </React.Fragment>
+                ))}
+              </div>
+              {others.length > 0 && <TickerMarquee items={others} />}
             </div>
           )}
+        </Reveal>
+
+        {/* ── 2 · Three workspaces ── */}
+        <div>
+          <SectionLabel>Workspaces</SectionLabel>
+          <div style={{ display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "repeat(3, 1fr)", gap: 18, marginTop: 14 }}>
+            <WorkspaceCard step="Step 1 · Research" title="Research"
+              desc="Find, analyze, and compare individual investments."
+              actions={[{ label: "Screen Funds", go: "discover" }, { label: "Compare Funds", go: "comparison" }, { label: "Analyze Fund", go: "analysis" }]}
+              cta="Enter Research" go="research" onNavigate={go} delay={0} glyph={GlyphResearch} />
+            <WorkspaceCard step="Step 2 · Portfolio" title="Portfolio"
+              desc="Build, revise, and analyze complete client portfolios."
+              actions={[{ label: "Create portfolio", go: "portfolio" }, { label: "Review portfolio", go: "murderboard" }, { label: "Open workspace", go: "workspace" }]}
+              cta="Enter Portfolio" go="workspace" onNavigate={go} delay={90} glyph={GlyphPortfolio} />
+            <WorkspaceCard step="Step 3 · Model" title="Model"
+              desc="Test funds and portfolios across benchmarks, assumptions, and market scenarios."
+              actions={[{ label: "Compare Fund", go: "model-fund" }, { label: "Project Portfolio", go: "model-project" }, { label: "Build Scenario", go: "model-scenarios" }]}
+              cta="Enter Model" go="model" onNavigate={go} delay={180} glyph={GlyphModel} />
+          </div>
         </div>
 
-        {/* RIGHT - markets */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: T.muted, ...ui, textTransform: "uppercase",
-            letterSpacing: "0.09em" }}>Markets</div>
-          <MiniMarketTable title="Equities" items={equities} />
-          <MiniMarketTable title="Fixed Income" items={bonds} />
-          <MiniMarketTable title="Alternatives" items={alts} />
+        {/* ── 3 · Recent Work ── */}
+        <div>
+          <SectionLabel>Recent Work</SectionLabel>
+          <Reveal delay={60}>
+            <div style={{ marginTop: 14, background: T.panel, border: `1px dashed ${T.line2}`, borderRadius: 16,
+              padding: isMobile ? "26px 20px" : "28px 30px", display: "flex", alignItems: "center", gap: 20,
+              flexWrap: "wrap" }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, flexShrink: 0, display: "flex",
+                alignItems: "center", justifyContent: "center", background: "var(--c-blueL)",
+                border: `1px solid ${T.blue}33` }}>
+                <svg width="19" height="19" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="8" r="6.3" stroke={T.blue} strokeWidth="1.3" />
+                  <path d="M8 4.6V8l2.3 1.5" stroke={T.blue} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <div style={{ flex: 1, minWidth: 220 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: T.text, ...ui }}>No recent activity yet</div>
+                <div style={{ fontSize: 12.5, color: T.dim, ...ui, marginTop: 4, lineHeight: 1.55, maxWidth: 560 }}>
+                  Funds you analyze, comparisons you run, and portfolios you build will appear here
+                  so you can pick up where you left off.
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button onClick={() => go("discover")}
+                  style={{ fontSize: 12.5, fontWeight: 600, color: "#fff", ...ui, cursor: "pointer",
+                    background: T.blue, border: "none", borderRadius: 9, padding: "9px 16px",
+                    transition: "background 0.15s" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = T.blueD)}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = T.blue)}>
+                  Start researching
+                </button>
+                <button onClick={() => go("portfolio")}
+                  style={{ fontSize: 12.5, fontWeight: 600, color: T.dim, ...ui, cursor: "pointer",
+                    background: T.panel, border: `1px solid ${T.line2}`, borderRadius: 9, padding: "9px 16px",
+                    transition: "all 0.15s" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = T.text; e.currentTarget.style.borderColor = T.muted; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = T.dim; e.currentTarget.style.borderColor = T.line2; }}>
+                  Build a portfolio
+                </button>
+              </div>
+            </div>
+          </Reveal>
         </div>
+
+        {/* ── 4 · Portfolio Opportunities ── */}
+        <div>
+          <SectionLabel>Portfolio Opportunities</SectionLabel>
+          <Reveal delay={60}>
+            <div style={{ marginTop: 14, background: T.panel, border: `1px solid ${T.line}`,
+              borderRadius: 16, padding: "22px 24px 20px", boxShadow: "var(--c-card-shadow)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: T.blue, opacity: 0.85 }} />
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: T.text, ...ui }}>Watching your book</span>
+              </div>
+              <p style={{ fontSize: 12.5, color: T.dim, ...ui, lineHeight: 1.6, margin: "10px 0 0", maxWidth: 720 }}>
+                As client portfolios are added, the feed will flag items that may need attention:
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 14 }}>
+                {opportunityKinds.map((k) => (
+                  <span key={k} style={{ fontSize: 11, fontWeight: 600, color: T.dim, ...ui,
+                    background: T.panel3, border: `1px solid ${T.line}`, borderRadius: 99, padding: "6px 12px" }}>
+                    {k}
+                  </span>
+                ))}
+              </div>
+              <div style={{ height: 1, background: T.line, margin: "18px 0 14px" }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 11.5, color: T.muted, ...ui, lineHeight: 1.55, flex: 1, minWidth: 240 }}>
+                  No findings yet — nothing needs attention, or no portfolios have been analyzed.
+                </span>
+                <button onClick={() => go("murderboard")}
+                  style={{ fontSize: 12, fontWeight: 600, color: T.blue, ...ui, cursor: "pointer",
+                    background: "var(--c-blueL)", border: `1px solid ${T.blue}44`,
+                    borderRadius: 9, padding: "9px 16px", transition: "filter 0.15s" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.97)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.filter = "none")}>
+                  Review a portfolio →
+                </button>
+              </div>
+            </div>
+          </Reveal>
+        </div>
+
+        <p style={{ fontSize: 10, color: T.muted, ...ui, textAlign: "center", margin: 0 }}>
+          Prices delayed · market data via Financial Modeling Prep · Research aid - verify before client use
+        </p>
       </div>
-
-      <p style={{ fontSize: 10, color: T.muted, ...ui, textAlign: "center", marginTop: 8 }}>
-        Prices delayed · Yahoo Finance &amp; FRED · Research aid - verify before client use
-      </p>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import IdeasTab, { type IdeasMode } from "./IdeasTab";
 import AnalysisTab  from "./AnalysisTab";
 import CompareTab   from "./CompareTab";
 import SettingsDrawer, { type Theme } from "./SettingsTab";
+import CompleteProfile from "./CompleteProfile";
 import { loadPrefs, applyMotionPref } from "../lib/prefs";
 import ComingSoonTab, { type RoadmapSpec } from "./ComingSoonTab";
 import WatchlistTab from "./WatchlistTab";
@@ -304,7 +305,7 @@ export default function AppShell({ authMode, authUser, authWorkspace, onLogout }
           />
         </div>
         <div style={{ display: tab === "dashboard" ? "block" : "none" }}>
-          <DashboardTab onNavigate={dashNavigate} />
+          <DashboardTab onNavigate={dashNavigate} userEmail={authUser ?? null} />
         </div>
         {mounted.has("research") && (
           <div style={{ display: tab === "research" ? "block" : "none" }}><ResearchHubTab go={hubGo} onAnalyze={goAnalyze} /></div>
@@ -391,6 +392,9 @@ export default function AppShell({ authMode, authUser, authWorkspace, onLogout }
       {/* Settings drawer */}
       <SettingsDrawer open={settingsOpen} onClose={() => setSettingsOpen(false)}
         theme={theme} setTheme={setTheme} environment={authMode} />
+
+      {/* One-time "complete your profile" prompt for signed-in users without a name */}
+      <CompleteProfile active={authMode === "full"} />
     </div>
   );
 }

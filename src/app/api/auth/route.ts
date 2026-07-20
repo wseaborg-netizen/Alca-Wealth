@@ -33,6 +33,35 @@ export async function POST(req: NextRequest) {
       return res;
     }
 
+    // ── Signup ──────────────────────────────────────────────────────────────
+    // Profile + default firm/workspace + owner membership are provisioned by
+    // the on_auth_user_created DB trigger (see supabase/migrations).
+    if (action === "signup") {
+      const { email, password, firstName, lastName, timezone } = body as {
+        email: string; password: string; firstName?: string; lastName?: string; timezone?: string;
+      };
+      if (!email?.trim() || !password || password.length < 8) {
+        return NextResponse.json({ error: "Enter a valid email and a password of at least 8 characters." }, { status: 400 });
+      }
+      const { createServerClient } = await import("@/lib/supabase");
+      const { resolveTimezone } = await import("@/lib/profile");
+      const supabase = await createServerClient();
+      // Name + timezone ride along as auth metadata; the handle_new_user trigger
+      // reads raw_user_meta_data to seed the profile (works with email confirm on).
+      const data_meta = {
+        first_name: firstName?.trim()?.slice(0, 80) || null,
+        last_name: lastName?.trim()?.slice(0, 80) || null,
+        timezone: resolveTimezone(timezone),
+      };
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(), password, options: { data: data_meta },
+      });
+      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      // Email confirmation on: no session yet — tell the client to check email.
+      if (!data.session) return NextResponse.json({ ok: true, mode: "confirm", user: data.user?.email });
+      return NextResponse.json({ ok: true, mode: "full", user: data.user?.email });
+    }
+
     // ── Full Supabase login ─────────────────────────────────────────────────
     if (action === "login") {
       const { email, password } = body as { email: string; password: string };
@@ -78,7 +107,12 @@ export async function GET(req: NextRequest) {
     const { createServerClient } = await import("@/lib/supabase");
     const supabase = await createServerClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (user) return NextResponse.json({ mode: "full", user: user.email });
+    if (user) {
+      // Include the default workspace for the app-shell indicator.
+      const { getDefaultFirm } = await import("@/lib/db");
+      const firm = await getDefaultFirm(supabase).catch(() => null);
+      return NextResponse.json({ mode: "full", user: user.email, workspace: firm?.name ?? null });
+    }
     return NextResponse.json({ mode: "none" });
   } catch (err) {
     console.error("[api/auth GET] error:", err);

@@ -204,6 +204,40 @@ export async function fundRequestCounts(sb: Supa, firmId: string): Promise<{
   };
 }
 
+// ── User profile (minimal signup profile) ──────────────────────────────────
+// One row per user in `profiles` (id = auth.users.id). RLS: own row only.
+
+export interface ProfileRow {
+  id: string; email: string | null; first_name: string | null; last_name: string | null;
+  display_name: string | null; timezone: string | null; onboarding_completed: boolean;
+}
+
+const PROFILE_COLS = "id, email, first_name, last_name, display_name, timezone, onboarding_completed";
+
+/** The caller's own profile, or null if none exists yet. */
+export async function profileGet(sb: Supa, userId: string): Promise<ProfileRow | null> {
+  const { data, error } = await sb.from("profiles").select(PROFILE_COLS).eq("id", userId).limit(1);
+  if (error) throw new Error(error.message);
+  return (data?.[0] as unknown as ProfileRow) ?? null;
+}
+
+/** Update the caller's own profile (name / display name / timezone / onboarding).
+    RLS guarantees id = auth.uid(); undefined fields are left untouched. */
+export async function profileUpsert(sb: Supa, userId: string, email: string | null, p: {
+  firstName?: string | null; lastName?: string | null; displayName?: string | null;
+  timezone?: string | null; onboardingCompleted?: boolean;
+}): Promise<ProfileRow> {
+  const patch: Record<string, unknown> = { id: userId, email };
+  if (p.firstName !== undefined) patch.first_name = p.firstName?.slice(0, 80) ?? null;
+  if (p.lastName !== undefined) patch.last_name = p.lastName?.slice(0, 80) ?? null;
+  if (p.displayName !== undefined) patch.display_name = p.displayName?.slice(0, 120) ?? null;
+  if (p.timezone !== undefined) patch.timezone = p.timezone ?? null;
+  if (p.onboardingCompleted !== undefined) patch.onboarding_completed = p.onboardingCompleted;
+  const { data, error } = await sb.from("profiles").upsert(patch, { onConflict: "id" }).select(PROFILE_COLS).single();
+  if (error) throw new Error(error.message);
+  return data as unknown as ProfileRow;
+}
+
 // ── Dynamic universe funds (Expansion Hub) ──────────────────────────────────
 // Verified rows are the shared runtime universe overlay; merged with the static
 // universe server-side (src/lib/universeServer.ts). RLS lets any authenticated
