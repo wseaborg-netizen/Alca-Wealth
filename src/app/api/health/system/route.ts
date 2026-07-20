@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireFirmContext, listsGetAll, fundRequestCounts } from "@/lib/db";
+import { requireFirmContext, listsGetAll, fundRequestCounts, dynamicFundCount } from "@/lib/db";
 import { getSessionUser } from "@/lib/db";
 import { runSystemHealth, type HealthAuthContext } from "@/lib/health";
 
@@ -30,6 +30,7 @@ export async function GET() {
           return lists.map((l) => ({ name: "", type: l.type, itemCount: l.items.length }));
         },
         fundRequestCounts: () => fundRequestCounts(ctx.sb, ctx.firm.id),
+        dynamicFundCount: () => dynamicFundCount(ctx.sb),
       }
     : { signedIn: true };
 

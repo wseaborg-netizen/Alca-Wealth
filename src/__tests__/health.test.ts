@@ -45,7 +45,9 @@ describe("runSystemHealth: normalized, safe, isolated", () => {
     const { checks } = await runSystemHealth({ signedIn: false });
     const u = checks.find((c) => c.key === "fundUniverse")!;
     expect(u.status).not.toBe("error");
-    expect((u.details as { verifiedFunds: number }).verifiedFunds).toBeGreaterThan(0);
+    const d = u.details as { staticFunds: number; mergedFunds: number };
+    expect(d.staticFunds).toBeGreaterThan(0);
+    expect(d.mergedFunds).toBeGreaterThanOrEqual(d.staticFunds);
   });
 
   test("FMP check degrades to error (not a crash) when the probe fails", async () => {
@@ -82,17 +84,20 @@ describe("runSystemHealth: normalized, safe, isolated", () => {
   });
 
   test("fund-requests check is informational — healthy on a normal backlog, warns only when stuck", async () => {
+    const counts = (o: Partial<{ pending: number; readyForReview: number; unsupported: number; total: number; needsClassification: number; addedToUniverse: number; failedValidation: number; classificationFailed: number }>) =>
+      ({ pending: 0, readyForReview: 0, unsupported: 0, total: 0, needsClassification: 0, addedToUniverse: 0, failedValidation: 0, classificationFailed: 0, ...o });
+
     const healthyCtx: HealthAuthContext = {
       signedIn: true,
-      fundRequestCounts: async () => ({ pending: 0, readyForReview: 3, unsupported: 1, total: 4 }),
+      fundRequestCounts: async () => counts({ readyForReview: 3, unsupported: 1, addedToUniverse: 2, total: 6 }),
     };
     const ok = (await runSystemHealth(healthyCtx)).checks.find((c) => c.key === "fundRequests")!;
     expect(ok.status).toBe("healthy");
-    expect((ok.details as { readyForReview: number }).readyForReview).toBe(3);
+    expect((ok.details as { addedToUniverse: number }).addedToUniverse).toBe(2);
 
     const stuckCtx: HealthAuthContext = {
       signedIn: true,
-      fundRequestCounts: async () => ({ pending: 2, readyForReview: 0, unsupported: 0, total: 2 }),
+      fundRequestCounts: async () => counts({ pending: 2, total: 2 }),
     };
     const stuck = (await runSystemHealth(stuckCtx)).checks.find((c) => c.key === "fundRequests")!;
     expect(stuck.status).toBe("warning");

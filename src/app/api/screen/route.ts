@@ -1,7 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFund, getBenchmarkHistory, BENCHMARKS } from "@/lib/funds";
-import { computePercentiles, compositeScore } from "@/lib/kpi";
-import { UNIVERSE } from "@/lib/universe";
+import { computePercentiles } from "@/lib/kpi";
+import { getMergedUniverse } from "@/lib/universeServer";
+import { rankFundsForContext, type ScoreContext } from "@/lib/metrics/score";
+import { MIN_PEERS } from "@/lib/metrics/peers";
+import { recordToScoreInputs, CONTEXT_FROM_PRIORITY } from "@/lib/metrics/recordScore";
+import type { Period } from "@/lib/metrics/periods";
+
+// Screener ranking = the SAME Advisor Review Score engine used by Fund
+// Analysis / Similar Funds. Scores are computed within each fund's own
+// category group inside the filtered set (peer-relative by default — never
+// the full universe); groups thinner than MIN_PEERS get no score and sort
+// last rather than a fake number.
+function contextFrom(body: { context?: string; priorities?: string[] }): ScoreContext {
+  if (body.context && body.context in CONTEXT_FROM_PRIORITY === false) {
+    const c = body.context as ScoreContext;
+    if (["overall","growth","income","lowCost","riskAdjusted","downside","tax","longTerm"].includes(c)) return c;
+  }
+  const mapped = (body.priorities ?? []).map((pr) => CONTEXT_FROM_PRIORITY[pr]).filter(Boolean);
+  return mapped[0] ?? "overall";
+}
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -35,8 +53,8 @@ export async function POST(req: NextRequest) {
     categories?: string[];
   };
 
-  // Filter universe
-  let candidates = UNIVERSE;
+  // Filter universe — merged base + verified dynamic funds (Expansion Hub).
+  let candidates = await getMergedUniverse();
 
   // Style-box: explicit category selection (union of selected boxes).
   // When present, this is the primary cap/style filter and takes precedence.
@@ -153,18 +171,41 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ funds: [], message: "No funds passed the expense/track-record filter." });
   }
 
-  // Compute percentiles + composite scores
+  // Percentiles kept for the factor-radar display (component detail, not a score)
   const pcts = computePercentiles(
     filtered.map((r) => ({ kpi: r.kpi, expenseRatio: r.expenseRatio ?? 1 }))
   );
 
+  // ── Unified Advisor Review Score, per category group within the filtered set ──
+  const context = contextFrom(body as { context?: string; priorities?: string[] });
+  const period = ((body as { period?: string }).period ?? "3Y") as Period;
+  const byCategory = new Map<string, number[]>();
+  filtered.forEach((r, i) => {
+    const arr = byCategory.get(r.category) ?? [];
+    arr.push(i); byCategory.set(r.category, arr);
+  });
+
+  const scoreOf = new Map<number, { score: number | null; band: string | null; reason: string | null; peers: number }>();
+  for (const [, idxs] of byCategory) {
+    if (idxs.length < MIN_PEERS) {
+      for (const i of idxs) scoreOf.set(i, { score: null, band: null,
+        reason: `fewer than ${MIN_PEERS} same-category funds in this screen`, peers: idxs.length });
+      continue;
+    }
+    const ranked = rankFundsForContext(idxs.map((i) => ({ item: i, inputs: recordToScoreInputs(filtered[i], period) })), context);
+    for (const r of ranked) scoreOf.set(r.item, { score: r.score, band: r.band, reason: r.reason, peers: idxs.length });
+  }
+
   const scored = filtered.map((r, i) => ({
     ...r,
     percentiles: pcts[i],
-    compositeScore: compositeScore(pcts[i], priorities ?? []),
+    advisorScore: scoreOf.get(i)?.score ?? null,
+    scoreBand: scoreOf.get(i)?.band ?? null,
+    scoreReason: scoreOf.get(i)?.reason ?? null,
+    scoredVsPeers: scoreOf.get(i)?.peers ?? 0,
   }));
 
-  scored.sort((a, b) => b.compositeScore - a.compositeScore);
+  scored.sort((a, b) => (b.advisorScore ?? -1) - (a.advisorScore ?? -1));
 
-  return NextResponse.json({ funds: scored });
+  return NextResponse.json({ funds: scored, scoring: { engine: "advisor-review-score", period, context } });
 }

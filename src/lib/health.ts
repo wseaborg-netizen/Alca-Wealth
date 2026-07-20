@@ -20,6 +20,7 @@ import { peersOf, rankAmong, MIN_PEERS } from "./metrics/peers";
 import { scoreFundForContext, type ScoreInputs } from "./metrics/score";
 import { recordToScoreInputs, rankRecords } from "./metrics/recordScore";
 import { targetSleeves, assetClassMix } from "./portfolioModel";
+import { classifierSelfTest } from "./classify";
 import type { Client } from "./client";
 import reviewQueue from "@/../data/generated/fund-review-queue.json";
 import importFailures from "@/../data/generated/fund-import-failures.json";
@@ -47,7 +48,12 @@ export interface SystemHealthResponse {
 export interface HealthAuthContext {
   signedIn: boolean;
   listsGetAll?: () => Promise<{ name: string; type: string; itemCount: number }[]>;
-  fundRequestCounts?: () => Promise<{ pending: number; readyForReview: number; unsupported: number; total: number }>;
+  fundRequestCounts?: () => Promise<{
+    pending: number; readyForReview: number; unsupported: number; total: number;
+    needsClassification: number; addedToUniverse: number; failedValidation: number; classificationFailed: number;
+  }>;
+  /** Verified dynamic-fund count (Expansion Hub overlay). */
+  dynamicFundCount?: () => Promise<number>;
 }
 
 const PROBE_TICKER = "VTI";
@@ -97,36 +103,46 @@ function probeHasHistory(rec: FundRecord): boolean {
 
 // ── 1. Fund Universe ──────────────────────────────────────────────────────────
 
-function checkFundUniverse(): CheckBody {
-  const verified = UNIVERSE.length;
+function checkFundUniverse(dynamicCount: number): CheckBody {
+  const staticCount = UNIVERSE.length;
+  const merged = staticCount + dynamicCount;
   const review = (reviewQueue as { count?: number }).count ?? 0;
   const failed = (importFailures as { count?: number }).count ?? 0;
   const taxonomyValid =
     !!taxonomy && typeof taxonomy === "object" &&
     ["primary_category", "asset_class", "region"].every((k) => k in (taxonomy as object));
+  // Classifier + taxonomy self-test (shared with the offline pipeline).
+  const classifier = classifierSelfTest();
 
   const details = {
-    verifiedFunds: verified,
+    staticFunds: staticCount,
+    dynamicFunds: dynamicCount,
+    mergedFunds: merged,       // dynamic count from a live COUNT — never hardcoded
     reviewQueue: review,
     importFailures: failed,
     taxonomyValid,
+    classifierOk: classifier.ok,
+    classifier: classifier.detail,
     generatedAt: UNIVERSE_GENERATED_AT,
   };
 
-  if (verified === 0) {
+  if (staticCount === 0) {
     return { status: "error", summary: "Fund universe is empty — no verified funds loaded.", details };
   }
+  if (!classifier.ok) {
+    return { status: "error", summary: `Classifier/taxonomy self-test failed — new funds cannot be classified.`, details };
+  }
   if (!taxonomyValid) {
-    return { status: "warning", summary: `${verified} verified funds, but taxonomy could not be fully validated.`, details };
+    return { status: "warning", summary: `${merged} verified funds, but taxonomy could not be fully validated.`, details };
   }
   if (review > 0 || failed > 0) {
     return {
       status: "warning",
-      summary: `${verified} verified funds loaded; ${review} in review, ${failed} import failures pending.`,
+      summary: `${merged} verified funds (${staticCount} base + ${dynamicCount} dynamic); ${review} in review, ${failed} import failures.`,
       details,
     };
   }
-  return { status: "healthy", summary: `${verified} verified funds loaded; review queue and import failures clear.`, details };
+  return { status: "healthy", summary: `${merged} verified funds (${staticCount} base + ${dynamicCount} dynamic); classifier + taxonomy OK.`, details };
 }
 
 // ── 2. FMP Data ────────────────────────────────────────────────────────────────
@@ -258,21 +274,28 @@ async function checkFundRequests(ctx: HealthAuthContext): Promise<CheckBody> {
   }
   const c = await ctx.fundRequestCounts();
   const details = {
-    total: c.total, pending: c.pending, readyForReview: c.readyForReview, unsupported: c.unsupported,
+    total: c.total, pending: c.pending, needsClassification: c.needsClassification,
+    readyForReview: c.readyForReview, addedToUniverse: c.addedToUniverse,
+    unsupported: c.unsupported, failedValidation: c.failedValidation, classificationFailed: c.classificationFailed,
   };
-  if (c.pending > 0) {
-    return {
-      status: "warning",
-      summary: `${c.pending} fund request(s) stuck — provider check did not complete; needs a retry.`,
-      details,
-    };
+  // Repeated hard failures → yellow with a clear reason (never red — the
+  // classifier/DB health cards own systemic-failure red).
+  const needsAttention = c.pending + c.needsClassification + c.failedValidation + c.classificationFailed;
+  if (needsAttention > 0) {
+    const bits = [
+      c.pending ? `${c.pending} stuck` : "",
+      c.needsClassification ? `${c.needsClassification} need classification` : "",
+      c.failedValidation ? `${c.failedValidation} failed validation` : "",
+      c.classificationFailed ? `${c.classificationFailed} classifier error` : "",
+    ].filter(Boolean).join(", ");
+    return { status: "warning", summary: `Fund requests need attention — ${bits}.`, details };
   }
   if (c.total === 0) {
     return { status: "healthy", summary: "No fund requests outstanding.", details };
   }
   return {
     status: "healthy",
-    summary: `Fund requests healthy — ${c.readyForReview} awaiting review, ${c.unsupported} unsupported.`,
+    summary: `Fund requests healthy — ${c.addedToUniverse} added, ${c.unsupported} unsupported.`,
     details,
   };
 }
@@ -372,8 +395,12 @@ export async function runSystemHealth(ctx: HealthAuthContext): Promise<SystemHea
     probe = null;
   }
 
+  // Dynamic-fund count (verified overlay) — isolated; 0 on any failure.
+  let dynamicCount = 0;
+  if (ctx.dynamicFundCount) { try { dynamicCount = await ctx.dynamicFundCount(); } catch { dynamicCount = 0; } }
+
   const [universe, fmp, scoring, savedLists, fundRequests, portfolio] = await Promise.all([
-    safeCheck("fundUniverse", "Fund Universe", async () => checkFundUniverse()),
+    safeCheck("fundUniverse", "Fund Universe", async () => checkFundUniverse(dynamicCount)),
     safeCheck("fmpData", "FMP Data", async () => checkFmpData(probe)),
     safeCheck("scoringEngine", "Scoring Engine", () => checkScoringEngine(probe)),
     safeCheck("savedLists", "Saved Lists / Supabase", () => checkSavedLists(ctx)),

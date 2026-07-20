@@ -986,9 +986,10 @@ If any box is unchecked and you do not know why, **do not deploy.** Leave it for
 ## System Health (internal diagnostics)
 
 - **What it is:** Settings → **System Health** — compact status cards (Healthy /
-  Warning / Needs attention) for seven core systems: Fund Universe, FMP Data,
-  Scoring Engine, Saved Lists / Supabase, Portfolio Builder, API Routes, and App
-  Build. An internal diagnostic, **not** a marketing/uptime claim.
+  Warning / Needs attention) for eight core systems: Fund Universe (now including
+  the classifier/taxonomy self-test + static/dynamic/merged counts), FMP Data,
+  Scoring Engine, Saved Lists / Supabase, Fund Requests, Portfolio Builder, API
+  Routes, and App Build. An internal diagnostic, **not** a marketing/uptime claim.
 - **Where:** the checks live in `src/lib/health.ts` (server-only), the endpoint
   is `GET /api/health/system`, and the UI is the `SystemHealthSection` inside
   `src/components/SettingsTab.tsx`. It runs when Settings opens and on **Refresh
@@ -1013,7 +1014,10 @@ If any box is unchecked and you do not know why, **do not deploy.** Leave it for
 
 When an advisor searches a ticker that isn't in the verified universe, they can
 **request** it. The request is tracked so it can be reviewed and, later, fed into
-the offline fund pipeline. **This never mutates the verified universe on its own.**
+the offline fund pipeline. **This never mutates the *static* verified universe on
+its own.** (As of the Expansion Hub below, a request that FMP supports **and** the
+classifier confidently classifies is added to the **dynamic** universe overlay —
+see the next section. The `fund_requests` table + API here are the intake layer.)
 
 - **Migration:** `supabase/migrations/20260719120000_fund_requests.sql` — creates
   the firm-scoped `fund_requests` table (same RLS pattern as saved work:
@@ -1053,3 +1057,76 @@ the offline fund pipeline. **This never mutates the verified universe on its own
   backlogs (it reports `readyForReview` / `unsupported` counts), and warns only
   when `pending` (stuck) requests exist. No FMP key or raw provider payload is
   ever returned by the support check.
+
+## Expansion Hub — add funds from the website
+
+**Where:** top nav → **Tools → Expansion** (`src/components/ExpansionTab.tsx`).
+Internal, signed-in firm users only. Add Fund panel, request-status table, merged
+universe counts, recently added funds, and the System Health cards.
+
+**Migration (required before deploy):**
+`supabase/migrations/20260720000000_dynamic_universe.sql` — creates the
+`dynamic_funds` table (verified overlay) with firm-scoped RLS, and extends the
+`fund_requests` status check with `added_to_universe`, `classification_failed`,
+`failed_validation`. Run it in the Supabase SQL editor (the CLI `db push` replays
+all migrations and collides with ones already applied by hand — paste this one
+file instead).
+
+**Why a dynamic overlay (not editing the JSON):** production Vercel can't safely
+rewrite `data/generated/*` per request. The static generated universe stays the
+**base**; verified runtime additions live in Supabase and are **merged
+server-side** (`src/lib/universeServer.ts` → `getMergedUniverse` /
+`getUniverseCounts` / `findMergedFund`). Wired into `/api/universe`, `/api/screen`,
+`/api/funds/[ticker]`, and the Health/Expansion counts. Duplicate tickers prefer
+the static base record.
+
+**Add-a-fund flow (`POST /api/fund-requests`):**
+1. Normalize (trim/upper/shape → 400 on junk).
+2. In the **merged** universe already → **already_available** (returns metadata,
+   stores nothing, links to Analyze).
+3. Else FMP support check: unsupported → **unsupported**; provider down/no key →
+   **pending** (retryable).
+4. Supported → **classify** with the shared pipeline rules (`src/lib/classify/`):
+   - confident + taxonomy-valid → stored as a **verified dynamic fund** →
+     **added_to_universe** (screenable/analyzable/save-able immediately; merged
+     count ticks up).
+   - rules can't confidently place it → **needs_classification** (held, not added).
+   - produced a non-taxonomy value → **failed_validation**. Classifier threw →
+     **classification_failed**. **Nothing is ever added on a guess.**
+
+**One classifier, no forks:** the rules live in `src/lib/classify/core.js`
+(CommonJS) and are imported by BOTH the offline pipeline
+(`scripts/classify-funds.mjs`) and the runtime wrapper `src/lib/classify/index.ts`.
+Overrides + taxonomy are the same JSON files the pipeline uses.
+
+**Statuses:** `pending` · `already_available` · `fmp_supported` (reserved) ·
+`needs_classification` · `ready_for_review` (used only when no runtime classifier
+is wired) · `approved` · `rejected` · `unsupported` · `classification_failed` ·
+`added_to_universe` · `failed_validation`.
+
+**Permissions:** any signed-in firm user can submit and see the firm's requests
+(RLS via `is_firm_member`); verified dynamic funds are readable by any
+authenticated user (one shared internal universe). Auto-add happens only when FMP
+support **and** classifier validation pass — users can't bypass validation.
+owner/admin/member roles exist for future review/reject controls.
+
+**Health:** Fund Universe card shows `static / dynamic / merged` counts (dynamic is
+a live `COUNT`, never hardcoded) and runs a classifier + taxonomy self-test —
+**error** (red) if the classifier/taxonomy is broken. Fund Requests card warns
+(yellow) when there are `pending`, `needs_classification`, `failed_validation`, or
+`classification_failed` items; normal review backlog stays green.
+
+**Folding dynamic funds into the static base (periodic maintenance):**
+1. List them: `select normalized_ticker from dynamic_funds where verified order by created_at;`
+2. Add those tickers to `data/input/fund-tickers.txt`.
+3. `npm run funds:build` → `npm run funds:validate`, commit the regenerated
+   `data/generated/*`, and deploy the static baseline.
+4. Optionally delete the now-static rows from `dynamic_funds` (the merge prefers
+   the static record regardless, so leaving them is harmless — they just stop
+   being counted as "dynamic").
+
+**Known limitation:** a brand-new dynamic fund is screenable and analyzable, but
+**peer-relative scoring** (`peers.ts` reads the static set synchronously) and the
+per-fund peer rank on the Analysis page stay limited until the fund is folded into
+the static base. The screener still scores it within its category group inside the
+filtered result set.

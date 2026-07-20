@@ -84,16 +84,29 @@ const CATEGORY_MAP: Record<string, string> = {
   "Alternative": "Sector / Thematic",
 };
 
-// One of the three benchmark tickers the KPI engine supports (SPY/AGG/VXUS).
-function benchTicker(f: RawFund): "SPY" | "AGG" | "VXUS" {
-  const ac = String(f.asset_class);
-  const region = String(f.region);
-  if (ac === "Fixed Income" || ac === "Cash") return "AGG";
+/** Precise primary_category → the legacy category vocabulary the screener /
+    portfolio sleeves match on. Shared by the static universe build and the
+    runtime dynamic-fund overlay (src/lib/universeServer.ts) so both map identically. */
+export function legacyCategory(primaryCategory: string): string {
+  return CATEGORY_MAP[primaryCategory] ?? primaryCategory;
+}
+
+/** One of the three benchmark tickers the KPI engine supports (SPY/AGG/VXUS). */
+export function benchmarkFor(assetClass: string, region: string): "SPY" | "AGG" | "VXUS" {
+  if (assetClass === "Fixed Income" || assetClass === "Cash") return "AGG";
   if (region === "International Developed" || region === "Emerging Markets") return "VXUS";
   return "SPY";
 }
 
+function benchTicker(f: RawFund): "SPY" | "AGG" | "VXUS" {
+  return benchmarkFor(String(f.asset_class), String(f.region));
+}
+
 const rawFunds = ((raw as { funds?: RawFund[] }).funds ?? []);
+
+/** When the classification pipeline last generated the universe file (ISO string). */
+export const UNIVERSE_GENERATED_AT: string | null =
+  (raw as { generatedAt?: string }).generatedAt ?? null;
 
 /** Verified-only fund universe. Every consumer of fund identity uses this. */
 export const UNIVERSE: UniverseFund[] = rawFunds
@@ -103,7 +116,7 @@ export const UNIVERSE: UniverseFund[] = rawFunds
     ticker: String(f.ticker).toUpperCase(),
     name: String(f.fund_name),
     vehicle: String(f.fund_type),
-    category: CATEGORY_MAP[String(f.primary_category)] ?? String(f.primary_category),
+    category: legacyCategory(String(f.primary_category)),
     benchmark: benchTicker(f),
   }));
 

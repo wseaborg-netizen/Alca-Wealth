@@ -189,7 +189,8 @@ export async function fundRequestCreate(sb: Supa, firmId: string, userId: string
 
 /** Status counts for the firm — used by System Health (informational). */
 export async function fundRequestCounts(sb: Supa, firmId: string): Promise<{
-  total: number; pending: number; readyForReview: number; unsupported: number; needsClassification: number;
+  total: number; pending: number; readyForReview: number; unsupported: number;
+  needsClassification: number; addedToUniverse: number; failedValidation: number; classificationFailed: number;
 }> {
   const { data, error } = await sb.from("fund_requests").select("status").eq("firm_id", firmId);
   if (error) throw new Error(error.message);
@@ -198,7 +199,73 @@ export async function fundRequestCounts(sb: Supa, firmId: string): Promise<{
   return {
     total: rows.length, pending: n("pending"), readyForReview: n("ready_for_review"),
     unsupported: n("unsupported"), needsClassification: n("needs_classification"),
+    addedToUniverse: n("added_to_universe"), failedValidation: n("failed_validation"),
+    classificationFailed: n("classification_failed"),
   };
+}
+
+// ── Dynamic universe funds (Expansion Hub) ──────────────────────────────────
+// Verified rows are the shared runtime universe overlay; merged with the static
+// universe server-side (src/lib/universeServer.ts). RLS lets any authenticated
+// user read verified rows.
+
+export interface DynamicFundRow {
+  id: string; ticker: string; normalized_ticker: string; fund_name: string; vehicle: string | null;
+  asset_class: string | null; primary_category: string | null; category: string | null;
+  benchmark: string | null; benchmark_category: string | null; management_style: string | null;
+  portfolio_role: string | null; investment_focus: string | null; region: string | null;
+  market_cap: string | null; style: string | null; style_box: string | null;
+  classification_source: string | null; verified: boolean; created_at: string; updated_at: string;
+}
+
+const DYNAMIC_FUND_COLS =
+  "id, ticker, normalized_ticker, fund_name, vehicle, asset_class, primary_category, category, " +
+  "benchmark, benchmark_category, management_style, portfolio_role, investment_focus, region, " +
+  "market_cap, style, style_box, classification_source, verified, created_at, updated_at";
+
+/** All verified dynamic funds (the runtime overlay). RLS allows any signed-in read. */
+export async function dynamicFundsListVerified(sb: Supa): Promise<DynamicFundRow[]> {
+  const { data, error } = await sb.from("dynamic_funds")
+    .select(DYNAMIC_FUND_COLS).eq("verified", true).order("created_at", { ascending: false }).limit(2000);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as DynamicFundRow[];
+}
+
+export async function dynamicFundByTicker(sb: Supa, normalized: string): Promise<DynamicFundRow | null> {
+  const { data, error } = await sb.from("dynamic_funds")
+    .select(DYNAMIC_FUND_COLS).eq("normalized_ticker", normalized.toUpperCase()).limit(1);
+  if (error) throw new Error(error.message);
+  return (data?.[0] as unknown as DynamicFundRow) ?? null;
+}
+
+/** Verified dynamic-fund count (for the merged universe count / health). */
+export async function dynamicFundCount(sb: Supa): Promise<number> {
+  const { count, error } = await sb.from("dynamic_funds")
+    .select("id", { count: "exact", head: true }).eq("verified", true);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+export async function dynamicFundInsert(sb: Supa, firmId: string, userId: string, f: {
+  ticker: string; fundName: string; vehicle: string | null;
+  assetClass: string | null; primaryCategory: string | null; category: string | null;
+  benchmark: string | null; benchmarkCategory: string | null; managementStyle: string | null;
+  portfolioRole: string | null; investmentFocus: string | null; region: string | null;
+  marketCap: string | null; style: string | null; styleBox: string | null;
+  classificationSource: string | null; sourceRequestId: string | null;
+  fmpPayloadSummary: Record<string, unknown> | null;
+}): Promise<DynamicFundRow> {
+  const { data, error } = await sb.from("dynamic_funds").insert({
+    firm_id: firmId, created_by: userId, source_request_id: f.sourceRequestId,
+    ticker: f.ticker.toUpperCase(), normalized_ticker: f.ticker.toUpperCase(), fund_name: f.fundName,
+    vehicle: f.vehicle, asset_class: f.assetClass, primary_category: f.primaryCategory, category: f.category,
+    benchmark: f.benchmark, benchmark_category: f.benchmarkCategory, management_style: f.managementStyle,
+    portfolio_role: f.portfolioRole, investment_focus: f.investmentFocus, region: f.region,
+    market_cap: f.marketCap, style: f.style, style_box: f.styleBox,
+    classification_source: f.classificationSource, fmp_payload_summary: f.fmpPayloadSummary, verified: true,
+  }).select(DYNAMIC_FUND_COLS).single();
+  if (error) throw new Error(error.message);
+  return data as unknown as DynamicFundRow;
 }
 
 // ── Legacy single-watchlist API (WatchlistTab) — now the default Watchlist ───
