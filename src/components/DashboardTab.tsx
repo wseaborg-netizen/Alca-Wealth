@@ -53,6 +53,70 @@ const sectionTitle: React.CSSProperties = { fontSize: 16, fontWeight: 700, color
 const sectionSub: React.CSSProperties = { fontSize: 12.5, color: T.dim, ...ui, margin: "3px 0 0" };
 const smallCap: React.CSSProperties = { fontSize: 10, color: T.muted, ...ui, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" };
 
+// ── Signature hero artwork — flowing mesh · topographic curves · network ──────
+function HeroArt() {
+  // A deterministic particle field + network nodes (no randomness → stable SSR).
+  const nodes = [[430, 40], [500, 70], [560, 40], [470, 110], [540, 130], [590, 95], [415, 150], [505, 175]];
+  const links: [number, number][] = [[0, 1], [1, 2], [1, 3], [3, 4], [4, 5], [2, 5], [3, 6], [4, 7]];
+  return (
+    <svg viewBox="0 0 640 260" preserveAspectRatio="xMidYMid slice" aria-hidden
+      style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
+      <defs>
+        <linearGradient id="hero-rib" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#5EEAD4" stopOpacity="0.55" /><stop offset="55%" stopColor="#3B82F6" stopOpacity="0.5" /><stop offset="100%" stopColor="#2563EB" stopOpacity="0.4" />
+        </linearGradient>
+        <radialGradient id="hero-glow" cx="72%" cy="30%" r="55%">
+          <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.16" /><stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="hero-line" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#2563EB" stopOpacity="0" /><stop offset="50%" stopColor="#2563EB" stopOpacity="0.5" /><stop offset="100%" stopColor="#5EEAD4" stopOpacity="0.15" />
+        </linearGradient>
+      </defs>
+      <rect width="640" height="260" fill="url(#hero-glow)" />
+      {/* topographic contour curves */}
+      <g fill="none" stroke="url(#hero-line)" strokeWidth="1">
+        {[0, 16, 32, 50, 70, 92].map((o, i) => (
+          <path key={i} opacity={0.5 - i * 0.05}
+            d={`M-20 ${150 + o} C 140 ${90 + o} 300 ${190 + o} 470 ${110 + o} S 700 ${150 + o} 720 ${120 + o}`} />
+        ))}
+      </g>
+      {/* soft translucent ribbons */}
+      <path d="M-40 120 C 160 40 360 200 680 60 L680 -40 L-40 -40 Z" fill="url(#hero-rib)" opacity="0.14" />
+      <path d="M-40 170 C 200 90 420 230 700 110" fill="none" stroke="url(#hero-rib)" strokeWidth="30" opacity="0.16" strokeLinecap="round" />
+      <path d="M-20 210 C 220 150 430 250 700 170" fill="none" stroke="url(#hero-rib)" strokeWidth="16" opacity="0.20" strokeLinecap="round" />
+      {/* financial network mesh */}
+      <g stroke="#3B82F6" strokeWidth="0.8" opacity="0.35">
+        {links.map(([a, b], i) => <line key={i} x1={nodes[a][0]} y1={nodes[a][1]} x2={nodes[b][0]} y2={nodes[b][1]} />)}
+      </g>
+      {nodes.map(([x, y], i) => <circle key={i} cx={x} cy={y} r={i % 3 === 0 ? 3 : 2} fill="#2563EB" opacity="0.5" />)}
+      {/* fine particles */}
+      <g fill="#5EEAD4" opacity="0.5">
+        {[[380, 60], [420, 200], [560, 200], [610, 50], [330, 120], [290, 60], [360, 170], [520, 100]].map(([x, y], i) =>
+          <circle key={i} cx={x} cy={y} r={i % 2 ? 1.4 : 1} />)}
+      </g>
+    </svg>
+  );
+}
+
+// ── Whole-page premium backdrop (very low opacity, behind everything) ─────────
+function PageBackdrop() {
+  return (
+    <svg aria-hidden style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 0 }}
+      preserveAspectRatio="xMidYMid slice" viewBox="0 0 1400 1000">
+      <defs>
+        <radialGradient id="bd-1" cx="15%" cy="8%" r="40%"><stop offset="0%" stopColor="#3B82F6" stopOpacity="0.05" /><stop offset="100%" stopColor="#3B82F6" stopOpacity="0" /></radialGradient>
+        <radialGradient id="bd-2" cx="90%" cy="60%" r="45%"><stop offset="0%" stopColor="#5EEAD4" stopOpacity="0.045" /><stop offset="100%" stopColor="#5EEAD4" stopOpacity="0" /></radialGradient>
+      </defs>
+      <rect width="1400" height="1000" fill="url(#bd-1)" /><rect width="1400" height="1000" fill="url(#bd-2)" />
+      <g fill="none" stroke="#2563EB" strokeWidth="1" opacity="0.035">
+        {[0, 60, 120, 190, 270].map((o, i) => (
+          <path key={i} d={`M-40 ${560 + o} C 300 ${420 + o} 700 ${680 + o} 1440 ${480 + o}`} />
+        ))}
+      </g>
+    </svg>
+  );
+}
+
 // ── Index card (market indices — real /api/market) ───────────────────────────
 function IndexCard({ item }: { item: MarketItem | undefined }) {
   if (!item) return <Card style={{ ...cardPad, minHeight: 158, display: "flex", alignItems: "center", justifyContent: "center", color: T.muted, fontSize: 12, ...ui }}>Loading…</Card>;
@@ -148,60 +212,104 @@ function Empty({ text }: { text: string }) {
   return <div style={{ fontSize: 12.5, color: T.muted, ...ui, padding: "14px 0", lineHeight: 1.6 }}>{text}</div>;
 }
 
-// ── Isometric 3D-style hub illustrations (decorative SVG) ────────────────────
-function IsoPlatform({ c }: { c: string }) {
+// ── Premium isometric hub illustrations (custom SVG, one design system) ───────
+// Shared iso helpers: a soft platform + a lifted panel with gradient + glass.
+function isoDefs(id: string, c: string, light: string) {
   return (
-    <>
-      <ellipse cx="60" cy="92" rx="52" ry="15" fill={c} opacity="0.08" />
-      <path d="M60 66 L108 90 L60 114 L12 90 Z" fill={c} opacity="0.10" />
-      <path d="M60 62 L108 86 L60 110 L12 86 Z" fill={c} opacity="0.16" />
-    </>
+    <defs>
+      <linearGradient id={`${id}-g`} x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor={light} /><stop offset="100%" stopColor={c} />
+      </linearGradient>
+      <linearGradient id={`${id}-glass`} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#fff" stopOpacity="0.5" /><stop offset="100%" stopColor="#fff" stopOpacity="0" />
+      </linearGradient>
+      <radialGradient id={`${id}-glow`} cx="50%" cy="40%" r="60%">
+        <stop offset="0%" stopColor={c} stopOpacity="0.22" /><stop offset="100%" stopColor={c} stopOpacity="0" />
+      </radialGradient>
+    </defs>
   );
 }
-function isoBar(x: number, topY: number, c: string) {
-  const w = 13, baseY = 86, d = 6.5;
-  const front = `M${x} ${topY} L${x + w} ${topY + d / 2} L${x + w} ${baseY + d / 2} L${x} ${baseY} Z`;
-  const side = `M${x} ${topY} L${x - d} ${topY - d / 2} L${x - d} ${baseY - d / 2} L${x} ${baseY} Z`;
-  const top = `M${x} ${topY} L${x - d} ${topY - d / 2} L${x + w - d} ${topY} L${x + w} ${topY + d / 2} Z`;
-  return (<g key={x}><path d={side} fill={c} opacity="0.55" /><path d={front} fill={c} /><path d={top} fill={c} opacity="0.8" /></g>);
+const platform = (c: string) => (
+  <g><ellipse cx="66" cy="98" rx="52" ry="13" fill={c} opacity="0.10" />
+    <path d="M66 74 L114 96 L66 118 L18 96 Z" fill={c} opacity="0.08" />
+    <path d="M66 70 L114 92 L66 114 L18 92 Z" fill={c} opacity="0.14" /></g>
+);
+// A lifted isometric card (top face + side depth).
+function isoCard(id: string, x: number, y: number, w: number, h: number, dep: number, c: string) {
+  return (
+    <g>
+      <path d={`M${x} ${y} L${x + w} ${y - w * 0.5} L${x + w} ${y - w * 0.5 + dep} L${x} ${y + dep} Z`} fill={c} opacity="0.5" />
+      <path d={`M${x} ${y} L${x - h} ${y - h * 0.5} L${x - h} ${y - h * 0.5 + dep} L${x} ${y + dep} Z`} fill={c} opacity="0.32" />
+      <path d={`M${x} ${y} L${x + w} ${y - w * 0.5} L${x + w - h} ${y - w * 0.5 - h * 0.5} L${x - h} ${y - h * 0.5} Z`} fill={`url(#${id}-g)`} />
+    </g>
+  );
 }
-const IlloResearch = ({ c }: { c: string }) => (
-  <svg width="120" height="118" viewBox="0 0 120 120" aria-hidden>
-    <IsoPlatform c={c} />
-    {isoBar(34, 66, c)}{isoBar(52, 52, c)}{isoBar(70, 40, c)}{isoBar(88, 58, c)}
-    <circle cx="30" cy="34" r="12" fill="none" stroke={c} strokeWidth="3" opacity="0.9" />
-    <line x1="38" y1="42" x2="46" y2="50" stroke={c} strokeWidth="3" strokeLinecap="round" opacity="0.9" />
-  </svg>
-);
-const IlloPortfolio = ({ c }: { c: string }) => (
-  <svg width="120" height="118" viewBox="0 0 120 120" aria-hidden>
-    <IsoPlatform c={c} />
-    <ellipse cx="60" cy="56" rx="30" ry="18" fill={c} opacity="0.85" />
-    <ellipse cx="60" cy="50" rx="30" ry="18" fill={c} />
-    <path d="M60 50 L60 32 A18 30 0 0 1 86 46 Z" fill="#fff" opacity="0.45" />
-    <ellipse cx="60" cy="50" rx="12" ry="7" fill={T.panel} />
-    <rect x="20" y="70" width="26" height="4" rx="2" fill={c} opacity="0.5" />
-    <rect x="20" y="78" width="18" height="4" rx="2" fill={c} opacity="0.35" />
-  </svg>
-);
-const IlloModel = ({ c }: { c: string }) => (
-  <svg width="120" height="118" viewBox="0 0 120 120" aria-hidden>
-    <IsoPlatform c={c} />
-    <path d="M22 78 L44 60 L62 68 L96 34" fill="none" stroke={c} strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M22 78 L44 60 L62 68 L96 34 L96 84 L22 84 Z" fill={c} opacity="0.12" />
-    {[[22, 78], [44, 60], [62, 68], [96, 34]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r="3.4" fill={c} />)}
-  </svg>
-);
-const IlloTools = ({ c }: { c: string }) => (
-  <svg width="120" height="118" viewBox="0 0 120 120" aria-hidden>
-    <IsoPlatform c={c} />
-    {isoBar(30, 60, c)}{isoBar(48, 46, c)}
-    <ellipse cx="82" cy="54" rx="20" ry="12" fill={c} opacity="0.85" />
-    <ellipse cx="82" cy="49" rx="20" ry="12" fill={c} />
-    <ellipse cx="82" cy="49" rx="8" ry="5" fill={T.panel} />
-    <path d="M82 49 L82 37 A12 20 0 0 1 99 46 Z" fill="#fff" opacity="0.4" />
-  </svg>
-);
+const IlloResearch = ({ c }: { c: string }) => {
+  const id = "il-r", light = "#7FA8FF";
+  return (
+    <svg width="128" height="120" viewBox="0 0 132 122" aria-hidden>
+      {isoDefs(id, c, light)}<rect width="132" height="122" fill={`url(#${id}-glow)`} />{platform(c)}
+      {/* floating dashboard panel */}
+      <g transform="translate(2 -6)">
+        <path d="M40 54 L86 30 L112 44 L66 68 Z" fill={`url(#${id}-g)`} />
+        <path d="M40 54 L40 62 L66 76 L66 68 Z" fill={c} opacity="0.5" />
+        <path d="M66 68 L66 76 L112 52 L112 44 Z" fill={c} opacity="0.34" />
+        {/* mini bars on the panel top */}
+        {[[58, 50, 8], [66, 52, 12], [74, 50, 16], [82, 48, 10]].map(([bx, by, bh], i) =>
+          <path key={i} d={`M${bx} ${by} l6 3 l0 ${-bh} l-6 ${-3} Z`} fill="#fff" opacity={0.55 - i * 0.06} />)}
+      </g>
+      {/* search bubble */}
+      <g transform="translate(84 20)"><circle r="11" fill={`url(#${id}-g)`} /><circle r="11" fill={`url(#${id}-glass)`} />
+        <circle r="5" fill="none" stroke="#fff" strokeWidth="2" /><line x1="4" y1="4" x2="8" y2="8" stroke="#fff" strokeWidth="2" strokeLinecap="round" /></g>
+    </svg>
+  );
+};
+const IlloPortfolio = ({ c }: { c: string }) => {
+  const id = "il-p", light = "#5FE0A6";
+  return (
+    <svg width="128" height="120" viewBox="0 0 132 122" aria-hidden>
+      {isoDefs(id, c, light)}<rect width="132" height="122" fill={`url(#${id}-glow)`} />{platform(c)}
+      {/* allocation rings (isometric donut stack) */}
+      <g transform="translate(66 58)">
+        <ellipse cy="10" rx="34" ry="19" fill={c} opacity="0.5" />
+        <ellipse rx="34" ry="19" fill={`url(#${id}-g)`} />
+        <path d="M0 0 L0 -19 A34 19 0 0 1 30 8 Z" fill="#fff" opacity="0.4" />
+        <ellipse rx="14" ry="8" fill={T.panel} />
+      </g>
+      {/* floating blocks */}
+      {isoCard(id, 24, 44, 16, 10, 7, c)}
+      <rect x="92" y="30" width="20" height="14" rx="3" transform="skewY(-8)" fill={`url(#${id}-g)`} opacity="0.9" />
+    </svg>
+  );
+};
+const IlloModel = ({ c }: { c: string }) => {
+  const id = "il-m", light = "#B794F6";
+  return (
+    <svg width="128" height="120" viewBox="0 0 132 122" aria-hidden>
+      {isoDefs(id, c, light)}<rect width="132" height="122" fill={`url(#${id}-glow)`} />{platform(c)}
+      {/* probability surface */}
+      <path d="M20 84 L44 62 L64 70 L104 34 L104 88 L20 88 Z" fill={`url(#${id}-g)`} opacity="0.22" />
+      <path d="M20 84 Q40 58 64 70 T104 34" fill="none" stroke={c} strokeWidth="1.4" opacity="0.4" transform="translate(0 10)" />
+      <path d="M20 78 L44 56 L64 64 L104 28" fill="none" stroke={`url(#${id}-g)`} strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
+      {[[20, 78], [44, 56], [64, 64], [104, 28]].map(([x, y], i) => <g key={i}><circle cx={x} cy={y} r="4.5" fill="#fff" /><circle cx={x} cy={y} r="3" fill={c} /></g>)}
+    </svg>
+  );
+};
+const IlloTools = ({ c }: { c: string }) => {
+  const id = "il-t", light = "#F5C77E";
+  return (
+    <svg width="128" height="120" viewBox="0 0 132 122" aria-hidden>
+      {isoDefs(id, c, light)}<rect width="132" height="122" fill={`url(#${id}-glow)`} />{platform(c)}
+      {/* planning blocks + gauge */}
+      {isoCard(id, 34, 66, 18, 12, 10, c)}
+      {isoCard(id, 58, 54, 18, 12, 16, c)}
+      <g transform="translate(90 50)">
+        <ellipse cy="6" rx="20" ry="11" fill={c} opacity="0.5" /><ellipse rx="20" ry="11" fill={`url(#${id}-g)`} />
+        <path d="M0 0 L0 -11 A20 11 0 0 1 17 5 Z" fill="#fff" opacity="0.42" /><ellipse rx="8" ry="4.5" fill={T.panel} />
+      </g>
+    </svg>
+  );
+};
 
 // ── Small link icon ───────────────────────────────────────────────────────────
 function LinkDot({ c }: { c: string }) {
@@ -275,23 +383,19 @@ export default function DashboardTab({ onNavigate, userEmail, onAnalyze }: {
   const healthProblems = health ? health.checks.filter((c) => c.status !== "healthy").length : 0;
 
   return (
-    <div style={{ margin: "0 -32px", background: T.bg, minHeight: "100vh" }}>
-      <div style={{ maxWidth: 1400, margin: "0 auto", padding: isMobile ? "88px 16px 48px" : "100px 32px 64px",
+    <div style={{ margin: "0 -32px", background: T.bg, minHeight: "100vh", position: "relative" }}>
+      <PageBackdrop />
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 1400, margin: "0 auto", padding: isMobile ? "88px 16px 48px" : "100px 32px 64px",
         display: "flex", flexDirection: "column", gap: 22 }}>
 
         {/* ── TOP: Welcome + 3 index cards ── */}
         <Reveal>
           <div style={{ display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "0.9fr 1.5fr", gap: 20 }}>
             {/* Welcome */}
-            <Card style={{ padding: isMobile ? "26px 24px" : "32px 30px", position: "relative", overflow: "hidden",
-              display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 172 }}>
-              <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none",
-                background: "radial-gradient(120% 90% at 100% 0%, rgba(37,99,235,0.10) 0%, rgba(37,99,235,0) 55%), radial-gradient(90% 90% at 0% 100%, rgba(94,234,212,0.10) 0%, rgba(94,234,212,0) 50%)" }} />
-              <svg aria-hidden viewBox="0 0 400 200" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.5 }}>
-                <path d="M0 150 Q 100 110 200 140 T 400 120" fill="none" stroke="rgba(37,99,235,0.14)" strokeWidth="1.5" />
-                <path d="M0 170 Q 120 130 240 160 T 400 140" fill="none" stroke="rgba(94,234,212,0.14)" strokeWidth="1.5" />
-              </svg>
-              <div style={{ position: "relative" }}>
+            <Card style={{ padding: isMobile ? "26px 24px" : "34px 32px", position: "relative", overflow: "hidden",
+              display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 200 }}>
+              <HeroArt />
+              <div style={{ position: "relative", zIndex: 1 }}>
                 <div style={{ fontSize: 13, color: T.dim, ...ui, marginBottom: 2 }}>Welcome back,</div>
                 <h1 style={{ fontSize: isMobile ? 30 : 38, fontWeight: 700, color: T.text, ...ui, margin: 0, letterSpacing: "-0.03em", lineHeight: 1.05 }}>
                   {greeting ?? "Advisor"}
