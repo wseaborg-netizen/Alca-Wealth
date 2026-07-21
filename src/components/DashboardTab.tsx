@@ -49,50 +49,54 @@ function Card({ children, style, hover }: { children: React.ReactNode; style?: R
   );
 }
 const cardPad: React.CSSProperties = { padding: "22px 24px" };
-const sectionTitle: React.CSSProperties = { fontSize: 16, fontWeight: 700, color: T.text, ...ui, margin: 0, letterSpacing: "-0.01em" };
+const sectionTitle: React.CSSProperties = { fontSize: 15.5, fontWeight: 600, color: T.text, ...ui, margin: 0, letterSpacing: "-0.015em" };
 const sectionSub: React.CSSProperties = { fontSize: 12.5, color: T.dim, ...ui, margin: "3px 0 0" };
 const smallCap: React.CSSProperties = { fontSize: 10, color: T.muted, ...ui, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" };
 
-// ── Signature hero artwork — flowing mesh · topographic curves · network ──────
+// ── Signature hero artwork — arctic sunrise (custom, minimal, low-contrast) ────
+// Snowy mountain horizon under a pale sky with a soft dawn glow near the ridge.
+// Deliberately understated so the hero text stays perfectly readable; the left
+// + bottom fades (rendered in the hero card) blend it into the panel.
 function HeroArt() {
-  // A deterministic particle field + network nodes (no randomness → stable SSR).
-  const nodes = [[430, 40], [500, 70], [560, 40], [470, 110], [540, 130], [590, 95], [415, 150], [505, 175]];
-  const links: [number, number][] = [[0, 1], [1, 2], [1, 3], [3, 4], [4, 5], [2, 5], [3, 6], [4, 7]];
   return (
     <svg viewBox="0 0 640 260" preserveAspectRatio="xMidYMid slice" aria-hidden
       style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
       <defs>
-        <linearGradient id="hero-rib" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#5EEAD4" stopOpacity="0.55" /><stop offset="55%" stopColor="#3B82F6" stopOpacity="0.5" /><stop offset="100%" stopColor="#2563EB" stopOpacity="0.4" />
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#E9F1FA" /><stop offset="52%" stopColor="#F1ECF0" />
+          <stop offset="76%" stopColor="#FBE9DF" /><stop offset="100%" stopColor="#FDF5F0" />
         </linearGradient>
-        <radialGradient id="hero-glow" cx="72%" cy="30%" r="55%">
-          <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.16" /><stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
+        <radialGradient id="dawn" cx="68%" cy="70%" r="46%">
+          <stop offset="0%" stopColor="#FBD3B4" stopOpacity="0.85" />
+          <stop offset="45%" stopColor="#F6C9AE" stopOpacity="0.42" />
+          <stop offset="100%" stopColor="#F6C9AE" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="hero-line" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#2563EB" stopOpacity="0" /><stop offset="50%" stopColor="#2563EB" stopOpacity="0.5" /><stop offset="100%" stopColor="#5EEAD4" stopOpacity="0.15" />
+        <linearGradient id="mtnBack" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#D8E4F1" /><stop offset="100%" stopColor="#E7EEF7" />
+        </linearGradient>
+        <linearGradient id="mtnFront" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#C4D4E7" /><stop offset="100%" stopColor="#DEE9F3" />
         </linearGradient>
       </defs>
-      <rect width="640" height="260" fill="url(#hero-glow)" />
-      {/* topographic contour curves */}
-      <g fill="none" stroke="url(#hero-line)" strokeWidth="1">
-        {[0, 16, 32, 50, 70, 92].map((o, i) => (
-          <path key={i} opacity={0.5 - i * 0.05}
-            d={`M-20 ${150 + o} C 140 ${90 + o} 300 ${190 + o} 470 ${110 + o} S 700 ${150 + o} 720 ${120 + o}`} />
-        ))}
+      <rect width="640" height="260" fill="url(#sky)" />
+      <rect width="640" height="260" fill="url(#dawn)" />
+      {/* icy haze along the horizon */}
+      <rect y="138" width="640" height="44" fill="#FBEDE3" opacity="0.45" />
+      {/* distant ridge */}
+      <path d="M0 172 L70 132 L120 160 L190 120 L260 158 L330 124 L420 164 L500 130 L560 158 L640 134 L640 260 L0 260 Z"
+        fill="url(#mtnBack)" opacity="0.85" />
+      {/* near snow peaks */}
+      <path d="M0 204 L92 150 L150 186 L232 140 L300 186 L382 148 L470 196 L560 150 L640 186 L640 260 L0 260 Z"
+        fill="url(#mtnFront)" />
+      {/* snow-lit faces (dawn side) */}
+      <g fill="#FFFFFF" opacity="0.62">
+        <path d="M92 150 L112 163 L92 172 L74 162 Z" /><path d="M232 140 L254 154 L232 163 L212 153 Z" />
+        <path d="M382 148 L404 162 L382 171 L362 160 Z" /><path d="M560 150 L580 163 L560 172 L542 162 Z" />
       </g>
-      {/* soft translucent ribbons */}
-      <path d="M-40 120 C 160 40 360 200 680 60 L680 -40 L-40 -40 Z" fill="url(#hero-rib)" opacity="0.14" />
-      <path d="M-40 170 C 200 90 420 230 700 110" fill="none" stroke="url(#hero-rib)" strokeWidth="30" opacity="0.16" strokeLinecap="round" />
-      <path d="M-20 210 C 220 150 430 250 700 170" fill="none" stroke="url(#hero-rib)" strokeWidth="16" opacity="0.20" strokeLinecap="round" />
-      {/* financial network mesh */}
-      <g stroke="#3B82F6" strokeWidth="0.8" opacity="0.35">
-        {links.map(([a, b], i) => <line key={i} x1={nodes[a][0]} y1={nodes[a][1]} x2={nodes[b][0]} y2={nodes[b][1]} />)}
-      </g>
-      {nodes.map(([x, y], i) => <circle key={i} cx={x} cy={y} r={i % 3 === 0 ? 3 : 2} fill="#2563EB" opacity="0.5" />)}
-      {/* fine particles */}
-      <g fill="#5EEAD4" opacity="0.5">
-        {[[380, 60], [420, 200], [560, 200], [610, 50], [330, 120], [290, 60], [360, 170], [520, 100]].map(([x, y], i) =>
-          <circle key={i} cx={x} cy={y} r={i % 2 ? 1.4 : 1} />)}
+      {/* cool shadow faces */}
+      <g fill="#A9BFD9" opacity="0.30">
+        <path d="M92 150 L150 186 L118 186 L92 172 Z" /><path d="M232 140 L300 186 L266 186 L232 163 Z" />
+        <path d="M382 148 L470 196 L432 196 L382 171 Z" />
       </g>
     </svg>
   );
@@ -108,11 +112,6 @@ function PageBackdrop() {
         <radialGradient id="bd-2" cx="90%" cy="60%" r="45%"><stop offset="0%" stopColor="#5EEAD4" stopOpacity="0.045" /><stop offset="100%" stopColor="#5EEAD4" stopOpacity="0" /></radialGradient>
       </defs>
       <rect width="1400" height="1000" fill="url(#bd-1)" /><rect width="1400" height="1000" fill="url(#bd-2)" />
-      <g fill="none" stroke="#2563EB" strokeWidth="1" opacity="0.035">
-        {[0, 60, 120, 190, 270].map((o, i) => (
-          <path key={i} d={`M-40 ${560 + o} C 300 ${420 + o} 700 ${680 + o} 1440 ${480 + o}`} />
-        ))}
-      </g>
     </svg>
   );
 }
@@ -366,7 +365,12 @@ export default function DashboardTab({ onNavigate, userEmail, onAnalyze }: {
     let alive = true;
     fetch("/api/market").then((r) => r.json()).then((d) => { if (alive) setMarket(d); }).catch(() => {});
     fetch("/api/profile", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (alive) setGreeting((d?.greeting as string) ?? greetingName(null, userEmail ?? null)); })
+      .then((d) => {
+        if (!alive) return;
+        const p = d?.profile as { first_name?: string | null; last_name?: string | null; display_name?: string | null } | null;
+        const full = [p?.first_name, p?.last_name].filter(Boolean).join(" ").trim();
+        setGreeting(full || p?.display_name || (d?.greeting as string) || greetingName(null, userEmail ?? null));
+      })
       .catch(() => { if (alive) setGreeting(greetingName(null, userEmail ?? null)); });
     fetch("/api/advisor-overview", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (alive && d?.ok) setOverview(d as Overview); }).catch(() => {});
@@ -379,7 +383,6 @@ export default function DashboardTab({ onNavigate, userEmail, onAnalyze }: {
     const find = (t: string) => market?.items.find((i) => i.ticker === t);
     return [find("^DJI"), find("^IXIC"), find("^GSPC")];
   }, [market]);
-  const time = market ? new Date(market.fetchedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : null;
   const healthProblems = health ? health.checks.filter((c) => c.status !== "healthy").length : 0;
 
   return (
@@ -395,21 +398,21 @@ export default function DashboardTab({ onNavigate, userEmail, onAnalyze }: {
             <Card style={{ padding: isMobile ? "26px 24px" : "34px 32px", position: "relative", overflow: "hidden",
               display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 200 }}>
               <HeroArt />
+              {/* fades keep the arctic scene subtle + the text readable */}
+              <div aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(90deg, ${T.panel} 0%, ${T.panel} 26%, transparent 64%)` }} />
+              <div aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(0deg, ${T.panel} 0%, transparent 42%)` }} />
               <div style={{ position: "relative", zIndex: 1 }}>
-                <div style={{ fontSize: 13, color: T.dim, ...ui, marginBottom: 2 }}>Welcome back,</div>
-                <h1 style={{ fontSize: isMobile ? 30 : 38, fontWeight: 700, color: T.text, ...ui, margin: 0, letterSpacing: "-0.03em", lineHeight: 1.05 }}>
+                <div style={{ fontSize: 12.5, color: T.dim, ...ui, marginBottom: 4, fontWeight: 400, letterSpacing: "0.01em" }}>Welcome back,</div>
+                <h1 style={{ fontSize: isMobile ? 32 : 46, fontWeight: 600, color: T.text, ...ui, margin: 0, letterSpacing: "-0.035em", lineHeight: 1.0 }}>
                   {greeting ?? "Advisor"}
                 </h1>
-                <p style={{ fontSize: 13.5, color: T.dim, ...ui, margin: "10px 0 16px", lineHeight: 1.5 }}>
+                <p style={{ fontSize: 14, color: T.dim, ...ui, margin: "14px 0 18px", lineHeight: 1.5, fontWeight: 400 }}>
                   Here’s what needs attention across your workspace.
                 </p>
-                <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 600, ...ui, color: T.text }}>
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: healthProblems === 0 ? T.green : T.amber }} />
-                    {health ? (healthProblems === 0 ? "All systems operational" : `${healthProblems} item${healthProblems === 1 ? "" : "s"} need attention`) : "Checking systems…"}
-                  </span>
-                  {time && <span style={{ fontSize: 11.5, color: T.muted, ...mono }}>Data as of {time} · delayed</span>}
-                </div>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 500, ...ui, color: T.dim }}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: healthProblems === 0 ? T.green : T.amber }} />
+                  {health ? (healthProblems === 0 ? "All systems operational" : `${healthProblems} item${healthProblems === 1 ? "" : "s"} need attention`) : "Checking systems…"}
+                </span>
               </div>
             </Card>
             {/* 3 index cards */}
@@ -536,22 +539,6 @@ export default function DashboardTab({ onNavigate, userEmail, onAnalyze }: {
           </div>
         </Reveal>
 
-        {/* ── Pro Tip bar ── */}
-        <Reveal delay={110}>
-          <Card style={{ padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between",
-            gap: 14, flexWrap: "wrap", background: "linear-gradient(90deg, rgba(217,119,6,0.06), rgba(37,99,235,0.04))" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-              <span style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(217,119,6,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <span style={{ fontSize: 15 }}>💡</span>
-              </span>
-              <span style={{ fontSize: 12.5, color: T.text, ...ui }}>
-                <span style={{ fontWeight: 700, color: "#B45309" }}>Pro Tip</span>&nbsp;&nbsp;Run a Tax Efficiency Analyzer on high-basis holdings to uncover potential tax savings.
-              </span>
-            </div>
-            <button onClick={() => go("tax")} style={{ padding: "8px 16px", borderRadius: 9, border: `1px solid ${T.line2}`,
-              background: T.panel, color: T.text, fontSize: 12, fontWeight: 600, cursor: "pointer", ...ui, whiteSpace: "nowrap" }}>Try it now →</button>
-          </Card>
-        </Reveal>
       </div>
     </div>
   );

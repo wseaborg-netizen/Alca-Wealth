@@ -137,7 +137,6 @@ describe("Advisor Hub + top-right wiring", () => {
     for (const hub of ["Research Hub", "Portfolio Hub", "Model Hub", "Planning & Tools Hub"]) expect(d).toContain(hub);
     for (const cta of ["Go to Research", "Go to Portfolio", "Go to Model", "Go to Tools"]) expect(d).toContain(cta);
     expect(d).toContain("Tax Efficiency Analyzer");
-    expect(d).toContain("Pro Tip");
     // removed from this page (APIs remain, cards gone)
     expect(d).not.toContain("Market Pulse");
   });
