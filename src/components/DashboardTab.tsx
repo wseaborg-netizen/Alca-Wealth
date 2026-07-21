@@ -17,7 +17,7 @@ interface MarketItem {
 }
 interface MarketData { items: MarketItem[]; fetchedAt: number }
 interface Quote { change1d: number; change1w: number; change1m: number; changeYtd: number }
-interface DeskFund { ticker: string; name: string | null; category: string | null; quote: Quote | null; hasAlert: boolean }
+interface DeskFund { ticker: string; name: string | null; category: string | null; quote: Quote | null; alertCount: number }
 interface Overview {
   ok: boolean;
   attentionItems: { type: string; severity: string; title: string; count: number; href: string }[];
@@ -32,6 +32,68 @@ const fmtPrice = (v: number | null) => v == null ? "—" : v.toLocaleString("en-
 const fmtPct = (v: number | null | undefined) => v == null ? "—" : (v >= 0 ? "+" : "") + (v * 100).toFixed(2) + "%";
 const pctCol = (v: number | null | undefined) => (v == null ? T.muted : v >= 0 ? T.green : T.red);
 const SEV_DOT: Record<string, string> = { info: "#3b82f6", watch: "#f59e0b", warning: "#f59e0b", critical: "#ef4444" };
+
+/** Relative timestamp: "2m ago" · "1h ago" · "3d ago". */
+function timeAgo(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return "";
+  const m = Math.floor(ms / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return d < 30 ? `${d}d ago` : new Date(iso).toLocaleDateString();
+}
+
+/** Tiny keyword-mapped line icon for hub quick links (one cohesive stroke set). */
+function MiniIcon({ label, c }: { label: string; c: string }) {
+  const wrap = (children: React.ReactNode) => (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.85 }}
+      stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">{children}</svg>
+  );
+  const l = label.toLowerCase();
+  if (l.includes("search")) return wrap(<><circle cx="6.5" cy="6.5" r="3.8" /><path d="M9.4 9.4L13 13" /></>);
+  if (l.includes("screen")) return wrap(<path d="M2 4h12M4.5 8h7M6.5 12h3" />);
+  if (l.includes("categor")) return wrap(<path d="M2.5 2.5h4.5v4.5H2.5zM9 2.5h4.5v4.5H9zM2.5 9h4.5v4.5H2.5zM9 9h4.5v4.5H9z" />);
+  if (l.includes("comparison")) return wrap(<path d="M3.5 13V6M8 13V3M12.5 13V8.5" />);
+  if (l.includes("recent")) return wrap(<><circle cx="8" cy="8" r="5.6" /><path d="M8 5v3.2l2.1 1.6" /></>);
+  if (l.includes("portfolio")) return wrap(<><circle cx="8" cy="8" r="5.6" /><path d="M8 8V2.4M8 8l4 3.6" /></>);
+  if (l.includes("allocation")) return wrap(<><circle cx="8" cy="8" r="5.6" /><circle cx="8" cy="8" r="2.2" /></>);
+  if (l.includes("rebalanc") || l.includes("distribution")) return wrap(<path d="M3 5.5h8.5L9.5 3.5M13 10.5H4.5l2 2" />);
+  if (l.includes("performance") || l.includes("projection")) return wrap(<path d="M2 13l4-5 3 2 5-6" />);
+  if (l.includes("risk")) return wrap(<path d="M8 2l5 1.8v3.8c0 3-2 5.1-5 6.4-3-1.3-5-3.4-5-6.4V3.8z" />);
+  if (l.includes("model")) return wrap(<path d="M8 2l5 2.8v6.4L8 14l-5-2.8V4.8zM8 8l5-2.8M8 8L3 5.2M8 8v6" />);
+  if (l.includes("goal") || l.includes("retirement")) return wrap(<><circle cx="8" cy="8" r="5.6" /><circle cx="8" cy="8" r="1.6" /></>);
+  if (l.includes("scenario")) return wrap(<path d="M2.5 12.5h3c4.5 0 3.5-8 8-8M10.5 2.5l3 2-2.4 2.6" />);
+  if (l.includes("monte")) return wrap(<><rect x="3" y="3" width="10" height="10" rx="2" /><path d="M6 6h.01M10 10h.01" /></>);
+  if (l.includes("tax")) return wrap(<><path d="M3.5 12.5l9-9" /><circle cx="5" cy="5" r="1.5" /><circle cx="11" cy="11" r="1.5" /></>);
+  if (l.includes("income")) return wrap(<><ellipse cx="8" cy="5" rx="5" ry="2.2" /><path d="M3 5v5.5c0 1.2 2.2 2.2 5 2.2s5-1 5-2.2V5" /></>);
+  if (l.includes("estate")) return wrap(<path d="M3 8l5-5 5 5v5.5H3z" />);
+  if (l.includes("report")) return wrap(<path d="M4.5 2h5l2.5 2.5V14h-7.5zM6.5 8h3M6.5 11h3" />);
+  if (l.includes("calculator")) return wrap(<><rect x="3.5" y="2" width="9" height="12" rx="1.6" /><path d="M5.8 5h4.4M5.8 8.5h.01M8 8.5h.01M10.2 8.5h.01M5.8 11h.01M8 11h.01M10.2 11h.01" /></>);
+  if (l.includes("social")) return wrap(<><circle cx="8" cy="5.4" r="2.6" /><path d="M3 13.5c.7-2.6 2.6-4 5-4s4.3 1.4 5 4" /></>);
+  return wrap(<path d="M6 4l4 4-4 4" />);
+}
+
+/** Circular tinted icon for feeds (doc / bell / warning / person glyphs). */
+function FeedIcon({ tone, kind }: { tone: string; kind: "doc" | "bell" | "warn" | "info" | "eye" | "bookmark" }) {
+  const glyph = {
+    doc: <path d="M5 2.5h4.5L12 5v8.5H5zM6.8 7.5h3.4M6.8 10h3.4" />,
+    bell: <path d="M8 3a3.4 3.4 0 0 1 3.4 3.4c0 2.6 1 3.4 1 3.4H3.6s1-.8 1-3.4A3.4 3.4 0 0 1 8 3zM6.9 12.4a1.2 1.2 0 0 0 2.2 0" />,
+    warn: <path d="M8 3l5.5 9.5h-11zM8 7v2.6M8 11.6h.01" />,
+    info: <path d="M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12zM8 7.5V11M8 5.2h.01" />,
+    eye: <path d="M2 8s2.4-4 6-4 6 4 6 4-2.4 4-6 4-6-4-6-4zM8 9.8A1.8 1.8 0 1 0 8 6.2a1.8 1.8 0 0 0 0 3.6z" />,
+    bookmark: <path d="M4.5 2.5h7V14L8 11.4 4.5 14z" />,
+  }[kind];
+  return (
+    <span style={{ width: 30, height: 30, borderRadius: "50%", background: `${tone}16`, display: "flex",
+      alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke={tone} strokeWidth="1.4"
+        strokeLinecap="round" strokeLinejoin="round">{glyph}</svg>
+    </span>
+  );
+}
 
 // ── Reusable premium card ─────────────────────────────────────────────────────
 function Card({ children, style, hover }: { children: React.ReactNode; style?: React.CSSProperties; hover?: boolean }) {
@@ -199,7 +261,10 @@ function WatchTable({ funds, onAnalyze }: { funds: DeskFund[]; onAnalyze?: (t: s
             <td style={{ padding: "9px 0", textAlign: "right", fontSize: 12, fontWeight: 600, color: pctCol(f.quote?.change1d), ...mono }}>{fmtPct(f.quote?.change1d)}</td>
             <td style={{ padding: "9px 0", textAlign: "right", fontSize: 12, fontWeight: 600, color: pctCol(f.quote?.changeYtd), ...mono }}>{fmtPct(f.quote?.changeYtd)}</td>
             <td style={{ padding: "9px 0", textAlign: "center" }}>
-              {f.hasAlert ? <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: T.red }} /> : <span style={{ color: T.muted }}>–</span>}
+              {f.alertCount > 0
+                ? <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 17, height: 17,
+                    borderRadius: 999, background: T.red, color: "#fff", fontSize: 10, fontWeight: 700, ...mono, padding: "0 4px" }}>{f.alertCount}</span>
+                : <span style={{ color: T.muted }}>–</span>}
             </td>
           </tr>
         ))}
@@ -310,11 +375,6 @@ const IlloTools = ({ c }: { c: string }) => {
   );
 };
 
-// ── Small link icon ───────────────────────────────────────────────────────────
-function LinkDot({ c }: { c: string }) {
-  return <span style={{ width: 5, height: 5, borderRadius: "50%", background: c, opacity: 0.75, flexShrink: 0 }} />;
-}
-
 // ── Workspace hub card ────────────────────────────────────────────────────────
 function Hub({ title, purpose, accent, items, cta, onCta, go, illo }: {
   title: string; purpose: string; accent: string; cta: string; onCta: () => void;
@@ -337,7 +397,7 @@ function Hub({ title, purpose, accent, items, cta, onCta, go, illo }: {
               style={{ textAlign: "left", background: "none", border: "none", padding: "3.5px 0", ...ui, fontSize: 12,
                 color: it.disabled || !it.tab ? T.muted : T.dim, cursor: it.disabled || !it.tab ? "default" : "pointer",
                 display: "flex", alignItems: "center", gap: 7, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              <LinkDot c={accent} />{it.label}{it.disabled ? <span style={{ fontSize: 9, color: T.muted }}> soon</span> : null}
+              <MiniIcon label={it.label} c={accent} />{it.label}{it.disabled ? <span style={{ fontSize: 9, color: T.muted }}> soon</span> : null}
             </button>
           ))}
         </div>
@@ -357,6 +417,7 @@ export default function DashboardTab({ onNavigate, userEmail, onAnalyze }: {
   const [greeting, setGreeting] = useState<string | null>(null);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [health, setHealth] = useState<HealthResp | null>(null);
+  const [refreshTick, setRefreshTick] = useState(0);
   const isNarrow = useMediaQuery("(max-width: 1080px)");
   const isMobile = useMediaQuery("(max-width: 720px)");
   const go = (t: DashTab) => onNavigate?.(t);
@@ -377,13 +438,16 @@ export default function DashboardTab({ onNavigate, userEmail, onAnalyze }: {
     fetch("/api/health/system", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (alive && d?.checks) setHealth(d as HealthResp); }).catch(() => {});
     return () => { alive = false; };
-  }, [userEmail]);
+  }, [userEmail, refreshTick]);
 
   const indices = useMemo(() => {
     const find = (t: string) => market?.items.find((i) => i.ticker === t);
     return [find("^DJI"), find("^IXIC"), find("^GSPC")];
   }, [market]);
   const healthProblems = health ? health.checks.filter((c) => c.status !== "healthy").length : 0;
+  const dataTime = market
+    ? new Date(market.fetchedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) + " ET"
+    : null;
 
   return (
     <div style={{ margin: "0 -32px", background: T.bg, minHeight: "100vh", position: "relative" }}>
@@ -409,10 +473,27 @@ export default function DashboardTab({ onNavigate, userEmail, onAnalyze }: {
                 <p style={{ fontSize: 14, color: T.dim, ...ui, margin: "14px 0 18px", lineHeight: 1.5, fontWeight: 400 }}>
                   Here’s what needs attention across your workspace.
                 </p>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 500, ...ui, color: T.dim }}>
-                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: healthProblems === 0 ? T.green : T.amber }} />
-                  {health ? (healthProblems === 0 ? "All systems operational" : `${healthProblems} item${healthProblems === 1 ? "" : "s"} need attention`) : "Checking systems…"}
-                </span>
+                <div style={{ display: "inline-flex", alignItems: "center", background: "rgba(255,255,255,0.82)",
+                  backdropFilter: "blur(5px)", border: `1px solid ${T.line}`, borderRadius: 10, padding: "7px 6px 7px 14px",
+                  boxShadow: "var(--elev-1)" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 600, ...ui, color: T.text, paddingRight: 13 }}>
+                    <span style={{ width: 7, height: 7, borderRadius: "50%", background: healthProblems === 0 ? T.green : T.amber }} />
+                    {health ? (healthProblems === 0 ? "All systems operational" : `${healthProblems} item${healthProblems === 1 ? "" : "s"} need attention`) : "Checking systems…"}
+                  </span>
+                  {dataTime && (
+                    <>
+                      <span style={{ width: 1, alignSelf: "stretch", background: T.line }} />
+                      <span style={{ fontSize: 11.5, color: T.muted, ...mono, padding: "0 8px 0 13px" }}>Data as of {dataTime}</span>
+                      <button onClick={() => setRefreshTick((t) => t + 1)} aria-label="Refresh data" title="Refresh"
+                        style={{ width: 24, height: 24, borderRadius: 7, border: "none", background: "transparent",
+                          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.muted }}>
+                        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                          <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v2.8h-2.8" />
+                        </svg>
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             </Card>
             {/* 3 index cards */}
@@ -426,86 +507,120 @@ export default function DashboardTab({ onNavigate, userEmail, onAnalyze }: {
         <Reveal delay={60}>
           <div style={{ display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "1.9fr 1fr", gap: 20, alignItems: "start" }}>
 
-            {/* Daily Desk */}
-            <Card style={{ ...cardPad }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
-                <div>
-                  <h2 style={sectionTitle}>Daily Desk</h2>
-                  <p style={sectionSub}>Your saved funds, watchlists, and recent activity at a glance.</p>
-                </div>
-                <button onClick={() => go("lists")} style={{ fontSize: 11.5, color: T.dim, ...ui, background: "none",
-                  border: `1px solid ${T.line2}`, borderRadius: 8, padding: "6px 11px", cursor: "pointer", fontWeight: 600 }}>Customize</button>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 22, marginTop: 18 }}>
-                <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-                    <span style={{ fontSize: 12.5, fontWeight: 700, color: T.text, ...ui }}>My Core Funds</span>
-                    <button onClick={() => go("lists")} style={{ fontSize: 11, color: T.blue, ...ui, background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>View all →</button>
+            {/* Left column: Daily Desk + Recent Activity strip */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 18, minWidth: 0 }}>
+              <Card style={{ ...cardPad }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                    <span style={{ width: 34, height: 34, borderRadius: 10, background: `${T.blue}14`, display: "flex",
+                      alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
+                      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke={T.blue} strokeWidth="1.5" strokeLinejoin="round">
+                        <path d="M2.5 2.5h4.5v4.5H2.5zM9 2.5h4.5v4.5H9zM2.5 9h4.5v4.5H2.5zM9 9h4.5v4.5H9z" />
+                      </svg>
+                    </span>
+                    <div>
+                      <h2 style={sectionTitle}>Daily Desk</h2>
+                      <p style={sectionSub}>Your saved funds, watchlists, and recent activity at a glance.</p>
+                    </div>
                   </div>
-                  {overview ? <CoreTable funds={overview.coreFunds} onAnalyze={onAnalyze} /> : <Empty text="Loading…" />}
+                  <button onClick={() => go("lists")} style={{ display: "inline-flex", alignItems: "center", gap: 6,
+                    fontSize: 11.5, color: T.dim, ...ui, background: "none",
+                    border: `1px solid ${T.line2}`, borderRadius: 9, padding: "7px 12px", cursor: "pointer", fontWeight: 600 }}>
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+                      <circle cx="8" cy="8" r="2" /><path d="M8 1.8v2M8 12.2v2M1.8 8h2M12.2 8h2M3.6 3.6l1.4 1.4M11 11l1.4 1.4M12.4 3.6L11 5M5 11l-1.4 1.4" />
+                    </svg>
+                    Customize
+                  </button>
                 </div>
-                <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-                    <span style={{ fontSize: 12.5, fontWeight: 700, color: T.text, ...ui }}>Watchlist</span>
-                    <button onClick={() => go("watchlist")} style={{ fontSize: 11, color: T.blue, ...ui, background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>View full →</button>
-                  </div>
-                  {overview ? <WatchTable funds={overview.watchlistFunds} onAnalyze={onAnalyze} /> : <Empty text="Loading…" />}
-                </div>
-              </div>
 
-              {/* Recent activity */}
-              <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${T.line}` }}>
-                <span style={{ fontSize: 12.5, fontWeight: 700, color: T.text, ...ui }}>Recent activity</span>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1.15fr", gap: 22, marginTop: 18 }}>
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+                      <span style={{ fontSize: 12.5, fontWeight: 700, color: T.text, ...ui }}>My Core Funds</span>
+                      <button onClick={() => go("lists")} style={{ fontSize: 11, color: T.blue, ...ui, background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>View all →</button>
+                    </div>
+                    {overview ? <CoreTable funds={overview.coreFunds} onAnalyze={onAnalyze} /> : <Empty text="Loading…" />}
+                  </div>
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+                      <span style={{ fontSize: 12.5, fontWeight: 700, color: T.text, ...ui }}>Watchlist</span>
+                      <button onClick={() => go("watchlist")} style={{ fontSize: 11, color: T.blue, ...ui, background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>View full watchlist →</button>
+                    </div>
+                    {overview ? <WatchTable funds={overview.watchlistFunds} onAnalyze={onAnalyze} /> : <Empty text="Loading…" />}
+                  </div>
+                </div>
+              </Card>
+
+              {/* Recent Activity strip */}
+              <Card style={{ padding: "16px 22px", display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 11, flexShrink: 0 }}>
+                  <FeedIcon tone={T.blue} kind="eye" />
+                  <div>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text, ...ui }}>Recent Activity</div>
+                    <div style={{ fontSize: 11, color: T.muted, ...ui }}>Your latest actions and updates.</div>
+                  </div>
+                </div>
                 {overview && overview.recentActivity.length > 0 ? (
-                  <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
-                    {overview.recentActivity.slice(0, 5).map((a, i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, background: T.panel3,
-                        border: `1px solid ${T.line}`, borderRadius: 10, padding: "8px 12px" }}>
-                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: SEV_DOT[a.severity] ?? T.muted }} />
-                        {a.ticker && <span style={{ fontSize: 11.5, fontWeight: 700, color: T.blue, ...mono }}>{a.ticker}</span>}
-                        <span style={{ fontSize: 11.5, color: T.dim, ...ui, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.label}</span>
-                        <span style={{ fontSize: 10, color: T.muted, ...mono }}>{new Date(a.at).toLocaleDateString()}</span>
+                  <div style={{ display: "flex", gap: 18, flexWrap: "wrap", flex: 1 }}>
+                    {overview.recentActivity.slice(0, 4).map((a, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                        <FeedIcon tone={SEV_DOT[a.severity] ?? T.blue} kind={a.kind === "alert" ? "doc" : "bookmark"} />
+                        <span style={{ display: "flex", flexDirection: "column", lineHeight: 1.35 }}>
+                          <span style={{ fontSize: 11.5, fontWeight: 600, color: T.text, ...ui, maxWidth: 150,
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {a.ticker ? `${a.ticker} — ` : ""}{a.label.replace(new RegExp(`^${a.ticker ?? ""} — `), "")}
+                          </span>
+                          <span style={{ fontSize: 10.5, color: T.muted, ...ui }}>{timeAgo(a.at)}</span>
+                        </span>
                       </div>
                     ))}
                   </div>
-                ) : <p style={{ fontSize: 12, color: T.muted, ...ui, margin: "8px 0 0" }}>No recent activity yet. Save a fund or run an SEC refresh to get started.</p>}
-              </div>
-            </Card>
+                ) : <span style={{ fontSize: 12, color: T.muted, ...ui }}>No recent activity yet. Save a fund or run an SEC refresh to get started.</span>}
+              </Card>
+            </div>
 
             {/* Right column */}
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {/* My Updates / Alerts */}
               <Card style={{ ...cardPad }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                  <h2 style={sectionTitle}>My Updates & Alerts</h2>
+                  <h2 style={sectionTitle}>My Updates / Alerts</h2>
                   <button onClick={() => go("alerts")} style={{ fontSize: 11.5, color: T.blue, ...ui, background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>View all →</button>
                 </div>
-                <p style={sectionSub}>Personal to your saved funds, watchlist, and monitoring.</p>
-                <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 4 }}>
+                <p style={sectionSub}>Personal updates for your funds &amp; watchlist.</p>
+                <div style={{ marginTop: 10, display: "flex", flexDirection: "column" }}>
                   {overview && (overview.attentionItems.length > 0 || overview.recentActivity.length > 0) ? (
                     <>
                       {overview.attentionItems.map((it, i) => (
                         <button key={`a${i}`} onClick={() => go(it.type === "sec_alerts" || it.type === "unresolved_cik" ? "alerts" : "expansion")}
-                          style={{ display: "flex", alignItems: "center", gap: 10, textAlign: "left", background: "none", border: "none", padding: "9px 0", borderTop: i ? `1px solid ${T.line}` : "none", cursor: "pointer" }}>
-                          <span style={{ width: 8, height: 8, borderRadius: "50%", background: SEV_DOT[it.severity] ?? T.blue, flexShrink: 0 }} />
-                          <span style={{ flex: 1, fontSize: 12.5, color: T.text, ...ui }}>{it.title}</span>
+                          style={{ display: "flex", alignItems: "center", gap: 11, textAlign: "left", background: "none", border: "none",
+                            padding: "10px 0", borderTop: i ? `1px solid ${T.line}` : "none", cursor: "pointer" }}>
+                          <FeedIcon tone={SEV_DOT[it.severity] ?? T.blue} kind={it.severity === "warning" ? "warn" : "bell"} />
+                          <span style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ display: "block", fontSize: 12.5, fontWeight: 600, color: T.text, ...ui, lineHeight: 1.35 }}>{it.title}</span>
+                            <span style={{ display: "block", fontSize: 11, color: T.muted, ...ui }}>Needs your review</span>
+                          </span>
                           <span style={{ fontSize: 12, fontWeight: 700, color: T.text, ...mono }}>{it.count}</span>
                         </button>
                       ))}
                       {overview.recentActivity.slice(0, 5).map((a, i) => (
-                        <div key={`r${i}`} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderTop: `1px solid ${T.line}` }}>
-                          <span style={{ width: 8, height: 8, borderRadius: "50%", background: SEV_DOT[a.severity] ?? T.muted, flexShrink: 0 }} />
+                        <div key={`r${i}`} style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 0",
+                          borderTop: overview.attentionItems.length + i > 0 ? `1px solid ${T.line}` : "none" }}>
+                          <FeedIcon tone={SEV_DOT[a.severity] ?? T.blue} kind="doc" />
                           <span style={{ flex: 1, minWidth: 0 }}>
-                            <span style={{ fontSize: 12.5, color: T.text, ...ui, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {a.ticker ? <span style={{ color: T.blue, fontWeight: 700, ...mono }}>{a.ticker} </span> : null}{a.label}
-                            </span>
+                            <span style={{ display: "block", fontSize: 12.5, fontWeight: 600, color: T.text, ...ui, lineHeight: 1.35,
+                              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.label}</span>
+                            {a.ticker && <span style={{ display: "block", fontSize: 11, color: T.muted, ...mono }}>{a.ticker}</span>}
                           </span>
-                          <span style={{ fontSize: 10, color: T.muted, ...mono, flexShrink: 0 }}>{new Date(a.at).toLocaleDateString()}</span>
+                          <span style={{ fontSize: 10.5, color: T.muted, ...ui, flexShrink: 0 }}>{timeAgo(a.at)}</span>
                         </div>
                       ))}
+                      <button onClick={() => go("alerts")} style={{ marginTop: 8, alignSelf: "flex-start", background: "none",
+                        border: "none", color: T.blue, fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0, ...ui }}>
+                        View all alerts →
+                      </button>
                     </>
-                  ) : <p style={{ fontSize: 12.5, color: T.muted, ...ui, padding: "10px 0" }}>No updates right now. Save funds and run an SEC refresh to start monitoring.</p>}
+                  ) : <p style={{ fontSize: 12.5, color: T.muted, ...ui, padding: "10px 0", lineHeight: 1.6 }}>No updates right now. Save funds and run an SEC refresh to start monitoring.</p>}
                 </div>
               </Card>
 
@@ -539,6 +654,25 @@ export default function DashboardTab({ onNavigate, userEmail, onAnalyze }: {
           </div>
         </Reveal>
 
+        {/* ── Pro Tip bar ── */}
+        <Reveal delay={110}>
+          <Card style={{ padding: "13px 20px", display: "flex", alignItems: "center", justifyContent: "space-between",
+            gap: 14, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+              <span style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(217,119,6,0.12)", display: "flex",
+                alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#B45309" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 1.6a4.8 4.8 0 0 0-2.7 8.8c.5.4.7.8.7 1.3v.6h4v-.6c0-.5.2-.9.7-1.3A4.8 4.8 0 0 0 8 1.6zM6.4 14.4h3.2" />
+                </svg>
+              </span>
+              <span style={{ fontSize: 12.5, color: T.dim, ...ui }}>
+                <span style={{ fontWeight: 700, color: "#B45309" }}>Pro Tip</span>&nbsp;&nbsp;Run a Tax Efficiency Analyzer on high-basis holdings to uncover potential tax savings.
+              </span>
+            </div>
+            <button onClick={() => go("tax")} style={{ padding: "8px 16px", borderRadius: 9, border: `1px solid ${T.line2}`,
+              background: T.panel, color: T.text, fontSize: 12, fontWeight: 600, cursor: "pointer", ...ui, whiteSpace: "nowrap" }}>Try it now →</button>
+          </Card>
+        </Reveal>
       </div>
     </div>
   );

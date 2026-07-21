@@ -65,10 +65,11 @@ export async function GET() {
     // Daily Desk tables — REAL saved-list funds enriched with REAL quotes.
     const commonItems = byType("common").flatMap((l) => l.items).slice(0, 8);
     const watchItems = byType("watchlist").flatMap((l) => l.items).slice(0, 8);
-    const alertTickers = new Set((alerts ?? []).map((a) => a.ticker).filter(Boolean));
+    const alertCountBy = new Map<string, number>();
+    for (const a of alerts ?? []) if (a.ticker) alertCountBy.set(a.ticker, (alertCountBy.get(a.ticker) ?? 0) + 1);
     const enrich = async (items: typeof commonItems) => Promise.all(items.map(async (it) => ({
       ticker: it.ticker, name: it.fund_name, category: it.category,
-      quote: await deskQuote(it.ticker), hasAlert: alertTickers.has(it.ticker),
+      quote: await deskQuote(it.ticker), alertCount: alertCountBy.get(it.ticker) ?? 0,
     })));
     const [coreFunds, watchlistFunds] = await Promise.all([enrich(commonItems), enrich(watchItems)]);
 

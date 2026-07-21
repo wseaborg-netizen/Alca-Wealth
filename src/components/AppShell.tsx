@@ -75,6 +75,7 @@ export default function AppShell({ authMode, authUser, authWorkspace, onLogout }
 
   // Profile display name for the top-right (name, not email-based workspace).
   const [accountName, setAccountName] = useState<string | null>(null);
+  const [unreadAlerts, setUnreadAlerts] = useState<number | null>(null);
   useEffect(() => {
     if (authMode !== "full") return;
     let alive = true;
@@ -83,6 +84,10 @@ export default function AppShell({ authMode, authUser, authWorkspace, onLogout }
       const p = d.profile as { first_name?: string | null; last_name?: string | null; display_name?: string | null } | null;
       const full = [p?.first_name, p?.last_name].filter(Boolean).join(" ").trim();
       setAccountName(full || p?.display_name || (d.greeting as string) || null);
+    }).catch(() => {});
+    // Unread alert count for the nav bell (real data; silent on failure).
+    fetch("/api/alerts", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (alive && typeof d?.counts?.unread === "number") setUnreadAlerts(d.counts.unread);
     }).catch(() => {});
     return () => { alive = false; };
   }, [authMode]);
@@ -265,6 +270,8 @@ export default function AppShell({ authMode, authUser, authWorkspace, onLogout }
         authUser={authUser}
         authWorkspace={authWorkspace}
         accountName={accountName}
+        unreadCount={unreadAlerts}
+        onAlerts={() => { if (authMode === "none") { window.location.href = "/login"; return; } switchTab("alerts"); }}
         onLogout={onLogout}
         canBack={canBack}
         canForward={canForward}

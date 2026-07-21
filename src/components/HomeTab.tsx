@@ -20,17 +20,54 @@ const Globe = dynamic(() => import("./Globe"), {
 
 const UNIVERSE_COUNT = UNIVERSE.length;
 
-// Dark hero palette — the platform's constant institutional chrome.
+// Arctic-light hero palette — white, icy, editorial (matches the Advisor
+// Overview's arctic-sunrise identity: this is where ALCA lives).
 const H = {
-  bg: "#08090C",
-  text: "#F4F5F7",
-  dim: "rgba(244,245,247,0.68)",
-  muted: "rgba(244,245,247,0.42)",
-  line: "rgba(255,255,255,0.09)",
-  card: "rgba(255,255,255,0.028)",
-  accent: "#5EEAD4",
+  bg: "#F4F8FC",
+  text: "#0E1726",
+  dim: "rgba(14,23,38,0.64)",
+  muted: "rgba(14,23,38,0.40)",
+  line: "rgba(14,23,38,0.08)",
+  card: "rgba(255,255,255,0.6)",
+  accent: "#2563EB",
   teal: "#0E7490",
 };
+
+// Wide arctic horizon — snowy ridge under a soft dawn glow, fading into the
+// page. The homepage variant of the Advisor Overview's signature hero art.
+function ArcticHorizon({ height = 260 }: { height?: number }) {
+  return (
+    <svg viewBox="0 0 1440 260" preserveAspectRatio="xMidYMax slice" aria-hidden
+      style={{ position: "absolute", left: 0, right: 0, bottom: 0, width: "100%", height, pointerEvents: "none" }}>
+      <defs>
+        <radialGradient id="ha-dawn" cx="62%" cy="92%" r="52%">
+          <stop offset="0%" stopColor="#FBD3B4" stopOpacity="0.55" />
+          <stop offset="50%" stopColor="#F6C9AE" stopOpacity="0.24" />
+          <stop offset="100%" stopColor="#F6C9AE" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="ha-back" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#D8E4F1" /><stop offset="100%" stopColor="#E9F0F8" />
+        </linearGradient>
+        <linearGradient id="ha-front" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#C6D6E9" /><stop offset="100%" stopColor="#E0EAF4" />
+        </linearGradient>
+        <linearGradient id="ha-fade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#F4F8FC" stopOpacity="1" /><stop offset="100%" stopColor="#F4F8FC" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <rect width="1440" height="260" fill="url(#ha-dawn)" />
+      <path d="M0 190 L150 138 L260 176 L420 122 L560 170 L730 128 L900 178 L1050 132 L1200 168 L1330 140 L1440 164 L1440 260 L0 260 Z"
+        fill="url(#ha-back)" opacity="0.8" />
+      <path d="M0 226 L190 164 L330 206 L520 152 L680 206 L860 162 L1040 214 L1220 164 L1360 200 L1440 182 L1440 260 L0 260 Z"
+        fill="url(#ha-front)" />
+      <g fill="#FFFFFF" opacity="0.6">
+        <path d="M190 164 L216 180 L190 190 L168 178 Z" /><path d="M520 152 L548 170 L520 180 L496 168 Z" />
+        <path d="M860 162 L886 178 L860 188 L838 176 Z" /><path d="M1220 164 L1244 179 L1220 189 L1200 178 Z" />
+      </g>
+      <rect width="1440" height="70" fill="url(#ha-fade)" />
+    </svg>
+  );
+}
 
 interface HomeProps {
   onEnterPlatform: () => void;
@@ -367,22 +404,24 @@ export default function HomeTab({ onEnterPlatform, onOpenResearch, onOpenPortfol
       `}</style>
 
       {/* ── HERO ── */}
-      <section style={{ position: "relative", overflow: "hidden", background: H.bg, color: H.text,
+      <section style={{ position: "relative", overflow: "hidden", color: H.text,
+        background: "linear-gradient(180deg, #EAF1F9 0%, #F2F1F4 55%, #FBF0E7 86%, #F4F8FC 100%)",
         borderBottom: `1px solid ${H.line}` }}>
-        {/* layered lighting — includes a broad hero-level haze behind the globe
-            so the atmospheric glow belongs to the page, not a bounded wrapper */}
+        {/* pale icy lighting + a soft halo behind the globe so the dark earth
+            sits naturally against the dawn sky */}
         <div style={{ position: "absolute", inset: 0, pointerEvents: "none",
           background: isMobile
-            ? "radial-gradient(120% 90% at 78% 8%, rgba(14,116,144,0.28), transparent 55%), radial-gradient(90% 80% at 8% 100%, rgba(56,189,248,0.12), transparent 55%)"
-            : "radial-gradient(120% 90% at 78% 8%, rgba(14,116,144,0.26), transparent 55%), radial-gradient(90% 80% at 8% 100%, rgba(56,189,248,0.12), transparent 55%), radial-gradient(64% 70% at 80% 52%, rgba(20,130,150,0.17) 0%, rgba(20,130,150,0.06) 45%, transparent 72%)" }} />
-        {/* fine grid — masked so the dots dissolve into the globe's atmosphere
-            instead of running visibly behind and around the earth */}
-        <div style={{ position: "absolute", inset: 0, opacity: 0.04, pointerEvents: "none",
-          backgroundImage: "radial-gradient(circle, #FFFFFF 1px, transparent 1px)", backgroundSize: "26px 26px",
+            ? "radial-gradient(120% 90% at 78% 8%, rgba(37,99,235,0.07), transparent 55%)"
+            : "radial-gradient(120% 90% at 78% 8%, rgba(37,99,235,0.07), transparent 55%), radial-gradient(58% 64% at 80% 50%, rgba(14,60,120,0.16) 0%, rgba(14,60,120,0.05) 45%, transparent 70%)" }} />
+        {/* fine grid — masked so the dots dissolve into the globe's atmosphere */}
+        <div style={{ position: "absolute", inset: 0, opacity: 0.05, pointerEvents: "none",
+          backgroundImage: "radial-gradient(circle, #16233A 1px, transparent 1px)", backgroundSize: "26px 26px",
           ...(isMobile ? {} : {
             WebkitMaskImage: "radial-gradient(circle at 79% 52%, transparent 0, transparent 24%, rgba(0,0,0,0.45) 38%, black 52%)",
             maskImage: "radial-gradient(circle at 79% 52%, transparent 0, transparent 24%, rgba(0,0,0,0.45) 38%, black 52%)",
           }) }} />
+        {/* signature arctic horizon along the hero's base */}
+        <ArcticHorizon height={isMobile ? 170 : 250} />
 
         <div style={{ position: "relative", maxWidth: 1360, margin: "0 auto",
           padding: isMobile ? "120px 22px 64px" : "140px 48px 90px",
@@ -393,7 +432,7 @@ export default function HomeTab({ onEnterPlatform, onOpenResearch, onOpenPortfol
             <Reveal y={12}>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 11.5, fontWeight: 600,
                 letterSpacing: "0.2em", textTransform: "uppercase", color: H.accent,
-                background: "rgba(94,234,212,0.08)", border: "1px solid rgba(94,234,212,0.25)",
+                background: "rgba(37,99,235,0.06)", border: "1px solid rgba(37,99,235,0.22)",
                 borderRadius: 99, padding: "6px 14px", ...ui }}>
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: H.accent }} />
                 The Advisor Operating System
@@ -402,7 +441,7 @@ export default function HomeTab({ onEnterPlatform, onOpenResearch, onOpenPortfol
             <Reveal delay={80} y={16}>
               <h1 style={{ fontSize: isMobile ? "clamp(38px,10vw,54px)" : "clamp(52px,5.2vw,78px)", fontWeight: 700,
                 lineHeight: 1.02, letterSpacing: "-0.03em", margin: "26px 0 0", ...ui, color: H.text }}>
-                Research.<br />Construct.<br /><span style={{ background: "linear-gradient(120deg, #5EEAD4, #38BDF8)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>Model.</span>
+                Research.<br />Construct.<br /><span style={{ background: "linear-gradient(120deg, #2563EB, #38BDF8)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>Model.</span>
               </h1>
             </Reveal>
             <Reveal delay={160} y={16}>
@@ -416,20 +455,20 @@ export default function HomeTab({ onEnterPlatform, onOpenResearch, onOpenPortfol
               <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 36 }}>
                 <button onClick={onEnterPlatform}
                   style={{ padding: "15px 30px", borderRadius: 13, border: "none", cursor: "pointer",
-                    background: "linear-gradient(135deg, #5EEAD4, #0E7490)", color: "#04212A",
-                    fontSize: 15.5, fontWeight: 700, ...ui, boxShadow: "0 10px 30px rgba(94,234,212,0.28)",
+                    background: "linear-gradient(135deg, #3B82F6, #1D4ED8)", color: "#fff",
+                    fontSize: 15.5, fontWeight: 700, ...ui, boxShadow: "0 10px 30px rgba(37,99,235,0.28)",
                     transition: "transform 0.18s, box-shadow 0.18s" }}
-                  onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 14px 38px rgba(94,234,212,0.36)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 10px 30px rgba(94,234,212,0.28)"; }}>
+                  onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 14px 38px rgba(37,99,235,0.36)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 10px 30px rgba(37,99,235,0.28)"; }}>
                   Enter Platform →
                 </button>
                 <button onClick={onExplore}
                   style={{ padding: "15px 28px", borderRadius: 13, cursor: "pointer",
-                    background: "rgba(255,255,255,0.04)", border: `1px solid rgba(255,255,255,0.18)`,
+                    background: "rgba(255,255,255,0.65)", border: `1px solid rgba(14,23,38,0.14)`,
                     color: H.text, fontSize: 15.5, fontWeight: 600, ...ui,
                     backdropFilter: "blur(8px)", transition: "all 0.18s" }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.09)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.35)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; }}>
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.92)"; e.currentTarget.style.borderColor = "rgba(14,23,38,0.28)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.65)"; e.currentTarget.style.borderColor = "rgba(14,23,38,0.14)"; }}>
                   Explore ALCA Wealth
                 </button>
               </div>
@@ -546,11 +585,12 @@ export default function HomeTab({ onEnterPlatform, onOpenResearch, onOpenPortfol
 
       {/* ── FINAL ENTER PLATFORM ── */}
       <section style={{ position: "relative", overflow: "hidden", background: H.bg,
-        borderTop: `1px solid ${H.line}`, padding: isMobile ? "72px 22px 64px" : "104px 48px 92px" }}>
+        borderTop: `1px solid ${H.line}`, padding: isMobile ? "72px 22px 120px" : "104px 48px 170px" }}>
         <div style={{ position: "absolute", inset: 0, pointerEvents: "none",
-          background: "radial-gradient(90% 80% at 50% 0%, rgba(14,116,144,0.24), transparent 60%)" }} />
+          background: "radial-gradient(90% 80% at 50% 0%, rgba(37,99,235,0.06), transparent 60%)" }} />
         <div style={{ position: "absolute", inset: 0, opacity: 0.04, pointerEvents: "none",
-          backgroundImage: "radial-gradient(circle, #FFFFFF 1px, transparent 1px)", backgroundSize: "26px 26px" }} />
+          backgroundImage: "radial-gradient(circle, #16233A 1px, transparent 1px)", backgroundSize: "26px 26px" }} />
+        <ArcticHorizon height={isMobile ? 120 : 160} />
         <Reveal>
           <div style={{ position: "relative", textAlign: "center", maxWidth: 640, margin: "0 auto" }}>
             <h2 style={{ fontSize: isMobile ? 30 : 44, fontWeight: 700, color: H.text, ...ui,
@@ -562,11 +602,11 @@ export default function HomeTab({ onEnterPlatform, onOpenResearch, onOpenPortfol
             </p>
             <button onClick={onEnterPlatform}
               style={{ marginTop: 32, padding: "16px 36px", borderRadius: 13, border: "none", cursor: "pointer",
-                background: "linear-gradient(135deg, #5EEAD4, #0E7490)", color: "#04212A",
-                fontSize: 16, fontWeight: 700, ...ui, boxShadow: "0 12px 34px rgba(94,234,212,0.3)",
+                background: "linear-gradient(135deg, #3B82F6, #1D4ED8)", color: "#fff",
+                fontSize: 16, fontWeight: 700, ...ui, boxShadow: "0 12px 34px rgba(37,99,235,0.28)",
                 transition: "transform 0.18s, box-shadow 0.18s" }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 16px 42px rgba(94,234,212,0.38)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 12px 34px rgba(94,234,212,0.3)"; }}>
+              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 16px 42px rgba(37,99,235,0.36)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 12px 34px rgba(37,99,235,0.28)"; }}>
               Enter Platform →
             </button>
             <p style={{ fontSize: 10.5, color: H.muted, ...ui, margin: "40px 0 0", letterSpacing: "0.03em" }}>

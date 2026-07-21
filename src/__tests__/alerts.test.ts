@@ -131,7 +131,7 @@ describe("Advisor Hub + top-right wiring", () => {
     const d = read("src/components/DashboardTab.tsx");
     expect(d).toContain("Welcome back,");
     expect(d).toContain("Daily Desk");
-    expect(d).toContain("My Updates & Alerts");
+    expect(d).toContain("My Updates / Alerts");
     expect(d).toContain("/api/advisor-overview");
     // four workspace hubs matching the mockup
     for (const hub of ["Research Hub", "Portfolio Hub", "Model Hub", "Planning & Tools Hub"]) expect(d).toContain(hub);
