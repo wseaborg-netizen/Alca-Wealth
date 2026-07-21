@@ -55,33 +55,36 @@ const smallCap: React.CSSProperties = { fontSize: 10, color: T.muted, ...ui, fon
 
 // ── Index card (market indices — real /api/market) ───────────────────────────
 function IndexCard({ item }: { item: MarketItem | undefined }) {
-  if (!item) return <Card style={{ ...cardPad, minHeight: 150, display: "flex", alignItems: "center", justifyContent: "center", color: T.muted, fontSize: 12, ...ui }}>Loading…</Card>;
+  if (!item) return <Card style={{ ...cardPad, minHeight: 158, display: "flex", alignItems: "center", justifyContent: "center", color: T.muted, fontSize: 12, ...ui }}>Loading…</Card>;
   const up = (item.change1d ?? 0) >= 0;
   const c = up ? T.green : T.red;
   const spark = item.spark6m && item.spark6m.length > 8 ? item.spark6m.map((v, i) => ({ i, v })) : null;
   const gid = `sp-${item.ticker.replace(/[^a-z0-9]/gi, "")}`;
+  // Absolute point change today, derived from the real price + % change.
+  const absChange = item.price != null && item.change1d != null && item.change1d !== -1
+    ? item.price - item.price / (1 + item.change1d) : null;
   return (
-    <Card hover style={{ ...cardPad, display: "flex", flexDirection: "column", gap: 8 }}>
+    <Card hover style={{ padding: "18px 20px", display: "flex", flexDirection: "column", gap: 7 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: T.text, ...ui }}>{item.label}</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: T.text, ...ui, textTransform: "uppercase", letterSpacing: "0.04em" }}>{item.label.toUpperCase()}</span>
         <span style={{ fontSize: 12.5, fontWeight: 700, color: c, ...mono }}>{fmtPct(item.change1d)}</span>
       </div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: T.text, ...mono, letterSpacing: "-0.02em" }}>{fmtPrice(item.price)}</div>
+      <div style={{ fontSize: 27, fontWeight: 700, color: T.text, ...mono, letterSpacing: "-0.02em" }}>{fmtPrice(item.price)}</div>
       {spark ? (
-        <div style={{ height: 52, margin: "2px -4px 0" }}>
+        <div style={{ height: 54, margin: "2px -4px 0" }}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={spark} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
               <defs><linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={c} stopOpacity={0.2} /><stop offset="100%" stopColor={c} stopOpacity={0} />
+                <stop offset="0%" stopColor={c} stopOpacity={0.18} /><stop offset="100%" stopColor={c} stopOpacity={0} />
               </linearGradient></defs>
               <Area type="monotone" dataKey="v" stroke={c} strokeWidth={1.8} fill={`url(#${gid})`} dot={false} isAnimationActive={false} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
-      ) : <div style={{ height: 52 }} />}
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, ...ui, color: T.muted }}>
-        <span>Today <span style={{ fontWeight: 700, color: c, ...mono }}>{fmtPct(item.change1d)}</span></span>
-        <span>YTD <span style={{ fontWeight: 700, color: pctCol(item.changeYtd), ...mono }}>{fmtPct(item.changeYtd)}</span></span>
+      ) : <div style={{ height: 54 }} />}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 11.5, ...ui, color: T.muted }}>
+        <span>Today</span>
+        <span style={{ fontWeight: 700, color: c, ...mono }}>{absChange == null ? "—" : (absChange >= 0 ? "+" : "") + absChange.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>
       </div>
     </Card>
   );
@@ -115,9 +118,11 @@ function WatchTable({ funds, onAnalyze }: { funds: DeskFund[]; onAnalyze?: (t: s
   return (
     <table style={{ borderCollapse: "collapse", width: "100%" }}>
       <thead><tr>
-        {["Ticker", "Category", "1D", "YTD"].map((h, i) => (
-          <th key={h} style={{ ...smallCap, textAlign: i < 2 ? "left" : "right", padding: "0 0 8px" }}>{h}</th>
-        ))}
+        <th style={{ ...smallCap, textAlign: "left", padding: "0 0 8px" }}>Ticker</th>
+        <th style={{ ...smallCap, textAlign: "left", padding: "0 0 8px" }}>Category</th>
+        <th style={{ ...smallCap, textAlign: "right", padding: "0 0 8px" }}>Score</th>
+        <th style={{ ...smallCap, textAlign: "right", padding: "0 0 8px" }}>1D</th>
+        <th style={{ ...smallCap, textAlign: "right", padding: "0 0 8px" }}>YTD</th>
         <th style={{ ...smallCap, textAlign: "center", padding: "0 0 8px" }}>Alert</th>
       </tr></thead>
       <tbody>
@@ -126,7 +131,8 @@ function WatchTable({ funds, onAnalyze }: { funds: DeskFund[]; onAnalyze?: (t: s
             <td style={{ padding: "9px 0" }}>
               <button onClick={() => onAnalyze?.(f.ticker)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", ...mono, fontSize: 12.5, fontWeight: 700, color: T.blue }}>{f.ticker}</button>
             </td>
-            <td style={{ padding: "9px 8px 9px 0", fontSize: 11.5, color: T.dim, ...ui, maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.category ?? "—"}</td>
+            <td style={{ padding: "9px 8px 9px 0", fontSize: 11.5, color: T.dim, ...ui, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.category ?? "—"}</td>
+            <td style={{ padding: "9px 0", textAlign: "right", fontSize: 12, fontWeight: 700, color: T.muted, ...mono }} title="Open the fund to see its Advisor Review Score">—</td>
             <td style={{ padding: "9px 0", textAlign: "right", fontSize: 12, fontWeight: 600, color: pctCol(f.quote?.change1d), ...mono }}>{fmtPct(f.quote?.change1d)}</td>
             <td style={{ padding: "9px 0", textAlign: "right", fontSize: 12, fontWeight: 600, color: pctCol(f.quote?.changeYtd), ...mono }}>{fmtPct(f.quote?.changeYtd)}</td>
             <td style={{ padding: "9px 0", textAlign: "center" }}>
@@ -142,34 +148,95 @@ function Empty({ text }: { text: string }) {
   return <div style={{ fontSize: 12.5, color: T.muted, ...ui, padding: "14px 0", lineHeight: 1.6 }}>{text}</div>;
 }
 
+// ── Isometric 3D-style hub illustrations (decorative SVG) ────────────────────
+function IsoPlatform({ c }: { c: string }) {
+  return (
+    <>
+      <ellipse cx="60" cy="92" rx="52" ry="15" fill={c} opacity="0.08" />
+      <path d="M60 66 L108 90 L60 114 L12 90 Z" fill={c} opacity="0.10" />
+      <path d="M60 62 L108 86 L60 110 L12 86 Z" fill={c} opacity="0.16" />
+    </>
+  );
+}
+function isoBar(x: number, topY: number, c: string) {
+  const w = 13, baseY = 86, d = 6.5;
+  const front = `M${x} ${topY} L${x + w} ${topY + d / 2} L${x + w} ${baseY + d / 2} L${x} ${baseY} Z`;
+  const side = `M${x} ${topY} L${x - d} ${topY - d / 2} L${x - d} ${baseY - d / 2} L${x} ${baseY} Z`;
+  const top = `M${x} ${topY} L${x - d} ${topY - d / 2} L${x + w - d} ${topY} L${x + w} ${topY + d / 2} Z`;
+  return (<g key={x}><path d={side} fill={c} opacity="0.55" /><path d={front} fill={c} /><path d={top} fill={c} opacity="0.8" /></g>);
+}
+const IlloResearch = ({ c }: { c: string }) => (
+  <svg width="120" height="118" viewBox="0 0 120 120" aria-hidden>
+    <IsoPlatform c={c} />
+    {isoBar(34, 66, c)}{isoBar(52, 52, c)}{isoBar(70, 40, c)}{isoBar(88, 58, c)}
+    <circle cx="30" cy="34" r="12" fill="none" stroke={c} strokeWidth="3" opacity="0.9" />
+    <line x1="38" y1="42" x2="46" y2="50" stroke={c} strokeWidth="3" strokeLinecap="round" opacity="0.9" />
+  </svg>
+);
+const IlloPortfolio = ({ c }: { c: string }) => (
+  <svg width="120" height="118" viewBox="0 0 120 120" aria-hidden>
+    <IsoPlatform c={c} />
+    <ellipse cx="60" cy="56" rx="30" ry="18" fill={c} opacity="0.85" />
+    <ellipse cx="60" cy="50" rx="30" ry="18" fill={c} />
+    <path d="M60 50 L60 32 A18 30 0 0 1 86 46 Z" fill="#fff" opacity="0.45" />
+    <ellipse cx="60" cy="50" rx="12" ry="7" fill={T.panel} />
+    <rect x="20" y="70" width="26" height="4" rx="2" fill={c} opacity="0.5" />
+    <rect x="20" y="78" width="18" height="4" rx="2" fill={c} opacity="0.35" />
+  </svg>
+);
+const IlloModel = ({ c }: { c: string }) => (
+  <svg width="120" height="118" viewBox="0 0 120 120" aria-hidden>
+    <IsoPlatform c={c} />
+    <path d="M22 78 L44 60 L62 68 L96 34" fill="none" stroke={c} strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M22 78 L44 60 L62 68 L96 34 L96 84 L22 84 Z" fill={c} opacity="0.12" />
+    {[[22, 78], [44, 60], [62, 68], [96, 34]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r="3.4" fill={c} />)}
+  </svg>
+);
+const IlloTools = ({ c }: { c: string }) => (
+  <svg width="120" height="118" viewBox="0 0 120 120" aria-hidden>
+    <IsoPlatform c={c} />
+    {isoBar(30, 60, c)}{isoBar(48, 46, c)}
+    <ellipse cx="82" cy="54" rx="20" ry="12" fill={c} opacity="0.85" />
+    <ellipse cx="82" cy="49" rx="20" ry="12" fill={c} />
+    <ellipse cx="82" cy="49" rx="8" ry="5" fill={T.panel} />
+    <path d="M82 49 L82 37 A12 20 0 0 1 99 46 Z" fill="#fff" opacity="0.4" />
+  </svg>
+);
+
+// ── Small link icon ───────────────────────────────────────────────────────────
+function LinkDot({ c }: { c: string }) {
+  return <span style={{ width: 5, height: 5, borderRadius: "50%", background: c, opacity: 0.75, flexShrink: 0 }} />;
+}
+
 // ── Workspace hub card ────────────────────────────────────────────────────────
-function Hub({ title, purpose, accent, items, cta, onCta, go }: {
+function Hub({ title, purpose, accent, items, cta, onCta, go, illo }: {
   title: string; purpose: string; accent: string; cta: string; onCta: () => void;
   items: { label: string; tab?: DashTab; disabled?: boolean }[]; go: (t: DashTab) => void;
+  illo: React.ReactNode;
 }) {
   return (
-    <Card hover style={{ ...cardPad, display: "flex", flexDirection: "column", gap: 12, height: "100%" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ width: 34, height: 34, borderRadius: 10, background: `${accent}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <span style={{ width: 12, height: 12, borderRadius: 4, background: accent }} />
+    <Card hover style={{ ...cardPad, display: "flex", flexDirection: "column", height: "100%" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+        <span style={{ width: 30, height: 30, borderRadius: 9, background: `${accent}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span style={{ width: 11, height: 11, borderRadius: 3, background: accent }} />
         </span>
-        <div>
-          <div style={{ fontSize: 14.5, fontWeight: 700, color: T.text, ...ui }}>{title}</div>
-          <div style={{ fontSize: 11.5, color: T.dim, ...ui }}>{purpose}</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: T.text, ...ui }}>{title}</div>
+      </div>
+      <div style={{ fontSize: 11.5, color: T.dim, ...ui, marginBottom: 8 }}>{purpose}</div>
+      <div style={{ display: "flex", gap: 6, flex: 1, alignItems: "flex-start" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 1, flex: 1, minWidth: 0 }}>
+          {items.map((it) => (
+            <button key={it.label} disabled={it.disabled || !it.tab} onClick={() => it.tab && go(it.tab)}
+              style={{ textAlign: "left", background: "none", border: "none", padding: "3.5px 0", ...ui, fontSize: 12,
+                color: it.disabled || !it.tab ? T.muted : T.dim, cursor: it.disabled || !it.tab ? "default" : "pointer",
+                display: "flex", alignItems: "center", gap: 7, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <LinkDot c={accent} />{it.label}{it.disabled ? <span style={{ fontSize: 9, color: T.muted }}> soon</span> : null}
+            </button>
+          ))}
         </div>
+        <div style={{ flexShrink: 0, marginTop: -4, opacity: 0.95 }}>{illo}</div>
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
-        {items.map((it) => (
-          <button key={it.label} disabled={it.disabled || !it.tab}
-            onClick={() => it.tab && go(it.tab)}
-            style={{ textAlign: "left", background: "none", border: "none", padding: "5px 0", ...ui, fontSize: 12.5,
-              color: it.disabled || !it.tab ? T.muted : T.dim, cursor: it.disabled || !it.tab ? "default" : "pointer",
-              display: "flex", alignItems: "center", gap: 7 }}>
-            <span style={{ color: accent, fontSize: 11 }}>›</span>{it.label}{it.disabled ? <span style={{ fontSize: 9.5, color: T.muted }}> (soon)</span> : null}
-          </button>
-        ))}
-      </div>
-      <button onClick={onCta} style={{ marginTop: 4, padding: "10px 0", borderRadius: 10, border: "none",
+      <button onClick={onCta} style={{ marginTop: 12, alignSelf: "flex-start", padding: "9px 18px", borderRadius: 10, border: "none",
         background: accent, color: "#fff", fontSize: 12.5, fontWeight: 700, cursor: "pointer", ...ui }}>{cta}</button>
     </Card>
   );
@@ -354,15 +421,32 @@ export default function DashboardTab({ onNavigate, userEmail, onAnalyze }: {
         {/* ── Workspace hubs ── */}
         <Reveal delay={90}>
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : isNarrow ? "1fr 1fr" : "repeat(4, 1fr)", gap: 18 }}>
-            <Hub title="Research" purpose="Find, analyze & compare." accent="#2563EB" cta="Enter Research" onCta={() => go("research")} go={go}
-              items={[{ label: "Advanced Search", tab: "find" }, { label: "Screener & Filters", tab: "find" }, { label: "Fund Comparison", tab: "comparison" }, { label: "Analyze a Fund", tab: "analysis" }, { label: "Recently Viewed", tab: "research" }]} />
-            <Hub title="Portfolio" purpose="Build & review portfolios." accent="#16A34A" cta="Enter Portfolio" onCta={() => go("portfolio")} go={go}
-              items={[{ label: "My Portfolios", tab: "portfolio" }, { label: "Allocation Review", tab: "portfolio" }, { label: "Performance", tab: "portfolio" }, { label: "Rebalancing", tab: "portfolio" }, { label: "Risk Analysis", tab: "murderboard" }]} />
-            <Hub title="Model" purpose="Test future outcomes." accent="#7C3AED" cta="Enter Model" onCta={() => go("model")} go={go}
-              items={[{ label: "Goal Planning", tab: "model-project" }, { label: "Projections", tab: "model-project" }, { label: "Scenario Analysis", tab: "model-scenarios" }, { label: "Fund vs Benchmark", tab: "model-fund" }, { label: "Monte Carlo", disabled: true }]} />
-            <Hub title="Advisor Toolkit" purpose="Planning tools & analytics." accent="#D97706" cta="Enter Toolkit" onCta={() => go("tax")} go={go}
-              items={[{ label: "Tax Efficiency", tab: "tax" }, { label: "Correlation", tab: "correlation" }, { label: "Peer Rankings", tab: "peers" }, { label: "Backtest", tab: "backtest" }, { label: "Saved Lists", tab: "lists" }, { label: "Add Missing Fund", tab: "expansion" }, { label: "Alerts", tab: "alerts" }, { label: "AI Assistant", tab: "assistant" }]} />
+            <Hub title="Research Hub" purpose="Find, analyze, and compare funds." accent="#2563EB" cta="Go to Research" onCta={() => go("research")} go={go} illo={<IlloResearch c="#2563EB" />}
+              items={[{ label: "Advanced Search", tab: "find" }, { label: "Screeners", tab: "find" }, { label: "Categories", tab: "research" }, { label: "Fund Comparison", tab: "comparison" }, { label: "Recently Viewed", tab: "research" }]} />
+            <Hub title="Portfolio Hub" purpose="Build, analyze, and manage portfolios." accent="#16A34A" cta="Go to Portfolio" onCta={() => go("portfolio")} go={go} illo={<IlloPortfolio c="#16A34A" />}
+              items={[{ label: "My Portfolios", tab: "portfolio" }, { label: "Allocation Review", tab: "portfolio" }, { label: "Rebalancing", tab: "portfolio" }, { label: "Performance & Attribution", tab: "portfolio" }, { label: "Risk Analysis", tab: "murderboard" }]} />
+            <Hub title="Model Hub" purpose="Run models and explore projections." accent="#7C3AED" cta="Go to Model" onCta={() => go("model")} go={go} illo={<IlloModel c="#7C3AED" />}
+              items={[{ label: "Model Portfolios", tab: "model" }, { label: "Goal Planning", tab: "model-project" }, { label: "Scenario Analysis", tab: "model-scenarios" }, { label: "Projections", tab: "model-project" }, { label: "Monte Carlo", disabled: true }]} />
+            <Hub title="Planning & Tools Hub" purpose="Client planning, tools, and analytics." accent="#D97706" cta="Go to Tools" onCta={() => go("tax")} go={go} illo={<IlloTools c="#D97706" />}
+              items={[{ label: "Retirement Planner", disabled: true }, { label: "Tax Efficiency Analyzer", tab: "tax" }, { label: "Income Planning", disabled: true }, { label: "Estate Planning Tools", disabled: true }, { label: "Client Reports", disabled: true }, { label: "Custom Calculators", disabled: true }, { label: "RMD & Distribution Planner", disabled: true }, { label: "Social Security Optimizer", disabled: true }]} />
           </div>
+        </Reveal>
+
+        {/* ── Pro Tip bar ── */}
+        <Reveal delay={110}>
+          <Card style={{ padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between",
+            gap: 14, flexWrap: "wrap", background: "linear-gradient(90deg, rgba(217,119,6,0.06), rgba(37,99,235,0.04))" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+              <span style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(217,119,6,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <span style={{ fontSize: 15 }}>💡</span>
+              </span>
+              <span style={{ fontSize: 12.5, color: T.text, ...ui }}>
+                <span style={{ fontWeight: 700, color: "#B45309" }}>Pro Tip</span>&nbsp;&nbsp;Run a Tax Efficiency Analyzer on high-basis holdings to uncover potential tax savings.
+              </span>
+            </div>
+            <button onClick={() => go("tax")} style={{ padding: "8px 16px", borderRadius: 9, border: `1px solid ${T.line2}`,
+              background: T.panel, color: T.text, fontSize: 12, fontWeight: 600, cursor: "pointer", ...ui, whiteSpace: "nowrap" }}>Try it now →</button>
+          </Card>
         </Reveal>
       </div>
     </div>

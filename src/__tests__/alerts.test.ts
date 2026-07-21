@@ -133,9 +133,11 @@ describe("Advisor Hub + top-right wiring", () => {
     expect(d).toContain("Daily Desk");
     expect(d).toContain("My Updates & Alerts");
     expect(d).toContain("/api/advisor-overview");
-    // four workspace hubs incl. the Advisor Toolkit that absorbs the extra tools
-    for (const cta of ["Enter Research", "Enter Portfolio", "Enter Model", "Enter Toolkit"]) expect(d).toContain(cta);
-    for (const tool of ["Tax Efficiency", "Correlation", "Peer Rankings", "Add Missing Fund", "AI Assistant"]) expect(d).toContain(tool);
+    // four workspace hubs matching the mockup
+    for (const hub of ["Research Hub", "Portfolio Hub", "Model Hub", "Planning & Tools Hub"]) expect(d).toContain(hub);
+    for (const cta of ["Go to Research", "Go to Portfolio", "Go to Model", "Go to Tools"]) expect(d).toContain(cta);
+    expect(d).toContain("Tax Efficiency Analyzer");
+    expect(d).toContain("Pro Tip");
     // removed from this page (APIs remain, cards gone)
     expect(d).not.toContain("Market Pulse");
   });
