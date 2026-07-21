@@ -4,9 +4,10 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getRecommendFund, getBenchmarkHistory, BENCHMARKS, inferVehicle } from "@/lib/funds";
-import { computePercentiles, compositeScore } from "@/lib/kpi";
+import { computePercentiles } from "@/lib/kpi";
+import { rankRecords, REPLACE_REASON_CONTEXT } from "@/lib/metrics/recordScore";
 import { cacheGet } from "@/lib/cache";
-import { UNIVERSE } from "@/lib/universe";
+import { getMergedUniverse } from "@/lib/universeServer";
 
 const REASON_PRIORITIES: Record<string, string[]> = {
   cost:      ["Low cost"],
@@ -25,8 +26,11 @@ export async function POST(req: NextRequest) {
 
   if (!currentTicker) return NextResponse.json({ error: "currentTicker required" }, { status: 400 });
 
-  // Warm benchmarks
-  await Promise.allSettled(BENCHMARKS.map(b => getBenchmarkHistory(b)));
+  // Warm benchmarks + load the merged universe (static base + verified dynamic).
+  const [UNIVERSE] = await Promise.all([
+    getMergedUniverse(),
+    Promise.allSettled(BENCHMARKS.map(b => getBenchmarkHistory(b))),
+  ]);
 
   // Fetch current fund
   const entry = UNIVERSE.find(u => u.ticker.toUpperCase() === currentTicker.toUpperCase());
@@ -84,18 +88,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not enough data to compare alternatives. Try again in a moment." }, { status: 400 });
   }
 
-  // Score all (including current for context)
+  // Score all (including current) with the unified Advisor Review Score
+  // engine — context chosen by the replacement reason.
   const allFunds = [currentFund, ...records];
   const pcts = computePercentiles(allFunds.map(r => ({ kpi: r.kpi, expenseRatio: r.expenseRatio ?? 1 })));
   const priorities = REASON_PRIORITIES[reason] ?? REASON_PRIORITIES.overall;
+  const context = REPLACE_REASON_CONTEXT[reason] ?? "overall";
+  const ranked = rankRecords(allFunds, context, "3Y");
+  const scoreOf = new Map(ranked.map((r) => [r.item.ticker, r.score]));
 
   const scored = allFunds.map((r, i) => ({
     ...r,
     percentiles: pcts[i],
-    compositeScore: compositeScore(pcts[i], priorities),
+    advisorScore: scoreOf.get(r.ticker) ?? null,
   }));
 
-  scored.sort((a, b) => b.compositeScore - a.compositeScore);
+  scored.sort((a, b) => (b.advisorScore ?? -1) - (a.advisorScore ?? -1));
 
   const currentScored = scored.find(f => f.ticker.toUpperCase() === currentTicker.toUpperCase())!;
   const alternatives = scored.filter(f => f.ticker.toUpperCase() !== currentTicker.toUpperCase()).slice(0, 6);

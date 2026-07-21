@@ -294,7 +294,7 @@ export default function TopNav(props: TopNavProps) {
                   background: "transparent", color: DIM, fontSize: 13.5, fontWeight: 500, ...ui, transition: "color 0.15s" }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = TXT)}
                 onMouseLeave={(e) => (e.currentTarget.style.color = DIM)}>
-                About
+                About ALCA
               </button>
             </div>
           )}

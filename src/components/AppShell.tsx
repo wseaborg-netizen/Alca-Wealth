@@ -45,7 +45,7 @@ const ROADMAP: RoadmapSpec[] = [
 ];
 
 // ── Nav model ───────────────────────────────────────────────────────────────────
-type TabId = "home" | "dashboard" | "research" | "workspace" | "ideas" | "analysis" | "comparison"
+export type TabId = "home" | "dashboard" | "research" | "workspace" | "ideas" | "analysis" | "comparison"
   | "portfolio" | "murderboard" | "watchlist" | "lists" | "model" | "backtest" | "correlation" | "peers" | "alerts" | "tax" | "assistant" | "expansion";
 
 // Which top-nav item "owns" each tab (drives the active dot in TopNav).
@@ -66,12 +66,13 @@ interface AppShellProps {
   authMode?: "full" | "preview" | "none" | null;
   authUser?: string | null;
   authWorkspace?: string | null;
+  initialTab?: TabId;   // server-resolved landing tab (dashboard when signed in)
   onLogout?: () => void;
 }
 
-export default function AppShell({ authMode, authUser, authWorkspace, onLogout }: AppShellProps = {}) {
-  const [tab, setTab]   = useState<TabId>("home");
-  const [mounted, setMounted] = useState<Set<TabId>>(new Set<TabId>(["home", "dashboard"]));
+export default function AppShell({ authMode, authUser, authWorkspace, initialTab, onLogout }: AppShellProps = {}) {
+  const [tab, setTab]   = useState<TabId>(initialTab ?? "home");
+  const [mounted, setMounted] = useState<Set<TabId>>(new Set<TabId>(["home", "dashboard", ...(initialTab ? [initialTab] : [])]));
 
   // Profile display name for the top-right (name, not email-based workspace).
   const [accountName, setAccountName] = useState<string | null>(null);

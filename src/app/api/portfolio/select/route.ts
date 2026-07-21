@@ -1,30 +1,18 @@
 /**
- * Data-driven fund selection for the Portfolio Builder.
- *
- * For each target sleeve (asset-class bucket) we screen the universe within that
- * category, score every candidate on the same multi-factor engine the Screen tab
- * uses (cost, risk-adjusted return, downside protection, alpha, consistency,
- * yield) - weighted by the client's goal - and return the single best fund plus
- * a plain-English reason. A curated seed fund is always in the pool, and if live
- * metrics are unavailable we fall back to the lowest-cost fund in the category,
- * then to the seed, so a portfolio is always produced.
+ * Fund selection for the Portfolio Builder — powered by the unified Advisor
+ * Review Score engine (the same one behind Analysis, the Screener, and
+ * Similar Funds). Each sleeve maps to a scoring CONTEXT (core → Low Cost /
+ * Core Index, growth → Growth, bonds → Downside Protection or Income by
+ * goal), candidates are scored peer-relative within the sleeve's category
+ * pool, and the pick carries an advisor-safe reason. A curated seed fund is
+ * always in the pool; when live metrics are unavailable the route falls back
+ * honestly (reason states it) — scores are never invented.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getFund, getBenchmarkHistory, BENCHMARKS } from "@/lib/funds";
-import { computePercentiles, compositeScore } from "@/lib/kpi";
-import { UNIVERSE } from "@/lib/universe";
-
-// Goal -> which factors the score should weight (keys map into PRIORITY_MAP).
-const GOAL_PRIORITIES: Record<string, string[]> = {
-  income:   ["Income / yield", "Downside protection", "Low cost"],
-  balanced: ["Risk-adjusted return (Sharpe)", "Low cost", "Downside protection"],
-  growth:   ["Risk-adjusted return (Sharpe)", "Alpha vs benchmark", "Low cost"],
-};
-
-const FACTOR_PHRASE: Record<string, string> = {
-  cost: "low cost", riskAdj: "strong risk-adjusted return", downside: "downside protection",
-  alpha: "alpha vs benchmark", consistency: "consistency", yield: "income",
-};
+import { getMergedUniverse } from "@/lib/universeServer";
+import { rankRecords, sleeveContext } from "@/lib/metrics/recordScore";
+import { CONTEXT_LABELS } from "@/lib/metrics/score";
 
 const CANDIDATES_PER_SLEEVE = 8;
 
@@ -35,13 +23,15 @@ export async function POST(req: NextRequest) {
   if (!Array.isArray(sleeves) || sleeves.length === 0) {
     return NextResponse.json({ error: "sleeves required" }, { status: 400 });
   }
-  const priorities = GOAL_PRIORITIES[goal ?? "balanced"] ?? GOAL_PRIORITIES.balanced;
 
-  await Promise.allSettled(BENCHMARKS.map((b) => getBenchmarkHistory(b)));
+  const [UNIVERSE] = await Promise.all([
+    getMergedUniverse(),
+    Promise.allSettled(BENCHMARKS.map((b) => getBenchmarkHistory(b))),
+  ]);
 
   const picks: Record<string, {
     ticker: string; name: string; vehicle: string; expenseRatio: number | null;
-    reason: string; score: number | null; poolSize: number;
+    reason: string; score: number | null; poolSize: number; context: string;
   }> = {};
 
   await Promise.all(sleeves.map(async (s) => {
@@ -73,25 +63,32 @@ export async function POST(req: NextRequest) {
     if (records.length === 0) {
       const fb = seedEntry ?? candidates[0];
       if (fb) picks[s.key] = { ticker: fb.ticker, name: fb.name, vehicle: fb.vehicle,
-        expenseRatio: null, reason: "Curated core fund (live metrics unavailable).", score: null, poolSize: 0 };
+        expenseRatio: null, reason: "Curated core fund (live metrics unavailable).",
+        score: null, poolSize: 0, context: sleeveContext(s.category, goal) };
       return;
     }
 
-    // Score the pool
-    const pcts = computePercentiles(records.map((r) => ({ kpi: r.kpi, expenseRatio: r.expenseRatio ?? 1 })));
-    const scored = records.map((r, i) => ({ r, p: pcts[i], score: compositeScore(pcts[i], priorities) }));
-    scored.sort((a, b) => b.score - a.score);
-    const win = scored[0];
+    // Score the pool with the unified engine, context chosen by sleeve type.
+    const context = sleeveContext(s.category, goal);
+    const ranked = rankRecords(records, context, "3Y");
+    const win = ranked[0];
+    if (!win || win.score == null) {
+      // Not enough peer data to score — fall back to the cheapest candidate,
+      // and say so instead of inventing a score.
+      const cheapest = [...records].sort((a, b) => (a.expenseRatio ?? 99) - (b.expenseRatio ?? 99))[0];
+      picks[s.key] = { ticker: cheapest.ticker, name: cheapest.name, vehicle: cheapest.vehicle,
+        expenseRatio: cheapest.expenseRatio,
+        reason: `Lowest-cost ${s.category} candidate (insufficient peer data to score this sleeve).`,
+        score: null, poolSize: records.length, context };
+      return;
+    }
 
-    // Build reason from the winner's two strongest factors
-    const topFactors = (Object.entries(win.p) as [string, number][])
-      .sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k]) => FACTOR_PHRASE[k] ?? k);
-    const erPct = win.r.expenseRatio != null ? ` (${win.r.expenseRatio.toFixed(2)}% expense)` : "";
-    const reason = `Best fit among ${records.length} ${s.category} funds - ${topFactors[0]} and ${topFactors[1]}${erPct}.`;
+    const erPct = win.item.expenseRatio != null ? ` (${win.item.expenseRatio.toFixed(2)}% expense)` : "";
+    const reason = `Fits the sleeve — strongest peer-relative score for ${CONTEXT_LABELS[context]} among ${records.length} ${s.category} funds${erPct}. ${win.reason ?? ""}`.trim();
 
     picks[s.key] = {
-      ticker: win.r.ticker, name: win.r.name, vehicle: win.r.vehicle,
-      expenseRatio: win.r.expenseRatio, reason, score: win.score, poolSize: records.length,
+      ticker: win.item.ticker, name: win.item.name, vehicle: win.item.vehicle,
+      expenseRatio: win.item.expenseRatio, reason, score: win.score, poolSize: records.length, context,
     };
   }));
 

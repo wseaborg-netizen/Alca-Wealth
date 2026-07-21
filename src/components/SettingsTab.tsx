@@ -278,12 +278,16 @@ export default function SettingsDrawer({ open, onClose, theme, setTheme, environ
   environment?: "full" | "preview" | "none" | null;
 }) {
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
+  const [mergedCount, setMergedCount] = useState<number | null>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setPrefs(loadPrefs());
+    // Live merged universe count (static base + verified dynamic funds).
+    fetch("/api/universe/count", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (typeof d?.merged === "number" && d.merged > 0) setMergedCount(d.merged); }).catch(() => {});
     returnFocus.current = document.activeElement as HTMLElement | null;
     closeRef.current?.focus();
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -389,7 +393,7 @@ export default function SettingsDrawer({ open, onClose, theme, setTheme, environ
           <section aria-label="Data and methodology">
             <SectionLabel>Data &amp; Methodology</SectionLabel>
             <Row label="Fund universe" sub="Verified, classified funds available to screen, compare, and analyze.">
-              <span style={{ fontSize: 14, fontWeight: 700, color: T.data, ...mono }}>{UNIVERSE_COUNT.toLocaleString()}</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: T.data, ...mono }}>{(mergedCount ?? UNIVERSE_COUNT).toLocaleString()}</span>
             </Row>
             <Row label="Data coverage"
               sub="Fund profiles, market quotes, historical prices & dividends, expenses, risk metrics, classifications, and benchmark comparisons." />

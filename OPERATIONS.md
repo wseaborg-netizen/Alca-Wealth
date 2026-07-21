@@ -1155,3 +1155,44 @@ filtered result set.
 - **System Health** gains a **SEC Monitoring** card: red only when
   `SEC_USER_AGENT` is missing; unresolved CIKs and "no alerts / no refresh yet"
   are informational, never errors.
+
+## App architecture — public site vs. workspace + live fund universe
+
+**Auth-aware root routing.** `src/app/page.tsx` is a **server component** that
+detects the session before render (`getServerAuthMode` pattern via the Supabase
+cookie + `lynx_preview`): anonymous → the public homepage; signed-in →
+**Advisor Overview immediately** (no marketing flash, no extra click). It passes
+`resolveInitialTab(authMode)` (`src/lib/authView.ts`) into `RootClient` →
+`AppShell` (`initialTab` prop). Public marketing pages (`/about`, `/security`,
+`/contact`, shared `MarketingPage`) detect auth server-side and swap **Sign in →
+Return to Workspace** (→ `/`, still signed in). The workspace nav's **About ALCA**
+opens the public homepage without signing out.
+
+**Canonical merged fund universe — single source of truth.**
+- **Server:** `src/lib/universeServer.ts` (`getMergedUniverse`, `getUniverseCounts`,
+  `findMergedFund`) = static generated universe (`src/lib/universe.ts`) + **verified**
+  dynamic funds (`dynamic_funds`, `verified=true` only, deduped — static record
+  wins on a duplicate ticker; fails safe to static if Supabase is unavailable).
+  Used by `/api/universe`, `/api/universe/count`, `/api/screen`,
+  `/api/funds/[ticker]` (static-first + merged fallback), `/api/recommend`,
+  `/api/recommend/from-fund`, `/api/replace`, `/api/portfolio/select`,
+  `/api/compare`, and the Advisor-Overview + System-Health counts.
+- **Client:** `src/lib/universeClient.ts` (`useMergedUniverse`) renders the static
+  base instantly (no flash) then overlays `/api/universe` (server-merged), shared
+  across all consumers via a module cache, revalidated when stale (30s) or via
+  `refreshMergedUniverse()`. Used by Research → Screen Funds (count + style-box
+  cell counts + box totals), the hub fund search, the model ticker typeaheads,
+  and the projection holdings validator. `ExpansionTab` calls
+  `refreshMergedUniverse()` after a fund reaches `added_to_universe`.
+- **Cache/revalidation:** `/api/universe*` are `no-store` (always live); nothing
+  writes repo JSON at runtime; dynamic funds stay in Supabase. **When users see a
+  newly verified fund:** immediately in the same session (Expansion invalidates
+  the shared cache), and on any later Screen-Funds mount / after 30s staleness
+  elsewhere — no redeploy or hard refresh required.
+- **Previous stale cause:** client components imported the *static* `UNIVERSE`
+  directly for counts/search, so they were frozen at build time even though the
+  server already merged dynamic funds. Fixed by routing every client universe
+  read through `useMergedUniverse`.
+- **Known limitation:** `equityShare` (model handoff) still resolves via the
+  static `findFund`; a brand-new dynamic fund inside a handoff portfolio is
+  skipped from that rough equity-share estimate until folded into the static base.

@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getFund, getRecommendFund, getBenchmarkHistory, BENCHMARKS, inferVehicle, type FundRecord } from "@/lib/funds";
 import { computePercentiles } from "@/lib/kpi";
 import { cacheGet } from "@/lib/cache";
-import { UNIVERSE, type UniverseFund } from "@/lib/universe";
+import { getMergedUniverse } from "@/lib/universeServer";
+import { type UniverseFund } from "@/lib/universe";
 
 const MAX_FUNDS = 6;
 const MAX_COLD_PEERS = 16; // budget for cold peer fetches across all categories
@@ -16,8 +17,11 @@ export async function POST(req: NextRequest) {
 
   const limited = tickers.slice(0, MAX_FUNDS).map((t) => t.toUpperCase());
 
-  // Pre-warm benchmark caches
-  await Promise.allSettled(BENCHMARKS.map((b) => getBenchmarkHistory(b)));
+  // Pre-warm benchmark caches + load the merged universe (base + verified dynamic)
+  const [UNIVERSE] = await Promise.all([
+    getMergedUniverse(),
+    Promise.allSettled(BENCHMARKS.map((b) => getBenchmarkHistory(b))),
+  ]);
 
   // Fetch the compared funds (full 5y data)
   const records = await Promise.all(

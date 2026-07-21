@@ -11,6 +11,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { T, ui, mono } from "./tokens";
 import { Btn, Card, Label, Spinner } from "./ui";
 import { SaveToList } from "./SaveToList";
+import { refreshMergedUniverse } from "@/lib/universeClient";
 
 type ReqStatus =
   | "pending" | "already_available" | "fmp_supported" | "needs_classification" | "ready_for_review"
@@ -102,6 +103,9 @@ export default function ExpansionTab({ onAnalyze }: { onAnalyze?: (t: string) =>
         reason: d.request?.failure_reason ?? null, duplicate: d.duplicate,
       });
       setTicker("");
+      // A newly verified fund joined the universe → invalidate the shared client
+      // cache so Research/Screen/model pick it up without a redeploy or refresh.
+      if (d.status === "added_to_universe") void refreshMergedUniverse();
       await loadAll();
     } catch {
       setResult({ status: "pending", ticker: t.toUpperCase(), fundName: null, category: null, reason: "Could not reach the server. Try again." });

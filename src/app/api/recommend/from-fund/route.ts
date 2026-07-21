@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getRecommendFund, getBenchmarkHistory, BENCHMARKS, inferVehicle } from "@/lib/funds";
 import { computePercentiles } from "@/lib/kpi";
 import { cacheGet } from "@/lib/cache";
-import { UNIVERSE } from "@/lib/universe";
+import { getMergedUniverse } from "@/lib/universeServer";
 
 export async function POST(req: NextRequest) {
   const { currentTicker, amount } = (await req.json()) as { currentTicker: string; amount?: number };
@@ -16,8 +16,11 @@ export async function POST(req: NextRequest) {
 
   const investAmount = typeof amount === "number" && amount > 0 ? amount : 100000;
 
-  // Warm benchmarks
-  await Promise.allSettled(BENCHMARKS.map((b) => getBenchmarkHistory(b)));
+  // Warm benchmarks + load the merged universe (static base + verified dynamic).
+  const [UNIVERSE] = await Promise.all([
+    getMergedUniverse(),
+    Promise.allSettled(BENCHMARKS.map((b) => getBenchmarkHistory(b))),
+  ]);
 
   // Resolve current fund
   const entry = UNIVERSE.find((u) => u.ticker.toUpperCase() === currentTicker.toUpperCase());

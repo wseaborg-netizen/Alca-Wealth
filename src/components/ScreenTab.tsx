@@ -1,13 +1,15 @@
 "use client";
 import React, { useState, useMemo } from "react";
+import { useMergedUniverse } from "@/lib/universeClient";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine, Legend,
 } from "recharts";
 import { T, mono, chartTooltip } from "./tokens";
+import { displayScore } from "../lib/metrics/score";
+import { SaveToList } from "./SaveToList";
 import { Btn, Label, Select, Spinner, ErrBanner, KPI, PriorityChip, SectionHeader, Card, RankBadge, ScoreBadge, PercentileBar } from "./ui";
 import { ui } from "./tokens";
-import { UNIVERSE } from "@/lib/universe";
 
 const ASSET = ["Any", "US Equity", "International Equity", "Fixed Income", "Allocation / Balanced", "Sector / Thematic", "Alternatives"];
 const VEHICLE = ["Either", "Mutual Fund", "ETF"];
@@ -93,20 +95,19 @@ const FI_CELLS: Record<string, string[]> = {
   "Low|Long":      ["High Yield Bond"],
 };
 
-// Category counts from the live universe (for cell labels + disabling empties)
-const CAT_COUNTS: Record<string, number> = {};
-UNIVERSE.forEach((f) => {
-  const k = f.category.toLowerCase();
-  CAT_COUNTS[k] = (CAT_COUNTS[k] ?? 0) + 1;
-});
-function cellCount(cats: string[]): number {
-  const seen = new Set<string>();
-  let n = 0;
-  for (const c of cats) {
-    const k = c.toLowerCase();
-    if (!seen.has(k)) { seen.add(k); n += CAT_COUNTS[k] ?? 0; }
-  }
-  return n;
+// Category counts come from the LIVE merged universe (static base + verified
+// dynamic funds) — computed in the component and passed into the style grid, so
+// cell labels + the universe count reflect newly added funds without a redeploy.
+function makeCellCount(catCounts: Record<string, number>) {
+  return (cats: string[]): number => {
+    const seen = new Set<string>();
+    let n = 0;
+    for (const c of cats) {
+      const k = c.toLowerCase();
+      if (!seen.has(k)) { seen.add(k); n += catCounts[k] ?? 0; }
+    }
+    return n;
+  };
 }
 
 // Parse equity style from a category string → { cap, style }
@@ -125,7 +126,10 @@ interface FundResult {
   expenseRatio: number | null;
   aumFormatted: string;
   fundAge: number | null;
-  compositeScore: number;
+  advisorScore: number | null;    // unified Advisor Review Score (category-relative)
+  scoreBand: string | null;
+  scoreReason: string | null;
+  scoredVsPeers: number;
   percentiles: { cost: number; riskAdj: number; downside: number; alpha: number; consistency: number; yield: number };
   kpi: {
     return1y: number | null; return3y: number | null; return5y: number | null;
@@ -142,7 +146,7 @@ interface FundResult {
 // ── Style box component ────────────────────────────────────────────────────────
 
 function StyleGrid({
-  title, accent, cols, rows, cells, selected, onToggle, xCaption, yCaption,
+  title, accent, cols, rows, cells, selected, onToggle, xCaption, yCaption, countFor,
 }: {
   title: string; accent: string;
   cols: readonly string[]; rows: readonly string[];
@@ -150,6 +154,7 @@ function StyleGrid({
   selected: Set<string>;
   onToggle: (key: string) => void;
   xCaption: string; yCaption: string;
+  countFor: (cats: string[]) => number;
 }) {
   return (
     <div style={{ flex: 1, minWidth: 0 }}>
@@ -183,7 +188,7 @@ function StyleGrid({
               {cols.map((c) => {
                 const key = `${r}|${c}`;
                 const cats = cells[key] ?? [];
-                const count = cellCount(cats);
+                const count = countFor(cats);
                 const isSel = selected.has(key);
                 const empty = count === 0;
                 return (
@@ -225,6 +230,15 @@ export default function ScreenTab({ onAddToCompare, onAnalyze, onFindSimilar }: 
   onAnalyze?: (t: string) => void;
   onFindSimilar?: (t: string) => void;
 }) {
+  // Live merged universe (static base + verified dynamic funds from Expansion).
+  const { funds: universe, count: universeCount } = useMergedUniverse();
+  const catCounts = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const f of universe) { const k = f.category.toLowerCase(); m[k] = (m[k] ?? 0) + 1; }
+    return m;
+  }, [universe]);
+  const cellCount = useMemo(() => makeCellCount(catCounts), [catCounts]);
+
   const [asset, setAsset] = useState("Any");
   const [vehicle, setVehicle] = useState("Either");
   const [erMax, setErMax] = useState("Any");
@@ -260,14 +274,14 @@ export default function ScreenTab({ onAddToCompare, onAnalyze, onFindSimilar }: 
 
   const totalBoxFunds = useMemo(() => {
     const cats = new Set(selectedCategories.map((c) => c.toLowerCase()));
-    return UNIVERSE.filter((f) => cats.has(f.category.toLowerCase())).length;
-  }, [selectedCategories]);
+    return universe.filter((f) => cats.has(f.category.toLowerCase())).length;
+  }, [selectedCategories, universe]);
 
-  // Live count for the universe indicator
+  // Live count for the universe indicator (merged base + dynamic).
   const displayCount = useMemo(() => {
-    if (eqSel.size === 0 && fiSel.size === 0) return UNIVERSE.length;
+    if (eqSel.size === 0 && fiSel.size === 0) return universeCount;
     return totalBoxFunds;
-  }, [eqSel.size, fiSel.size, totalBoxFunds]);
+  }, [eqSel.size, fiSel.size, totalBoxFunds, universeCount]);
   const hasBoxSel = eqSel.size > 0 || fiSel.size > 0;
 
   const clearBoxes = () => { setEqSel(new Set()); setFiSel(new Set()); };
@@ -317,7 +331,7 @@ export default function ScreenTab({ onAddToCompare, onAnalyze, onFindSimilar }: 
   };
 
   const top = results?.slice(0, 20) ?? [];
-  const scoreData = top.slice(0, 10).map((f) => ({ name: f.ticker, Score: f.compositeScore }));
+  const scoreData = top.slice(0, 10).map((f) => ({ name: f.ticker, Score: f.advisorScore != null ? displayScore(f.advisorScore) : 0 }));
   const captureData = top.slice(0, 10).map((f) => ({
     name: f.ticker,
     "Upside capture": f.kpi.upsideCapture3y,
@@ -361,7 +375,7 @@ export default function ScreenTab({ onAddToCompare, onAnalyze, onFindSimilar }: 
                 {displayCount.toLocaleString()}
               </span>
               <span style={{ fontSize: 11, color: T.dim, fontWeight: 500, whiteSpace: "nowrap", ...ui }}>
-                {hasBoxSel ? `/ ${UNIVERSE.length} funds` : "funds in database"}
+                {hasBoxSel ? `/ ${universeCount} funds` : "funds in database"}
               </span>
             </div>
           </div>
@@ -382,12 +396,12 @@ export default function ScreenTab({ onAddToCompare, onAnalyze, onFindSimilar }: 
             borderRadius: 8, padding: "16px 18px" }}>
             <StyleGrid title="U.S. Equity" accent={T.data}
               cols={EQUITY_COLS} rows={EQUITY_ROWS} cells={EQUITY_CELLS}
-              selected={eqSel} onToggle={toggleSet(setEqSel)}
+              selected={eqSel} onToggle={toggleSet(setEqSel)} countFor={cellCount}
               xCaption="Style" yCaption="Market cap" />
             <div style={{ width: 1, background: T.line, alignSelf: "stretch" }} />
             <StyleGrid title="Fixed Income" accent={T.cyan}
               cols={FI_COLS} rows={FI_ROWS} cells={FI_CELLS}
-              selected={fiSel} onToggle={toggleSet(setFiSel)}
+              selected={fiSel} onToggle={toggleSet(setFiSel)} countFor={cellCount}
               xCaption="Duration" yCaption="Credit quality" />
           </div>
         </div>
@@ -454,7 +468,7 @@ export default function ScreenTab({ onAddToCompare, onAnalyze, onFindSimilar }: 
               outline: "none", padding: "7px 12px", fontSize: 13, ...ui }} />
         </div>
         <div className="mb-5">
-          <Label>Scoring priorities - selected factors weight the composite score</Label>
+          <Label>Scoring priorities - sets the Advisor Review Score context (category-relative)</Label>
           <div className="flex flex-wrap gap-2 mt-2">
             {PRIORITIES.map((p) => (
               <PriorityChip key={p} label={p} active={prio.includes(p)} onClick={() => togglePrio(p)} />
@@ -479,7 +493,7 @@ export default function ScreenTab({ onAddToCompare, onAnalyze, onFindSimilar }: 
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
             <Card style={{ padding: 16 }}>
-              <Label>Composite score - top 10</Label>
+              <Label>Advisor Review Score - top 10</Label>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={scoreData} layout="vertical" margin={{ left: 4, right: 20, top: 4 }}>
                   <CartesianGrid stroke={T.line} horizontal={false} strokeDasharray="0" />
@@ -541,7 +555,13 @@ export default function ScreenTab({ onAddToCompare, onAnalyze, onFindSimilar }: 
                       </div>
                     </div>
                   </div>
-                  <ScoreBadge score={f.compositeScore} />
+                  <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <SaveToList compact ticker={f.ticker} fundName={f.name} category={f.category} />
+                    {f.advisorScore != null
+                      ? <span title={f.scoreReason ?? undefined}><ScoreBadge score={displayScore(f.advisorScore)} /></span>
+                      : <span title={f.scoreReason ?? "score unavailable"}
+                          style={{ fontSize: 11, color: T.muted, ...ui }}>—</span>}
+                  </span>
                 </div>
 
                 {f.error && (

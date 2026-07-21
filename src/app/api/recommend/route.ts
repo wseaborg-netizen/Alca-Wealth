@@ -4,9 +4,11 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getRecommendFund, getBenchmarkHistory, BENCHMARKS } from "@/lib/funds";
-import { computePercentiles, compositeScore } from "@/lib/kpi";
+import { computePercentiles } from "@/lib/kpi";
+import { rankRecords, contextFromPriorities } from "@/lib/metrics/recordScore";
 import { cacheGet } from "@/lib/cache";
-import { UNIVERSE } from "@/lib/universe";
+import { getMergedUniverse } from "@/lib/universeServer";
+import type { UniverseFund } from "@/lib/universe";
 
 export interface ClientProfile {
   riskTolerance: "conservative" | "moderate" | "aggressive";
@@ -44,8 +46,8 @@ function profileToMinYield(p: ClientProfile): number | null {
   return null;
 }
 
-function profileToCandidates(p: ClientProfile) {
-  let candidates = UNIVERSE;
+function profileToCandidates(p: ClientProfile, universe: UniverseFund[]) {
+  let candidates = universe;
 
   // Asset class filter
   if (p.assetClass && p.assetClass !== "Any") {
@@ -111,7 +113,7 @@ function buildReason(profile: ClientProfile, fundName: string, rank: number): st
 export async function POST(req: NextRequest) {
   const profile: ClientProfile = await req.json();
 
-  const candidates = profileToCandidates(profile);
+  const candidates = profileToCandidates(profile, await getMergedUniverse());
   if (!candidates.length) return NextResponse.json({ funds: [] });
 
   const priorities = profileToPriorities(profile);
@@ -149,19 +151,23 @@ export async function POST(req: NextRequest) {
 
   if (!filtered.length) return NextResponse.json({ funds: [], message: "No funds matched this profile. Try relaxing constraints." });
 
-  // Score
+  // Score with the unified Advisor Review Score engine (context from the
+  // profile-derived priorities); percentiles kept for factor-detail display.
   const pcts = computePercentiles(filtered.map(r => ({ kpi: r.kpi, expenseRatio: r.expenseRatio ?? 1 })));
+  const context = contextFromPriorities(priorities);
+  const ranked = rankRecords(filtered, context, "3Y");
+  const scoreOf = new Map(ranked.map((r) => [r.item.ticker, r.score]));
   const scored = filtered.map((r, i) => ({
     ...r,
     percentiles: pcts[i],
-    compositeScore: compositeScore(pcts[i], priorities),
+    advisorScore: scoreOf.get(r.ticker) ?? null,
   }));
-  scored.sort((a, b) => b.compositeScore - a.compositeScore);
+  scored.sort((a, b) => (b.advisorScore ?? -1) - (a.advisorScore ?? -1));
 
   const top5 = scored.slice(0, 5).map((r, i) => ({
     ...r,
     reason: buildReason(profile, r.name, i + 1),
   }));
 
-  return NextResponse.json({ funds: top5, priorities });
+  return NextResponse.json({ funds: top5, priorities, scoring: { engine: "advisor-review-score", context, period: "3Y" } });
 }
