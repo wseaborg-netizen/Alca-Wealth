@@ -11,7 +11,7 @@ interface WatchlistTabProps {
   onAddToCompare: (ticker: string) => void;
   onAnalyze: (ticker: string) => void;
   onDiscover: (mode: "find") => void;
-  authMode?: "full" | "preview" | null;
+  authMode?: "full" | "preview" | "none" | null;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -248,7 +248,7 @@ export default function WatchlistTab({ onAddToCompare, onAnalyze, onDiscover, au
           gridTemplateColumns: "2fr 80px 88px 72px 68px 68px 220px 36px",
           gap: 0, padding: "9px 16px",
           background: T.panel2, borderBottom: `1px solid ${T.line}` }}>
-          {["Fund", "Trend", "1Y Return", "Sharpe", "ER", "Yield", "Factor Chips", ""].map((h) => (
+          {["Fund", "Trend", "1Y Return", "Sharpe 3Y", "ER", "TTM Yield", "Factor Chips", ""].map((h) => (
             <div key={h} style={{ fontSize: 9.5, fontWeight: 600, color: T.muted, textTransform: "uppercase",
               letterSpacing: "0.11em", ...ui, paddingRight: 8 }}>{h}</div>
           ))}
@@ -378,7 +378,7 @@ export default function WatchlistTab({ onAddToCompare, onAnalyze, onDiscover, au
         {/* Footer */}
         <div style={{ padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontSize: 11, color: T.muted, ...ui }}>
-            {tickers.length} fund{tickers.length !== 1 ? "s" : ""} · prices delayed · data from Yahoo Finance
+            {tickers.length} fund{tickers.length !== 1 ? "s" : ""} · prices delayed · fund data via Financial Modeling Prep
           </div>
           <button
             onClick={() => { tickers.forEach((t) => { setData((prev) => { const n = { ...prev }; delete n[t]; return n; }); }); tickers.forEach(fetchFund); }}

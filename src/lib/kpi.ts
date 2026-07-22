@@ -59,11 +59,38 @@ export interface KpiResult {
 
   // Stress tests
   stressTests: StressResult[];
+
+  // Per-period stat sets driving the Analysis period toggle
+  periods: Record<Period, PeriodStats>;
 }
 
-/** Risk-free rate - use FRED 3-month T-bill proxy. Edit to update. */
-const RISK_FREE_ANNUAL = 0.045;
-const RISK_FREE_MONTHLY = (1 + RISK_FREE_ANNUAL) ** (1 / 12) - 1;
+// All return/risk formulas live in the central methodology module — this file
+// only orchestrates windows, alignment, and provider quirks.
+import {
+  RISK_FREE_ANNUAL, annualizedReturn, annualizedVolatility, maxDrawdown as calcMaxDrawdown,
+  betaAlpha, sharpeRatio, sortinoRatio, sampleStdDev, alignByDate, periodicReturns,
+} from "./metrics/performance";
+import { PERIODS, PERIOD_YEARS, type Period } from "./metrics/periods";
+export { RISK_FREE_ANNUAL };
+
+/** One period's full stat set — every value independently span/obs-guarded.
+    Frequency: 1Y risk stats use DAILY returns (√252 — 12 monthly points can't
+    support statistics); 3Y/5Y/10Y use month-end returns (√12, the documented
+    Morningstar-convention choice). Returns/drawdown always daily + day-count. */
+export interface PeriodStats {
+  return: number | null;       // annualized %, day-count CAGR
+  volatility: number | null;   // annualized %
+  sharpe: number | null;
+  sortino: number | null;
+  beta: number | null;
+  alpha: number | null;        // annualized Jensen's alpha %
+  maxDrawdown: number | null;  // %
+}
+
+export const EMPTY_PERIOD: PeriodStats = {
+  return: null, volatility: null, sharpe: null, sortino: null,
+  beta: null, alpha: null, maxDrawdown: null,
+};
 
 /** Historical stress-test windows */
 const STRESS_WINDOWS = [
@@ -109,28 +136,10 @@ function median(arr: number[]): number {
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
 }
 
-function stdDev(arr: number[], avg?: number): number {
-  if (arr.length < 2) return 0;
-  const m = avg ?? mean(arr);
-  return Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / (arr.length - 1));
-}
-
-/** Downside deviation - std dev of returns below the target (monthly rf) */
-function downsideDev(returns: number[], target = RISK_FREE_MONTHLY): number {
-  const below = returns.filter((r) => r < target).map((r) => (r - target) ** 2);
-  if (below.length < 2) return 0;
-  return Math.sqrt(below.reduce((s, v) => s + v, 0) / returns.length);
-}
-
 /** Nearest price on or after a given date string */
 function priceAt(daily: DailyPrice[], dateStr: string): number | null {
   const d = daily.find((p) => p.date >= dateStr);
   return d?.price ?? null;
-}
-
-/** Annualized CAGR % */
-function cagr(start: number, end: number, years: number): number {
-  return ((end / start) ** (1 / years) - 1) * 100;
 }
 
 // ── main ──────────────────────────────────────────────────────────────────────
@@ -149,34 +158,40 @@ export function computeKpis(
     upsideCapture3y: null, downsideCapture3y: null,
     battingAvg3y: null, ttmYield: null, divGrowth3y: null,
     rolling3y: [], stressTests: [],
+    periods: { "1Y": { ...EMPTY_PERIOD }, "3Y": { ...EMPTY_PERIOD }, "5Y": { ...EMPTY_PERIOD }, "10Y": { ...EMPTY_PERIOD } },
   };
 
   if (!fundDaily.length) return empty;
 
   const result = { ...empty };
+  result.periods = computeAllPeriods(fundDaily, benchDaily);
   const lastPrice = fundDaily[fundDaily.length - 1].price;
 
-  // ── CAGR returns ─────────────────────────────────────────────────────────────
+  // Actual elapsed years between two dates — annualization must use the REAL
+  // span, and a labeled N-year stat is only shown when ~the full N years of
+  // history exist. A fund with 18 months of data gets null for 3y/5y fields
+  // (shown as insufficient data), never a mislabeled or misannualized number.
+  const lastDate = fundDaily[fundDaily.length - 1].date;
+  const spanYears = (a: string, b: string) =>
+    (new Date(b).getTime() - new Date(a).getTime()) / (365.25 * 24 * 3600 * 1000);
+  const MIN_SPAN_FRACTION = 0.9;
+
+  // ── Annualized returns: CAGR over ACTUAL elapsed days of the window ─────────
   for (const [field, years] of [
     ["return1y", 1], ["return3y", 3], ["return5y", 5],
   ] as [keyof KpiResult, number][]) {
     const window = trailingYears(fundDaily, years);
     if (window.length < 20) continue;
-    (result[field] as number | null) = +cagr(window[0].price, lastPrice, years).toFixed(2);
+    if (spanYears(window[0].date, lastDate) < years * MIN_SPAN_FRACTION) continue;
+    (result[field] as number | null) = annualizedReturn(window);
   }
 
-  // ── Drawdown (3y and 5y) ─────────────────────────────────────────────────────
+  // ── Drawdown (3y and 5y) from the daily adjusted series ─────────────────────
   for (const [field, years] of [["maxDrawdown5y", 5], ["maxDrawdown3y", 3]] as [keyof KpiResult, number][]) {
     const w = trailingYears(fundDaily, years);
     if (w.length < 20) continue;
-    let peak = w[0].price;
-    let maxDD = 0;
-    for (const d of w) {
-      if (d.price > peak) peak = d.price;
-      const dd = (d.price - peak) / peak;
-      if (dd < maxDD) maxDD = dd;
-    }
-    (result[field] as number | null) = +(maxDD * 100).toFixed(2);
+    if (spanYears(w[0].date, lastDate) < years * MIN_SPAN_FRACTION) continue;
+    (result[field] as number | null) = calcMaxDrawdown(w);
   }
 
   // ── Calmar (3y): 3y ann return / |max drawdown 3y| ───────────────────────────
@@ -216,47 +231,24 @@ export function computeKpis(
   const br = monthlyReturns(alignedBench);
   if (fr.length < 24) return result;
 
-  const frMean = mean(fr);
-  const brMean = mean(br);
+  // ── Risk & factor stats — monthly-return convention (documented), all
+  //    delegated to the central methodology module ─────────────────────────────
+  result.stdDev3y = annualizedVolatility(fr, 12);
 
-  // Std dev (annualized)
-  const frStd = stdDev(fr, frMean);
-  const annStd = frStd * Math.sqrt(12);
-  result.stdDev3y = +(annStd * 100).toFixed(2);
+  // Sharpe / Sortino: geometric annualized return over the stated risk-free
+  // assumption (see RISK_FREE_LABEL in metrics/performance).
+  result.sharpe3y = sharpeRatio(fr, 12);
+  result.sortino3y = sortinoRatio(fr, 12);
 
-  const annFundReturn = (1 + frMean) ** 12 - 1;
-  const annBenchReturn = (1 + brMean) ** 12 - 1;
+  // Beta + annualized Jensen's alpha vs the mapped benchmark, from aligned
+  // monthly excess returns with geometric annualization.
+  const ba = betaAlpha(fr, br, 12);
+  result.beta3y = ba?.beta ?? null;
+  result.alpha3y = ba?.alphaAnnualPct ?? null;
 
-  // Sharpe (3y): (ann return − rf) / ann std dev
-  result.sharpe3y = annStd > 0
-    ? +((annFundReturn - RISK_FREE_ANNUAL) / annStd).toFixed(3)
-    : null;
-
-  // Sortino (3y): (ann return − rf) / ann downside deviation
-  const downDev = downsideDev(fr) * Math.sqrt(12);
-  result.sortino3y = downDev > 0
-    ? +((annFundReturn - RISK_FREE_ANNUAL) / downDev).toFixed(3)
-    : null;
-
-  // Beta (3y)
-  let cov = 0, benchVar = 0;
-  for (let i = 0; i < fr.length; i++) {
-    cov += (fr[i] - frMean) * (br[i] - brMean);
-    benchVar += (br[i] - brMean) ** 2;
-  }
-  cov /= fr.length - 1;
-  benchVar /= br.length - 1;
-  result.beta3y = benchVar > 0 ? +(cov / benchVar).toFixed(3) : null;
-
-  // Alpha (3y annualized)
-  if (result.beta3y !== null) {
-    const alpha = annFundReturn - (RISK_FREE_ANNUAL + result.beta3y * (annBenchReturn - RISK_FREE_ANNUAL));
-    result.alpha3y = +(alpha * 100).toFixed(2);
-  }
-
-  // Information ratio: alpha / tracking error
+  // Information ratio: alpha / tracking error (annualized σ of excess returns)
   const excessReturns = fr.map((r, i) => r - br[i]);
-  const te = stdDev(excessReturns) * Math.sqrt(12);
+  const te = (sampleStdDev(excessReturns) ?? 0) * Math.sqrt(12);
   const annAlpha = result.alpha3y ?? 0;
   result.infoRatio3y = te > 0 ? +(annAlpha / (te * 100)).toFixed(3) : null;
 
@@ -298,6 +290,65 @@ export function computeKpis(
   return result;
 }
 
+// ── Per-period stats (Analysis period toggle) ────────────────────────────────
+
+const SPAN_FRACTION = 0.9;
+
+function windowSpanOk(w: DailyPrice[], lastDate: string, years: number): boolean {
+  if (w.length < 20) return false;
+  const span = (new Date(lastDate).getTime() - new Date(w[0].date).getTime()) / (365.25 * 24 * 3600 * 1000);
+  return span >= years * SPAN_FRACTION;
+}
+
+/** Full stat set for one trailing window. Every stat guards independently. */
+function computePeriodStats(fundDaily: DailyPrice[], benchDaily: DailyPrice[], years: number): PeriodStats {
+  const out: PeriodStats = { ...EMPTY_PERIOD };
+  if (!fundDaily.length) return out;
+  const lastDate = fundDaily[fundDaily.length - 1].date;
+  const w = trailingYears(fundDaily, years);
+  if (!windowSpanOk(w, lastDate, years)) return out;
+
+  out.return = annualizedReturn(w);
+  out.maxDrawdown = calcMaxDrawdown(w);
+
+  const bw = trailingYears(benchDaily, years);
+  if (years === 1) {
+    // Daily-frequency risk stats (documented exception — see PeriodStats).
+    const fr = periodicReturns(w);
+    out.volatility = annualizedVolatility(fr, 252, 200);
+    out.sharpe = sharpeRatio(fr, 252, undefined, 200);
+    out.sortino = sortinoRatio(fr, 252, undefined, 200);
+    const { a: fa, b: ba } = alignByDate(w, bw);
+    const ab = betaAlpha(periodicReturns(fa), periodicReturns(ba), 252, undefined, 200);
+    out.beta = ab?.beta ?? null;
+    out.alpha = ab?.alphaAnnualPct ?? null;
+  } else {
+    const minObs = Math.floor(years * 12 * SPAN_FRACTION);
+    const fm = toMonthly(w);
+    const bm = toMonthly(bw);
+    const bByMonth = new Map(bm.map((d) => [d.date.slice(0, 7), d]));
+    const alignedF: DailyPrice[] = [], alignedB: DailyPrice[] = [];
+    for (const fd of fm) {
+      const bd = bByMonth.get(fd.date.slice(0, 7));
+      if (bd) { alignedF.push(fd); alignedB.push(bd); }
+    }
+    const fr = monthlyReturns(fm);
+    out.volatility = annualizedVolatility(fr, 12, minObs);
+    out.sharpe = sharpeRatio(fr, 12, undefined, minObs);
+    out.sortino = sortinoRatio(fr, 12, undefined, minObs);
+    const ab = betaAlpha(monthlyReturns(alignedF), monthlyReturns(alignedB), 12, undefined, minObs);
+    out.beta = ab?.beta ?? null;
+    out.alpha = ab?.alphaAnnualPct ?? null;
+  }
+  return out;
+}
+
+function computeAllPeriods(fundDaily: DailyPrice[], benchDaily: DailyPrice[]): Record<Period, PeriodStats> {
+  const out = {} as Record<Period, PeriodStats>;
+  for (const p of PERIODS) out[p] = computePeriodStats(fundDaily, benchDaily, PERIOD_YEARS[p]);
+  return out;
+}
+
 // ── Stress tests ──────────────────────────────────────────────────────────────
 
 function computeStressTests(fundDaily: DailyPrice[], benchDaily: DailyPrice[]): StressResult[] {
@@ -322,16 +373,16 @@ function computeStressTests(fundDaily: DailyPrice[], benchDaily: DailyPrice[]): 
 /**
  * Trailing-12-month distribution yield (%).
  *
- * Yahoo's chart `events=dividends` stream folds year-end CAPITAL-GAINS
- * distributions in with income dividends for mutual funds - it exposes no
- * separate capital-gains stream - so naively summing it overstates the income
+ * Provider dividend streams commonly fold year-end CAPITAL-GAINS
+ * distributions in with income dividends for mutual funds - there is no
+ * separate capital-gains stream - so naively summing overstates the income
  * yield, often several-fold (e.g. AIVSX: ~1.5% income reads as ~10%).
  *
  * Fix: winsorize the stream. Any single payment that is BOTH a large multiple
  * of the fund's median payment AND a material fraction of price is treated as
  * cap-gains-like and clamped down to the median (counted as one normal payment)
  * rather than summed in full. Clamping (vs. dropping) keeps the recurring income
- * Yahoo bundles into that same December event and degrades gracefully for funds
+ * bundled into that same December event and degrades gracefully for funds
  * that pay only once a year. A final cap guards against pathological data.
  * Both gates must trip, so genuinely high-yield funds with a regular cadence
  * (covered-call, high-yield bond, preferred) are left untouched.
@@ -456,29 +507,3 @@ export function computePercentiles(
   }));
 }
 
-export const PRIORITY_MAP: Record<string, (keyof ReturnType<typeof computePercentiles>[number])[]> = {
-  "Downside protection":          ["downside"],
-  "Low cost":                     ["cost"],
-  "Risk-adjusted return (Sharpe)":["riskAdj"],
-  "Alpha vs benchmark":           ["alpha"],
-  "Consistency vs category":      ["consistency"],
-  "Income / yield":               ["yield"],
-};
-
-export function compositeScore(
-  pcts: ReturnType<typeof computePercentiles>[number],
-  priorities: string[]
-): number {
-  if (priorities.length === 0) {
-    const all = Object.values(pcts);
-    return Math.round(all.reduce((s, v) => s + v, 0) / all.length);
-  }
-  let total = 0, count = 0;
-  for (const p of priorities) {
-    for (const f of PRIORITY_MAP[p] ?? []) {
-      total += pcts[f];
-      count++;
-    }
-  }
-  return count > 0 ? Math.round(total / count) : 50;
-}

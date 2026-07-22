@@ -18,6 +18,7 @@ import {
 } from "../lib/portfolioModel";
 import { computeTaxEfficiency } from "../lib/tax";
 import type { FundRecord } from "../lib/funds";
+import { setModelHandoff } from "../lib/handoff";
 import { blendKpis, blendReturns, type Holding, type BlendedKpis, type BlendedChartPoint } from "../lib/portfolioCalc";
 
 const money = (v: number) => (v == null ? "-" : "$" + Math.round(v).toLocaleString("en-US"));
@@ -38,7 +39,7 @@ const inferHorizon = (age: number) => age < 35 ? 30 : age < 50 ? 20 : age < 60 ?
 const goalFromPos = (p: number): Goal => (p < 34 ? "growth" : p > 66 ? "income" : "balanced");
 const posFromGoal = (g: Goal): number => (g === "growth" ? 12 : g === "income" ? 88 : 50);
 const goalBlurb = (p: number): string =>
-  p < 20 ? "Maximize long-term appreciation; accept larger swings for higher expected return."
+  p < 20 ? "Maximize long-term appreciation; accept larger swings in pursuit of higher potential return."
   : p < 40 ? "Growth-leaning: mostly equity with a stabilizing bond sleeve."
   : p < 60 ? "A balanced core - roughly even growth and stability through most markets."
   : p < 80 ? "Income-leaning: emphasizes yield and downside protection over growth."
@@ -204,8 +205,8 @@ async function analyzeSide(items: { ticker: string; weight: number }[]): Promise
   return { kpi: blendKpis(holdings), taxScore, series: blendReturns(holdings), n: holdings.length };
 }
 
-export default function PortfoliosTab({ onAnalyze, onFindSimilar }: {
-  onAnalyze?: (t: string) => void; onFindSimilar?: (t: string) => void;
+export default function PortfoliosTab({ onAnalyze, onFindSimilar, onRunInModel }: {
+  onAnalyze?: (t: string) => void; onFindSimilar?: (t: string) => void; onRunInModel?: () => void;
 } = {}) {
   const [clients, setClients] = useState<Client[]>([]);
   const [draft, setDraft] = useState<Client>(newClient());
@@ -230,8 +231,6 @@ export default function PortfoliosTab({ onAnalyze, onFindSimilar }: {
   const [usEquityPct, setUsEquityPct] = useState(65);     // US vs International equity preference
   const [philosophy, setPhilosophy] = useState("blend");  // advisor intent → cost sensitivity
   const [blendedTax, setBlendedTax] = useState<number | null>(null); // captured blended tax score for results
-  const [present, setPresent] = useState(false);          // client-facing presentation overlay
-  const [presentHover, setPresentHover] = useState(0);    // active pie slice in presentation
 
   // Compare
   const [cur, setCur] = useState<Side | null>(null);
@@ -385,6 +384,31 @@ export default function PortfoliosTab({ onAnalyze, onFindSimilar }: {
   const mix = built ? assetClassMix(built.sleeves) : null;
   // Recommendation framing: name the strategy from its equity weight, and score
   // diversification from sleeve concentration (normalized inverse-HHI, 0-100).
+  // Current holdings (what the client owns today) enable current-vs-proposed modeling.
+  const hasCurrentHoldings = draft.holdings.some((h) => h.ticker && h.value > 0);
+
+  /** Validate → save → hand the recommendation to Model (never mutates the saved portfolio). */
+  const runInModel = () => {
+    if (!built) return;
+    const tot = built.sleeves.reduce((sum, x) => sum + x.weight, 0);
+    if (Math.abs(tot - 1) > 0.02) return; // weights must total ~100%
+    saveClient();
+    const clientName = draft.name.trim() || "Untitled Client";
+    const holdings = built.sleeves.map((sl) => ({
+      ticker: sl.fund.ticker, weight: +(sl.weight * 100).toFixed(1), name: sl.fund.name }));
+    const curTotal = draft.holdings.reduce((sum, h) => sum + (h.value || 0), 0);
+    setModelHandoff({
+      source: "portfolio", clientId: draft.id, horizonYears: draft.horizonYears,
+      primary: { name: `Proposed — ${clientName}`, holdings },
+      second: hasCurrentHoldings && curTotal > 0 ? {
+        name: `Current — ${clientName}`,
+        holdings: draft.holdings.filter((h) => h.ticker && h.value > 0)
+          .map((h) => ({ ticker: h.ticker.toUpperCase(), weight: +((h.value / curTotal) * 100).toFixed(1) })),
+      } : undefined,
+    });
+    onRunInModel?.();
+  };
+
   const strategyName = (() => {
     const eq = mix ? mix.equity : eqFrac;
     if (eq >= 0.80) return "Aggressive Growth";
@@ -683,25 +707,27 @@ export default function PortfoliosTab({ onAnalyze, onFindSimilar }: {
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(148px, 1fr))", gap: 12, marginTop: 20 }}>
                     {([
-                      ["Risk Level", `${riskLabel(draft.risk)}`],
-                      ["Expected Return", metricsLoading ? "…" : pctv(metrics?.return3y ?? null)],
-                      ["Expected Drawdown", metricsLoading ? "…" : pctv(metrics?.maxDrawdown3y ?? null)],
-                      ["Expense Ratio", metricsLoading ? "…" : pctv(metrics?.expenseRatio ?? null, 2)],
-                      ["Tax Efficiency", blendedTax == null ? (metricsLoading ? "…" : "—") : `${blendedTax}/100`],
-                      ["Diversification", divScore == null ? "—" : `${divScore}/100`],
-                    ] as [string, string][]).map(([l, v]) => (
-                      <div key={l} style={{ background: T.panel3, border: `1px solid ${T.line}`, borderRadius: R.md, padding: "13px 14px" }}>
-                        <div style={{ fontSize: 10, color: T.muted, ...ui, textTransform: "uppercase", letterSpacing: "0.06em" }}>{l}</div>
+                      ["Risk Level", `${riskLabel(draft.risk)}`, "Bucketed from the advisor-selected risk tolerance."],
+                      ["Hist. Annualized Return (3y)", metricsLoading ? "…" : pctv(metrics?.return3y ?? null), "Weighted 3-year historical return of the selected funds. Past performance does not guarantee future results."],
+                      ["Hist. Max Drawdown (3y)", metricsLoading ? "…" : pctv(metrics?.maxDrawdown3y ?? null), "Weighted 3-year historical peak-to-trough decline of the selected funds — a historical fact, not a forecast."],
+                      ["Weighted Expense Ratio", metricsLoading ? "…" : pctv(metrics?.expenseRatio ?? null, 2), "Holdings-weighted average of the funds' published expense ratios."],
+                      ["Tax Efficiency", blendedTax == null ? (metricsLoading ? "…" : "—") : `${blendedTax}/100`, "ALCA-derived score (0-100) from each holding's tax character (qualified dividends, turnover proxy, municipal exposure) and its account placement."],
+                      ["Diversification", divScore == null ? "—" : `${divScore}/100`, "ALCA-derived score (0-100) from sleeve count, asset-class spread, and geographic mix of the recommendation."],
+                    ] as [string, string, string][]).map(([l, v, why]) => (
+                      <div key={l} title={why} style={{ background: T.panel3, border: `1px solid ${T.line}`, borderRadius: R.md, padding: "13px 14px", cursor: "help" }}>
+                        <div style={{ fontSize: 10, color: T.muted, ...ui, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                          {l}<span aria-hidden style={{ marginLeft: 4, opacity: 0.7 }}>ⓘ</span>
+                        </div>
                         <div style={{ fontSize: 19, fontWeight: 600, color: T.text, ...mono, marginTop: 5 }}>{v}</div>
                       </div>
                     ))}
                   </div>
 
-                  {/* Primary actions */}
+                  {/* Primary actions — the recommendation flows forward into Model */}
                   <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
-                    <Btn accent onClick={() => setPresent(true)}>Present to Client →</Btn>
+                    <Btn accent onClick={runInModel}>{hasCurrentHoldings ? "Compare Both in Model →" : "Run in Model →"}</Btn>
+                    {hasCurrentHoldings && <Btn onClick={() => setView("compare")}>Compare Portfolios</Btn>}
                     <Btn onClick={() => document.getElementById("alca-analysis")?.scrollIntoView({ behavior: "smooth" })}>View Analysis</Btn>
-                    <Btn ghost disabled>Export PDF · soon</Btn>
                   </div>
 
                   {/* Why this recommendation? */}
@@ -975,119 +1001,6 @@ export default function PortfoliosTab({ onAnalyze, onFindSimilar }: {
         </>
       )}
 
-      {/* ══════════════ PRESENT TO CLIENT (full-screen presentation) ══════════════ */}
-      {present && built && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: T.bg, overflowY: "auto" }}>
-          <div style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 40px 80px" }}>
-            {/* Presentation header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 34 }}>
-              <div style={{ ...ui, fontSize: 15, fontWeight: 700, letterSpacing: "0.16em", color: T.text, textTransform: "uppercase" }}>ALCA</div>
-              <button onClick={() => setPresent(false)} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, ...ui, fontWeight: 500,
-                color: T.dim, background: "transparent", border: `1px solid ${T.line2}`, borderRadius: R.md, padding: "7px 14px", cursor: "pointer" }}>
-                <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
-                Exit presentation
-              </button>
-            </div>
-
-            {/* Headline */}
-            <div style={{ textAlign: "center", marginBottom: 8 }}>
-              <div style={{ fontSize: 12, color: T.muted, ...ui, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Proposed portfolio</div>
-              <h1 style={{ ...ui, fontSize: 38, fontWeight: 600, color: T.text, margin: 0, letterSpacing: "-0.02em" }}>{strategyName}</h1>
-              {mix && <p style={{ fontSize: 15, color: T.dim, ...ui, marginTop: 8 }}>{Math.round(mix.equity * 100)}% equity · {Math.round((mix.fixed + mix.cash) * 100)}% bonds &amp; cash · {riskLabel(draft.risk)} risk</p>}
-            </div>
-
-            {/* Large pie + hover explanation */}
-            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 420px) 1fr", gap: 40, alignItems: "center", margin: "40px 0 48px" }}>
-              <div style={{ height: 420, position: "relative" }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={donutData} dataKey="value" cx="50%" cy="50%" innerRadius={112} outerRadius={168}
-                      onMouseEnter={(_: unknown, i: number) => setPresentHover(i)} paddingAngle={1.5} isAnimationActive={false} stroke="none">
-                      {donutData.map((d, i) => <Cell key={i} fill={d.color} opacity={presentHover === i ? 1 : 0.55}
-                        style={{ transition: "opacity 0.15s", transformOrigin: "center", transform: presentHover === i ? "scale(1.04)" : "scale(1)" }} />)}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-                {donutData[presentHover] && (
-                  <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
-                    <div style={{ fontSize: 30, fontWeight: 700, color: T.text, ...mono }}>{donutData[presentHover].pct}%</div>
-                    <div style={{ fontSize: 13, color: T.dim, ...ui, maxWidth: 150, textAlign: "center", lineHeight: 1.3, marginTop: 2 }}>{donutData[presentHover].label}</div>
-                  </div>
-                )}
-              </div>
-              <div>
-                {(() => {
-                  const sl = built.sleeves[presentHover];
-                  const ex = sl ? ASSET_EXPLAIN[sl.key] : null;
-                  return (
-                    <div>
-                      <div style={{ fontSize: 11.5, color: T.muted, ...ui, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>Hover a slice</div>
-                      <h3 style={{ ...ui, fontSize: 24, fontWeight: 600, color: T.text, margin: 0, letterSpacing: "-0.01em" }}>{ex?.title ?? sl?.label}</h3>
-                      <p style={{ fontSize: 15.5, color: T.dim, ...ui, marginTop: 12, lineHeight: 1.65 }}>{ex?.body ?? "A component of the recommended allocation."}</p>
-                    </div>
-                  );
-                })()}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 22 }}>
-                  {built.sleeves.map((s, i) => (
-                    <button key={s.key} onMouseEnter={() => setPresentHover(i)} onClick={() => setPresentHover(i)}
-                      style={{ display: "flex", alignItems: "center", gap: 7, padding: "6px 11px", borderRadius: 99, cursor: "pointer",
-                        border: `1px solid ${presentHover === i ? T.text : T.line2}`, background: presentHover === i ? T.panel2 : "transparent", ...ui, fontSize: 12 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: 2, background: SLICE[i % SLICE.length] }} />
-                      <span style={{ color: T.dim }}>{s.label}</span>
-                      <span style={{ color: T.text, fontWeight: 600, ...mono }}>{Math.round(s.weight * 100)}%</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Metrics summary */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 14, marginBottom: 48 }}>
-              {([
-                ["Expected Return", metricsLoading ? "…" : pctv(metrics?.return3y ?? null)],
-                ["Expected Drawdown", metricsLoading ? "…" : pctv(metrics?.maxDrawdown3y ?? null)],
-                ["Expense Ratio", metricsLoading ? "…" : pctv(metrics?.expenseRatio ?? null, 2)],
-                ["Tax Efficiency", blendedTax == null ? "—" : `${blendedTax}/100`],
-                ["Diversification", divScore == null ? "—" : `${divScore}/100`],
-              ] as [string, string][]).map(([l, v]) => (
-                <div key={l} style={{ textAlign: "center", padding: "16px 12px", background: T.panel3, borderRadius: R.lg }}>
-                  <div style={{ fontSize: 10.5, color: T.muted, ...ui, textTransform: "uppercase", letterSpacing: "0.06em" }}>{l}</div>
-                  <div style={{ fontSize: 24, fontWeight: 600, color: T.text, ...mono, marginTop: 6 }}>{v}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Why this portfolio */}
-            <div style={{ marginBottom: 44 }}>
-              <h2 style={{ ...ui, fontSize: 22, fontWeight: 600, color: T.text, margin: "0 0 14px", letterSpacing: "-0.01em" }}>Why this portfolio?</h2>
-              <p style={{ fontSize: 15.5, color: T.dim, ...ui, lineHeight: 1.7, maxWidth: 760 }}>
-                This {riskLabel(draft.risk).toLowerCase()}-risk {strategyName.toLowerCase()} portfolio holds {mix ? Math.round(mix.equity * 100) : "—"}% in equities for long-term growth and {mix ? Math.round((mix.fixed + mix.cash) * 100) : "—"}% in bonds and cash to cushion volatility. The equity sleeve blends {usEquityPct}% US and {100 - usEquityPct}% international exposure so returns aren&apos;t tied to a single market, and the fixed-income sleeve is layered across core, short-term and inflation-protected bonds for stability. Fund selection favors {(PHILOSOPHIES.find((p) => p.key === philosophy)?.label ?? "a balanced").toLowerCase()} construction, and the {TAX_TIERS[taxTier].label.toLowerCase()} tax setting {taxTier >= 3 ? "steers taxable dollars into tax-efficient and municipal holdings" : "keeps things simple"}.
-              </p>
-            </div>
-
-            {/* Fund breakdown with plain-English reasons */}
-            <div>
-              <h2 style={{ ...ui, fontSize: 22, fontWeight: 600, color: T.text, margin: "0 0 16px", letterSpacing: "-0.01em" }}>Recommended funds</h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {built.sleeves.map((s, i) => (
-                  <div key={s.key} style={{ display: "flex", gap: 16, alignItems: "flex-start", border: `1px solid ${T.line}`, borderRadius: R.lg, padding: "16px 18px", background: T.panel }}>
-                    <div style={{ width: 8, height: 8, borderRadius: 2, background: SLICE[i % SLICE.length], marginTop: 6, flexShrink: 0 }} />
-                    <div style={{ minWidth: 92 }}>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: T.text, ...mono }}>{s.fund.ticker}</div>
-                      <div style={{ fontSize: 12.5, color: T.data, ...mono, fontWeight: 600 }}>{Math.round(s.weight * 100)}%</div>
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13.5, fontWeight: 600, color: T.text, ...ui }}>{s.label}</div>
-                      <div style={{ fontSize: 13, color: T.dim, ...ui, marginTop: 4, lineHeight: 1.55 }}>{s.reason ?? ASSET_EXPLAIN[s.key]?.body ?? "Selected for this allocation sleeve."}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ fontSize: 11.5, color: T.muted, ...ui, marginTop: 24, textAlign: "center" }}>Research aid · verify before client use.</div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

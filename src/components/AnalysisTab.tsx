@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
@@ -8,11 +8,40 @@ import { Btn, Label, Card, Spinner, ErrBanner, KPI, PageHeader } from "./ui";
 import type { FundRecord } from "../lib/funds";
 import { analyzeFund } from "../lib/analysis";
 import { computeTaxEfficiency } from "../lib/tax";
+import { PERIODS, blendOverall, type Period, type PeriodOrOverall } from "../lib/metrics/periods";
+import { rankSentence, type CategoryRank } from "../lib/metrics/peers";
+import { SaveToList } from "./SaveToList";
+import {
+  scoreFundForContext, overallReviewScore, getPeerAlternativesForContext, displayScore,
+  SCORE_CONTEXTS, CONTEXT_LABELS,
+  type ReviewScore, type ScoreInputs, type ScoreContext,
+} from "../lib/metrics/score";
+import type { PeriodStats } from "../lib/kpi";
+
+/** /api/funds payload: FundRecord + raw score inputs for subject and peers.
+    The unified score engine runs CLIENT-side so period + scoring-context
+    switches are instant with a single fetch. */
+interface ScoreInputsPayload {
+  ticker: string; name: string;
+  expenseRatio: number | null; ttmYield: number | null; taxScore: number | null;
+  fundAge: number | null; battingAvg: number | null;
+  periods: Record<Period, PeriodStats>;
+}
+interface PeerIntelPayload {
+  peerGroup: string;
+  peerCount: number;
+  subject: ScoreInputsPayload;
+  peers: ScoreInputsPayload[];
+  warming: boolean;
+  unavailableReasons: string[];
+}
+type AnalysisRecord = FundRecord & {
+  categoryRanks?: Partial<Record<Period, CategoryRank>> | null;
+  peerIntel?: PeerIntelPayload | null;
+};
 
 const pct = (v: number | null, d = 2) => (v == null ? "-" : `${v.toFixed(d)}%`);
 const num = (v: number | null, d = 2) => (v == null ? "-" : v.toFixed(d));
-
-interface TickerNews { uuid: string; title: string; publisher: string; link: string; publishedAt: number; image: string }
 
 function timeAgo(ts: number): string {
   if (!ts) return "";
@@ -22,27 +51,14 @@ function timeAgo(ts: number): string {
   return `${Math.floor(mins / 1440)}d ago`;
 }
 
-/** Overall rating derived from the heuristic pros/cons net score. */
-function overallRating(net: number): { score: number; grade: string; color: string; worth: string } {
-  const score = Math.round(Math.max(6, Math.min(97, 50 + net * 6.5)));
-  const grade = score >= 80 ? "A" : score >= 67 ? "B" : score >= 52 ? "C" : score >= 38 ? "D" : "E";
-  const color = score >= 67 ? T.green : score >= 52 ? T.amber : T.red;
-  const worth =
-    net >= 3 ? "Worth it - strong across the numbers."
-    : net >= 1 ? "Worth a look - more strengths than watch-outs."
-    : net <= -3 ? "Hard to justify - the watch-outs outweigh."
-    : net <= -1 ? "Be selective - mixed signals here."
-    : "Neutral - depends on the role it plays.";
-  return { score, grade, color, worth };
-}
+// Tax-efficiency grade colors (A–D heuristic from lib/tax — not a fund rating).
+const taxGradeColors: Record<string, string> = { A: T.green, B: "#16A34A", C: T.amber, D: T.red };
+const taxGradeBg: Record<string, string> = { A: "#DCFCE7", B: "#F0FDF4", C: "#FEF9C3", D: "#FEF2F2" };
 
 function equityStyle(category: string): string | null {
   const m = category.match(/US Equity (Large|Mid|Small|Mid\/Small|Small\/Mid)\s+(Value|Blend|Growth)/i);
   return m ? `${m[1]} ${m[2]}` : null;
 }
-
-const ratingColors: Record<string, string> = { A: T.green, B: "#16A34A", C: T.amber, D: T.red };
-const ratingBg: Record<string, string> = { A: "#DCFCE7", B: "#F0FDF4", C: "#FEF9C3", D: "#FEF2F2" };
 
 export default function AnalysisTab({
   ticker, setTicker, onCompare, onFindSimilar,
@@ -55,22 +71,17 @@ export default function AnalysisTab({
   const [input, setInput] = useState(ticker);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [record, setRecord] = useState<FundRecord | null>(null);
-  const [news, setNews] = useState<TickerNews[]>([]);
-  const [newsLoading, setNewsLoading] = useState(false);
+  const [record, setRecord] = useState<AnalysisRecord | null>(null);
+  // Global analysis period + scoring context — drive the score, metrics,
+  // rank, breakdown, and similar-funds list together.
+  const [period, setPeriod] = useState<PeriodOrOverall>("3Y");
+  const [context, setContext] = useState<ScoreContext>("overall");
 
   const run = async (raw: string) => {
     const t = raw.trim().toUpperCase();
     if (!t) return;
-    setLoading(true); setError(""); setRecord(null); setNews([]);
+    setLoading(true); setError(""); setRecord(null);
     setTicker(t);
-    // Pull related news in parallel (non-blocking for the main analysis)
-    setNewsLoading(true);
-    fetch(`/api/news/ticker?q=${encodeURIComponent(t)}`)
-      .then((r) => r.json())
-      .then((d) => setNews(d.items ?? []))
-      .catch(() => setNews([]))
-      .finally(() => setNewsLoading(false));
     try {
       const res = await fetch(`/api/funds/${t}`);
       const data = await res.json();
@@ -96,23 +107,90 @@ export default function AnalysisTab({
   const style = record ? equityStyle(record.category) : null;
 
   const k = record?.kpi;
+
+  // Selected-period stat set. "Overall" = documented weighted blend of the
+  // available 1Y/3Y/5Y/10Y values (never confident on 1Y-only history).
+  const statFor = (key: keyof PeriodStats): number | null => {
+    if (!k?.periods) return null;
+    if (period !== "Overall") return k.periods[period]?.[key] ?? null;
+    const blended = blendOverall({
+      "1Y": k.periods["1Y"]?.[key], "3Y": k.periods["3Y"]?.[key],
+      "5Y": k.periods["5Y"]?.[key], "10Y": k.periods["10Y"]?.[key],
+    });
+    return blended?.value ?? null;
+  };
+  const pl = period === "Overall" ? "Overall*" : period; // * = blended
+  const rank = record?.categoryRanks && period !== "Overall" ? record.categoryRanks[period] ?? null : null;
+
+  // ── Unified Advisor Review Score: computed client-side from shipped peer
+  //    inputs, for the selected period + scoring context ──
+  const intel = record?.peerIntel ?? null;
+  const inputsOf = (f: ScoreInputsPayload, p: Period): ScoreInputs => ({
+    stats: f.periods?.[p] ?? null, expenseRatio: f.expenseRatio, ttmYield: f.ttmYield,
+    taxScore: f.taxScore, fundAge: f.fundAge, battingAvg: f.battingAvg,
+  });
+  const scoring = useMemo(() => {
+    if (!intel || !intel.peers.length) return null;
+    const byPeriod: Partial<Record<Period, ReviewScore | null>> = {};
+    for (const p of PERIODS) {
+      byPeriod[p] = scoreFundForContext(inputsOf(intel.subject, p), intel.peers.map((x) => inputsOf(x, p)), context);
+    }
+    return { byPeriod, overall: overallReviewScore(byPeriod) };
+  }, [intel, context]);
+  const periodScore = scoring && period !== "Overall" ? scoring.byPeriod[period] ?? null : null;
+  const shownScore = period === "Overall"
+    ? (scoring?.overall ? { score: scoring.overall.score, band: scoring.overall.band } : null)
+    : (periodScore ? { score: periodScore.score, band: periodScore.band } : null);
+  const scoreUnavailableReason = !record ? null
+    : !intel ? "Unavailable — no reliable peer group."
+    : shownScore ? null
+    : period === "Overall" ? "Unavailable — Overall needs at least 3 years of scored history."
+    : intel.unavailableReasons[0] ?? `Unavailable — insufficient ${period} peer data.`;
+
+  const alternatives = useMemo(() => {
+    if (!intel || !scoring) return [];
+    const candScore = (p: Period, i: number): number | null => {
+      const peers = [...intel.peers.filter((_, j) => j !== i).map((x) => inputsOf(x, p)), inputsOf(intel.subject, p)];
+      return scoreFundForContext(inputsOf(intel.peers[i], p), peers, context)?.score ?? null;
+    };
+    const subjBase = { ticker: intel.subject.ticker, name: intel.subject.name, category: intel.peerGroup,
+      expenseRatio: intel.subject.expenseRatio };
+    if (period === "Overall") {
+      if (!scoring.overall) return [];
+      const cands = intel.peers.map((pr, i) => {
+        const per: Partial<Record<Period, ReviewScore | null>> = {};
+        for (const p of PERIODS) { const sc = candScore(p, i); per[p] = sc != null ? ({ score: sc } as ReviewScore) : null; }
+        return { ticker: pr.ticker, name: pr.name, category: intel.peerGroup,
+          score: overallReviewScore(per)?.score ?? null, stats: pr.periods?.["3Y"] ?? null, expenseRatio: pr.expenseRatio };
+      });
+      return getPeerAlternativesForContext(
+        { ...subjBase, score: scoring.overall.score, stats: intel.subject.periods?.["3Y"] ?? null }, cands, "Overall", context);
+    }
+    const mine = scoring.byPeriod[period];
+    if (!mine) return [];
+    const cands = intel.peers.map((pr, i) => ({ ticker: pr.ticker, name: pr.name, category: intel.peerGroup,
+      score: candScore(period, i), stats: pr.periods?.[period] ?? null, expenseRatio: pr.expenseRatio }));
+    return getPeerAlternativesForContext(
+      { ...subjBase, score: mine.score, stats: intel.subject.periods?.[period] ?? null }, cands, period, context);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intel, scoring, period, context]);
+
   const metrics = k && record ? [
-    { label: "1Y Return", value: pct(k.return1y), good: k.return1y != null ? k.return1y > 0 : null },
-    { label: "3Y Return", value: pct(k.return3y), good: k.return3y != null ? k.return3y > 0 : null },
-    { label: "5Y Return", value: pct(k.return5y), good: k.return5y != null ? k.return5y > 0 : null },
-    { label: "Sharpe 3Y", value: num(k.sharpe3y), good: k.sharpe3y != null ? k.sharpe3y >= 1 : null },
-    { label: "Sortino 3Y", value: num(k.sortino3y), good: k.sortino3y != null ? k.sortino3y >= 1 : null },
-    { label: "Alpha 3Y", value: pct(k.alpha3y), good: k.alpha3y != null ? k.alpha3y > 0 : null },
-    { label: "Beta 3Y", value: num(k.beta3y), good: k.beta3y != null ? k.beta3y <= 1.1 : null },
-    { label: "Max DD 3Y", value: pct(k.maxDrawdown3y, 1), good: k.maxDrawdown3y != null ? k.maxDrawdown3y > -20 : null },
-    { label: "Std Dev 3Y", value: pct(k.stdDev3y, 1), good: null },
-    { label: "Up Capture", value: num(k.upsideCapture3y, 1), good: k.upsideCapture3y != null ? k.upsideCapture3y >= 100 : null },
-    { label: "Down Capture", value: num(k.downsideCapture3y, 1), good: k.downsideCapture3y != null ? k.downsideCapture3y < 100 : null },
+    { label: `${pl} Return`, value: pct(statFor("return")), good: statFor("return") != null ? statFor("return")! > 0 : null },
+    { label: `Sharpe ${pl}`, value: num(statFor("sharpe")), good: statFor("sharpe") != null ? statFor("sharpe")! >= 1 : null },
+    { label: `Sortino ${pl}`, value: num(statFor("sortino")), good: statFor("sortino") != null ? statFor("sortino")! >= 1 : null },
+    { label: `Alpha ${pl} vs ${record.benchmark}`, value: pct(statFor("alpha")), good: statFor("alpha") != null ? statFor("alpha")! > 0 : null },
+    { label: `Beta ${pl} vs ${record.benchmark}`, value: num(statFor("beta")), good: statFor("beta") != null ? statFor("beta")! <= 1.1 : null },
+    { label: `Max DD ${pl}`, value: pct(statFor("maxDrawdown"), 1), good: statFor("maxDrawdown") != null ? statFor("maxDrawdown")! > -20 : null },
+    { label: `Std Dev ${pl}`, value: pct(statFor("volatility"), 1), good: null },
+    // Period-fixed stats keep their own explicit period labels — never mixed silently.
+    { label: "Up Capture 3Y", value: num(k.upsideCapture3y, 1), good: k.upsideCapture3y != null ? k.upsideCapture3y >= 100 : null },
+    { label: "Down Capture 3Y", value: num(k.downsideCapture3y, 1), good: k.downsideCapture3y != null ? k.downsideCapture3y < 100 : null },
     { label: "TTM Yield", value: pct(k.ttmYield), good: k.ttmYield != null ? k.ttmYield > 0 : null },
     { label: "Expense", value: record.expenseRatio != null ? pct(record.expenseRatio) : "-", good: record.expenseRatio != null ? record.expenseRatio <= 0.5 : null },
     { label: "AUM", value: record.aumFormatted, good: null },
     { label: "Fund Age", value: record.fundAge != null ? `${record.fundAge.toFixed(1)} yr` : "-", good: record.fundAge != null ? record.fundAge >= 5 : null },
-    { label: "Batting Avg", value: pct(k.battingAvg3y, 0), good: k.battingAvg3y != null ? k.battingAvg3y >= 50 : null },
+    { label: "Batting Avg 3Y", value: pct(k.battingAvg3y, 0), good: k.battingAvg3y != null ? k.battingAvg3y >= 50 : null },
   ] : [];
 
   const rolling = (k?.rolling3y ?? []).map((p) => ({
@@ -164,55 +242,177 @@ export default function AnalysisTab({
                   <span style={{ fontSize: 11, color: T.muted, ...ui }}>{record.category}</span>
                 </div>
               </div>
-              <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <SaveToList ticker={record.ticker} fundName={record.name} category={record.category} />
                 {onCompare && <Btn small onClick={() => onCompare(record.ticker)}>Compare this</Btn>}
                 {onFindSimilar && <Btn small onClick={() => onFindSimilar(record.ticker)}>Find similar</Btn>}
               </div>
             </div>
 
-            {/* Overall rating + bottom line */}
-            {(() => {
-              const r = overallRating(a.net);
-              return (
-                <div style={{ marginTop: 14, display: "flex", gap: 14, alignItems: "stretch", flexWrap: "wrap" }}>
-                  {/* Overall score dial */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px",
-                    borderRadius: 10, background: T.panel2, border: `1px solid ${T.line}`, flexShrink: 0 }}>
-                    <div style={{ position: "relative", width: 58, height: 58, flexShrink: 0 }}>
-                      <svg width="58" height="58" viewBox="0 0 58 58">
-                        <circle cx="29" cy="29" r="25" fill="none" stroke={T.line} strokeWidth="6" />
-                        <circle cx="29" cy="29" r="25" fill="none" stroke={r.color} strokeWidth="6"
-                          strokeLinecap="round" strokeDasharray={`${(r.score / 100) * 157} 157`}
-                          transform="rotate(-90 29 29)" />
-                      </svg>
-                      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column",
-                        alignItems: "center", justifyContent: "center" }}>
-                        <span style={{ fontSize: 17, fontWeight: 600, color: r.color, lineHeight: 1, ...mono }}>{r.score}</span>
-                        <span style={{ fontSize: 8, color: T.muted, ...ui }}>/100</span>
-                      </div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 9, fontWeight: 600, color: T.dim, textTransform: "uppercase",
-                        letterSpacing: "0.1em", ...ui }}>Overall rating</div>
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 7, marginTop: 3 }}>
-                        <span style={{ fontSize: 26, fontWeight: 600, color: r.color, lineHeight: 1, ...mono }}>{r.grade}</span>
-                        <span style={{ fontSize: 11, color: T.dim, ...ui }}>{a.pros.length}▲ / {a.cons.length}▼</span>
-                      </div>
-                    </div>
-                  </div>
-                  {/* Bottom line + worth-it */}
-                  <div style={{ flex: 1, minWidth: 240, padding: "12px 14px", borderRadius: 10,
-                    background: a.net >= 2 ? "#F0FDF4" : a.net <= -2 ? "#FEF2F2" : T.panel2,
-                    border: `1px solid ${a.net >= 2 ? "#BBF7D0" : a.net <= -2 ? "#FECACA" : T.line}` }}>
-                    <div style={{ fontSize: 9, fontWeight: 600, color: T.dim, textTransform: "uppercase",
-                      letterSpacing: "0.1em", ...ui, marginBottom: 4 }}>Is it worth it?</div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: r.color, ...ui, marginBottom: 6 }}>{r.worth}</div>
-                    <div style={{ fontSize: 12.5, color: T.text, lineHeight: 1.6, ...ui }}>{a.bottomLine}</div>
+            {/* Advisor Review Score — the single fund score, period + context aware */}
+            <div style={{ marginTop: 14, display: "flex", gap: 14, alignItems: "stretch", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px",
+                borderRadius: 10, background: T.panel2, border: `1px solid ${T.line}`, flexShrink: 0 }}>
+                <div style={{ position: "relative", width: 58, height: 58, flexShrink: 0 }}>
+                  <svg width="58" height="58" viewBox="0 0 58 58">
+                    <circle cx="29" cy="29" r="25" fill="none" stroke={T.line} strokeWidth="6" />
+                    {shownScore && (
+                      <circle cx="29" cy="29" r="25" fill="none"
+                        stroke={shownScore.score >= 70 ? T.green : shownScore.score >= 50 ? T.amber : T.red}
+                        strokeWidth="6" strokeLinecap="round"
+                        strokeDasharray={`${(displayScore(shownScore.score) / 100) * 157} 157`}
+                        transform="rotate(-90 29 29)" />
+                    )}
+                  </svg>
+                  <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column",
+                    alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ fontSize: 17, fontWeight: 600, ...mono,
+                      color: shownScore ? (shownScore.score >= 70 ? T.green : shownScore.score >= 50 ? T.amber : T.red) : T.muted }}>
+                      {shownScore ? displayScore(shownScore.score) : "—"}
+                    </span>
+                    <span style={{ fontSize: 8, color: T.muted, ...ui }}>/100</span>
                   </div>
                 </div>
-              );
-            })()}
+                <div style={{ maxWidth: 190 }}>
+                  <div style={{ fontSize: 9, fontWeight: 600, color: T.dim, textTransform: "uppercase",
+                    letterSpacing: "0.1em", ...ui }}>Advisor Review Score</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, ...ui, marginTop: 3, lineHeight: 1.4,
+                    color: shownScore ? (shownScore.score >= 70 ? T.green : shownScore.score >= 50 ? T.amber : T.red) : T.muted }}>
+                    {shownScore ? shownScore.band : scoreUnavailableReason}
+                  </div>
+                  <div style={{ fontSize: 10, color: T.muted, ...ui, marginTop: 3 }}>
+                    {pl} · {CONTEXT_LABELS[context]}{intel ? ` · vs ${intel.peerCount} ${intel.peerGroup} funds` : ""}
+                  </div>
+                </div>
+              </div>
+              <div style={{ flex: 1, minWidth: 260, display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                  <div role="tablist" aria-label="Analysis period"
+                    style={{ display: "inline-flex", gap: 2, background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 9, padding: 3 }}>
+                    {([...PERIODS, "Overall"] as PeriodOrOverall[]).map((p) => (
+                      <button key={p} role="tab" aria-selected={p === period} onClick={() => setPeriod(p)}
+                        style={{ padding: "6px 11px", borderRadius: 7, border: "none", cursor: p === period ? "default" : "pointer",
+                          background: p === period ? T.blue : "transparent", color: p === period ? "#fff" : T.dim,
+                          fontSize: 11.5, fontWeight: 600, ...ui }}>{p}</button>
+                    ))}
+                  </div>
+                  <select value={context} onChange={(e) => setContext(e.target.value as ScoreContext)}
+                    aria-label="Scoring context"
+                    style={{ padding: "7px 10px", borderRadius: 8, border: `1px solid ${T.line}`,
+                      background: T.panel, color: T.text, fontSize: 12, ...ui, outline: "none" }}>
+                    {SCORE_CONTEXTS.map((c) => <option key={c} value={c}>{CONTEXT_LABELS[c]}</option>)}
+                  </select>
+                </div>
+                {rank && (
+                  <div style={{ fontSize: 12, color: T.dim, ...ui, fontWeight: 600 }}>{rankSentence(rank, period)}</div>
+                )}
+                {period === "Overall" && scoring?.overall?.note && (
+                  <div style={{ fontSize: 11, color: T.amber, ...ui }}>{scoring.overall.note}</div>
+                )}
+                <div style={{ fontSize: 12.5, color: T.text, lineHeight: 1.55, ...ui }}>
+                  <span style={{ fontSize: 9, fontWeight: 600, color: T.dim, textTransform: "uppercase",
+                    letterSpacing: "0.1em", ...ui, display: "block", marginBottom: 3 }}>Review takeaway</span>
+                  {a.bottomLine}
+                </div>
+                <div style={{ fontSize: 10, color: T.muted, ...ui }}>
+                  Peer-relative review aid — confirm in your firm&apos;s system before acting.
+                </div>
+              </div>
+            </div>
           </Card>
+
+          {/* ── Advisor Review — category-relative score + peer alternatives.
+                Internal review aid: peer comparison only, never a recommendation. ── */}
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(280px, 340px) 1fr", gap: 14, alignItems: "stretch" }}>
+            <Card style={{ padding: "18px 20px" }}>
+              <Label>Score Breakdown · {pl} · {CONTEXT_LABELS[context]}</Label>
+              {shownScore ? (
+                <>
+                  {period === "Overall" && (
+                    <p style={{ fontSize: 11, color: T.muted, ...ui, margin: "8px 0 0", lineHeight: 1.5 }}>
+                      Overall blends the per-period scores (1Y 10% · 3Y 25% · 5Y 30% · 10Y 35%, renormalized).
+                      Component detail is shown for individual periods.
+                    </p>
+                  )}
+                  {period !== "Overall" && periodScore && (
+                    <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 7 }}>
+                      {periodScore.components.map((c) => (
+                        <div key={c.key} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 11, color: T.dim, ...ui, width: 118, flexShrink: 0 }}>{c.label}</span>
+                          <span style={{ flex: 1, height: 5, background: T.panel3, borderRadius: 3, overflow: "hidden" }}>
+                            {c.score != null && <span style={{ display: "block", width: `${c.score}%`, height: "100%",
+                              background: c.score >= 70 ? T.green : c.score >= 40 ? T.amber : T.red, borderRadius: 3 }} />}
+                          </span>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: T.text, ...mono, width: 30, textAlign: "right" }}>
+                            {c.score != null ? c.score : "—"}
+                          </span>
+                        </div>
+                      ))}
+                      <p style={{ fontSize: 10.5, color: T.muted, ...ui, margin: "6px 0 0", lineHeight: 1.5 }}>
+                        {periodScore.components.filter((c) => c.score != null).slice(0, 2)
+                          .map((c) => `${c.label}: ${c.score}/100 — ${c.explanation}.`).join(" ")}
+                      </p>
+                      {periodScore.missing.length > 0 && (
+                        <p style={{ fontSize: 10.5, color: T.muted, ...ui, margin: 0 }}>
+                          Reweighted without: {periodScore.missing.join(", ")} (unavailable — not counted as zero).
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  <p style={{ fontSize: 10.5, color: T.muted, ...ui, margin: "10px 0 0", lineHeight: 1.5 }}>
+                    Peer-percentile components vs {intel?.peerCount ?? "—"} {intel?.peerGroup} funds with data.
+                    A review aid for advisors — not a rating of future performance.
+                  </p>
+                </>
+              ) : (
+                <p style={{ fontSize: 12, color: T.muted, ...ui, margin: "10px 0 0", lineHeight: 1.55 }}>{scoreUnavailableReason}</p>
+              )}
+            </Card>
+
+            <Card style={{ padding: "18px 20px" }}>
+              <Label>Similar Funds to Review · {pl} · {CONTEXT_LABELS[context]}</Label>
+              {alternatives.length ? (
+                <div style={{ marginTop: 10, overflowX: "auto" }}>
+                  <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 520 }}>
+                    <thead><tr>
+                      {["Fund", "Score", `${pl} Return`, "Sharpe", "ER", "Max DD", "Why it surfaced", ""].map((h) => (
+                        <th key={h} style={{ textAlign: "left", fontSize: 10, color: T.muted, ...ui, padding: "2px 12px 6px 0", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
+                      ))}
+                    </tr></thead>
+                    <tbody>
+                      {alternatives.map((alt) => (
+                        <tr key={alt.ticker} style={{ borderTop: `1px solid ${T.line}` }}>
+                          <td style={{ padding: "7px 12px 7px 0", whiteSpace: "nowrap" }}>
+                            <button onClick={() => run(alt.ticker)} title={alt.name}
+                              style={{ border: "none", background: "none", cursor: "pointer", padding: 0,
+                                fontSize: 12.5, fontWeight: 700, color: T.blue, ...mono }}>{alt.ticker}</button>
+                            <span style={{ display: "block", fontSize: 10.5, color: T.muted, ...ui, maxWidth: 170,
+                              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{alt.name}</span>
+                          </td>
+                          <td style={{ padding: "7px 12px 7px 0", fontSize: 12.5, fontWeight: 600, color: T.text, ...mono }}>{alt.score != null ? displayScore(alt.score) : "—"}</td>
+                          <td style={{ padding: "7px 12px 7px 0", fontSize: 12, color: T.dim, ...mono }}>{alt.stats?.return != null ? `${alt.stats.return.toFixed(1)}%` : "—"}</td>
+                          <td style={{ padding: "7px 12px 7px 0", fontSize: 12, color: T.dim, ...mono }}>{alt.stats?.sharpe != null ? alt.stats.sharpe.toFixed(2) : "—"}</td>
+                          <td style={{ padding: "7px 12px 7px 0", fontSize: 12, color: T.dim, ...mono }}>{alt.expenseRatio != null ? `${alt.expenseRatio.toFixed(2)}%` : "—"}</td>
+                          <td style={{ padding: "7px 12px 7px 0", fontSize: 12, color: T.dim, ...mono }}>{alt.stats?.maxDrawdown != null ? `${alt.stats.maxDrawdown.toFixed(1)}%` : "—"}</td>
+                          <td style={{ padding: "7px 12px 7px 0", fontSize: 11, color: T.dim, ...ui, maxWidth: 200 }}>{alt.rationale}</td>
+                          <td style={{ padding: "7px 0" }}><SaveToList compact ticker={alt.ticker} fundName={alt.name} category={alt.category} /></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <p style={{ fontSize: 10.5, color: T.muted, ...ui, margin: "10px 0 0" }}>
+                    Same-category review candidates only ({intel?.peerGroup}). Peer comparison for advisor review — not client advice.
+                  </p>
+                </div>
+              ) : (
+                <p style={{ fontSize: 12, color: T.muted, ...ui, margin: "10px 0 0", lineHeight: 1.55 }}>
+                  {!intel ? "Unavailable — no reliable peer group."
+                    : shownScore ? "No same-category peers with a stronger reviewable profile for this period yet."
+                    : "Unavailable — peer data for this period is still warming."}
+                </p>
+              )}
+            </Card>
+          </div>
 
           {/* Pros / Cons */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
@@ -242,9 +442,9 @@ export default function AnalysisTab({
             </Card>
           </div>
 
-          {/* Current data */}
+          {/* Current data — global period toggle drives return/risk/factor stats */}
           <Card style={{ padding: "18px 22px" }}>
-            <Label>Current data</Label>
+            <Label>Current data · {pl}</Label>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: "16px 12px", marginTop: 12 }}>
               {metrics.map((m) => (
                 <KPI key={m.label} label={m.label} value={m.value} good={m.good} />
@@ -259,9 +459,9 @@ export default function AnalysisTab({
                 <Label>Tax efficiency</Label>
                 <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 10 }}>
                   <div style={{ width: 54, height: 54, borderRadius: 12, flexShrink: 0,
-                    background: ratingBg[tax.rating], border: `1px solid ${ratingColors[tax.rating]}44`,
+                    background: taxGradeBg[tax.rating], border: `1px solid ${taxGradeColors[tax.rating]}44`,
                     display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span style={{ fontSize: 28, fontWeight: 600, color: ratingColors[tax.rating], ...mono }}>{tax.rating}</span>
+                    <span style={{ fontSize: 28, fontWeight: 600, color: taxGradeColors[tax.rating], ...mono }}>{tax.rating}</span>
                   </div>
                   <div>
                     <div style={{ fontSize: 12, fontWeight: 600, color: T.text, ...ui }}>{tax.ratingLabel}</div>
@@ -323,42 +523,6 @@ export default function AnalysisTab({
             </Card>
           )}
 
-          {/* News & coverage */}
-          <Card style={{ padding: "16px 20px" }}>
-            <Label>News &amp; coverage - recent articles mentioning {record.ticker}</Label>
-            {newsLoading ? (
-              <div style={{ fontSize: 12, color: T.muted, ...ui, padding: "16px 0" }}>Pulling related coverage…</div>
-            ) : news.length === 0 ? (
-              <div style={{ fontSize: 12, color: T.muted, ...ui, padding: "12px 0" }}>
-                No recent articles found for {record.ticker}. Extra context only - the rating above is data-driven.
-              </div>
-            ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginTop: 12 }}>
-                {news.map((n) => (
-                  <div key={n.uuid} onClick={() => window.open(n.link, "_blank", "noopener,noreferrer")}
-                    style={{ display: "flex", gap: 11, alignItems: "center", cursor: "pointer",
-                      background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "10px 12px" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = T.blue)}
-                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = T.line)}>
-                    {n.image && (
-                      <img src={n.image} alt="" loading="lazy" referrerPolicy="no-referrer"
-                        style={{ width: 46, height: 46, borderRadius: 6, objectFit: "cover", flexShrink: 0, background: T.panel3 }}
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                    )}
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 500, color: T.text, lineHeight: 1.4, ...ui,
-                        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as React.CSSProperties["WebkitBoxOrient"], overflow: "hidden" }}>
-                        {n.title}
-                      </div>
-                      <div style={{ fontSize: 10, color: T.muted, marginTop: 3, ...ui }}>
-                        {n.publisher}{n.publishedAt ? ` · ${timeAgo(n.publishedAt)}` : ""}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
 
           <p style={{ fontSize: 10, color: T.muted, ...ui, textAlign: "center" }}>
             Research aid · data delayed &amp; unofficial · verify in your firm&apos;s system before client use

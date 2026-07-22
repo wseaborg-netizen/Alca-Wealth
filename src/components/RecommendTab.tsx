@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { T, ui, mono } from "./tokens";
+import { displayScore } from "../lib/metrics/score";
+import { SaveToList } from "./SaveToList";
 import { Label, Card, Btn, Select, ScoreBadge, PercentileBar, PriorityChip, Spinner, ErrBanner } from "./ui";
 import { loadClients, riskLabel, type Client } from "../lib/client";
 
@@ -307,7 +309,7 @@ const YIELD_OPTIONS = [
 
 interface ScreenFund {
   ticker: string; name: string; vehicle: string; category: string;
-  expenseRatio: number | null; compositeScore: number;
+  expenseRatio: number | null; advisorScore: number | null;
   percentiles: { cost: number; riskAdj: number; downside: number; alpha: number; consistency: number; yield: number };
   kpi: Kpi;
 }
@@ -423,7 +425,12 @@ function ByFactorsMode({ onAddToCompare, onAnalyze }: {
                     <div style={{ fontSize: 10, color: T.muted, marginTop: 1, ...ui }}>{f.category} · {f.vehicle}</div>
                   </div>
                 </div>
-                <ScoreBadge score={f.compositeScore} />
+                <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <SaveToList compact ticker={f.ticker} fundName={f.name} category={f.category} />
+                  {f.advisorScore != null
+                    ? <ScoreBadge score={displayScore(f.advisorScore)} />
+                    : <span style={{ fontSize: 11, color: T.muted, ...ui }}>—</span>}
+                </span>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginTop: 12 }}>
@@ -481,7 +488,7 @@ const PROFILE_VEHICLE = ["Either", "ETF", "Mutual Fund"];
 
 interface ProfileFund {
   ticker: string; name: string; vehicle: string; category: string;
-  expenseRatio: number | null; compositeScore: number; reason: string; kpi: Kpi;
+  expenseRatio: number | null; advisorScore: number | null; reason: string; kpi: Kpi;
 }
 
 function Chip({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
@@ -651,7 +658,12 @@ export function ProfileMode({ onAddToCompare, onAnalyze, presetClient, presetVeh
                     <div style={{ fontSize: 10, color: T.muted, marginTop: 1, ...ui }}>{f.category} · {f.vehicle}</div>
                   </div>
                 </div>
-                <ScoreBadge score={f.compositeScore} />
+                <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <SaveToList compact ticker={f.ticker} fundName={f.name} category={f.category} />
+                  {f.advisorScore != null
+                    ? <ScoreBadge score={displayScore(f.advisorScore)} />
+                    : <span style={{ fontSize: 11, color: T.muted, ...ui }}>—</span>}
+                </span>
               </div>
               {f.reason && (
                 <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 6, background: T.panel2,

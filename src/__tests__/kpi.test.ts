@@ -90,8 +90,11 @@ describe("computeKpis", () => {
       prices.push({ date: d.toISOString().slice(0, 10), price: Math.max(price, 1) });
     }
     const kpi = computeKpis(prices, prices);
-    expect(kpi.maxDrawdown5y).not.toBeNull();
-    expect(kpi.maxDrawdown5y!).toBeLessThan(-30);
+    // Only ~3.5y of history exists: the 3y drawdown is real, but a "5y" label
+    // would be misleading — the span guard nulls it (shown as unavailable).
+    expect(kpi.maxDrawdown5y).toBeNull();
+    expect(kpi.maxDrawdown3y).not.toBeNull();
+    expect(kpi.maxDrawdown3y!).toBeLessThan(-30);
   });
 
   test("Sharpe is null when fund has constant positive returns (zero std dev)", () => {
@@ -135,7 +138,7 @@ describe("computeTtmYield (capital-gains winsorization)", () => {
     const dividends = divsMonthsAgo([
       { monthsAgo: 9, amount: 0.155 },
       { monthsAgo: 6, amount: 0.155 },
-      { monthsAgo: 3, amount: 5.6 },   // income + cap gains, bundled by Yahoo
+      { monthsAgo: 3, amount: 5.6 },   // income + cap gains bundled by the provider
       { monthsAgo: 1, amount: 0.155 },
     ]);
     const kpi = computeKpis(prices, prices, dividends, 66);

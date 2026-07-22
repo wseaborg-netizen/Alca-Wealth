@@ -6,22 +6,10 @@ import type { FundRecord } from "../lib/funds";
 
 const KEY = "tool_murderboard_v1";
 
-interface NewsItem { uuid: string; title: string; publisher: string; link: string; publishedAt: number; }
 
 const pctv = (v: number | null, d = 1) => (v == null ? "-" : `${v.toFixed(d)}%`);
 const num2 = (v: number | null) => (v == null ? "-" : v.toFixed(2));
 
-function timeAgo(unixSec: number): string {
-  if (!unixSec) return "";
-  const s = Date.now() / 1000 - unixSec;
-  if (s < 3600) return `${Math.max(1, Math.round(s / 60))}m ago`;
-  if (s < 86400) return `${Math.round(s / 3600)}h ago`;
-  return `${Math.round(s / 86400)}d ago`;
-}
-function fmtDate(unixSec: number): string {
-  if (!unixSec) return "";
-  return new Date(unixSec * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
 
 function assetClassOf(category: string): string {
   const c = (category || "").toLowerCase();
@@ -52,19 +40,14 @@ export default function MurderBoardTab({ onAnalyze, onFindSimilar }: {
 } = {}) {
   const [tickers, setTickers] = useState<string[]>([]);
   const [funds, setFunds] = useState<Record<string, FundRecord | null>>({});
-  const [news, setNews] = useState<Record<string, NewsItem[]>>({});
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState("");
 
   const loadFund = useCallback(async (t: string) => {
     try {
-      const [fr, nr] = await Promise.all([
-        fetch(`/api/funds/${t}`).then((r) => (r.ok ? r.json() : null)).catch(() => null),
-        fetch(`/api/news/ticker?q=${encodeURIComponent(t)}`).then((r) => (r.ok ? r.json() : null)).catch(() => null),
-      ]);
+      const fr = await fetch(`/api/funds/${t}`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
       setFunds((f) => ({ ...f, [t]: fr && !fr.error ? fr : null }));
-      setNews((n) => ({ ...n, [t]: (nr?.items ?? []) as NewsItem[] }));
     } catch { /* noop */ }
   }, []);
 
@@ -89,12 +72,6 @@ export default function MurderBoardTab({ onAnalyze, onFindSimilar }: {
     setTickers(next); saveBoard(next);
   };
 
-  // Merged, most-recent-first news across all board funds
-  const feed = tickers
-    .flatMap((t) => (news[t] ?? []).map((n) => ({ ...n, ticker: t })))
-    .sort((a, b) => b.publishedAt - a.publishedAt)
-    .slice(0, 14);
-
   // Gap analysis
   const coveredClasses = new Set(
     tickers.map((t) => funds[t]).filter(Boolean).map((f) => assetClassOf(f!.category))
@@ -104,7 +81,7 @@ export default function MurderBoardTab({ onAnalyze, onFindSimilar }: {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 1080 }}>
       <PageHeader title="Portfolio Review"
-        subtitle="Review the funds in a client's portfolio - track them, watch the news, and surface gaps or better alternatives." />
+        subtitle="Review the funds in a client's portfolio - track them and surface gaps or better alternatives." />
 
       {/* Add */}
       <Card>
@@ -131,17 +108,12 @@ export default function MurderBoardTab({ onAnalyze, onFindSimilar }: {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
           {tickers.map((t) => {
             const f = funds[t];
-            const n = news[t] ?? [];
             return (
               <div key={t} style={{ border: `1px solid ${T.line}`, borderRadius: 10, background: T.panel, padding: "14px 16px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span style={{ fontSize: 16, fontWeight: 700, color: T.text, ...mono }}>{t}</span>
-                      {n.length > 0 && (
-                        <span style={{ fontSize: 9.5, color: T.data, background: `${T.data}18`, borderRadius: 10,
-                          padding: "1px 7px", ...ui, fontWeight: 600 }}>{n.length} news</span>
-                      )}
                     </div>
                     <div style={{ fontSize: 11, color: T.dim, ...ui, whiteSpace: "nowrap", overflow: "hidden",
                       textOverflow: "ellipsis", maxWidth: 300 }}>{f?.name ?? (funds[t] === null ? "No data" : "Loading...")}</div>
@@ -210,30 +182,6 @@ export default function MurderBoardTab({ onAnalyze, onFindSimilar }: {
         </Card>
       )}
 
-      {/* News alerts feed */}
-      {feed.length > 0 && (
-        <Card>
-          <div style={{ padding: "16px 20px" }}>
-            <Label>News Alerts - Your Funds</Label>
-            <div style={{ marginTop: 10, display: "flex", flexDirection: "column" }}>
-              {feed.map((n) => (
-                <div key={n.uuid + n.ticker} onClick={() => window.open(n.link, "_blank", "noopener,noreferrer")}
-                  style={{ display: "flex", gap: 12, alignItems: "baseline", padding: "10px 0",
-                    borderBottom: `1px solid ${T.line}`, cursor: "pointer" }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: T.data, ...mono, width: 54, flexShrink: 0 }}>{n.ticker}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12.5, color: T.text, ...ui, lineHeight: 1.4 }}>{n.title}</div>
-                    <div style={{ fontSize: 10.5, color: T.muted, ...ui, marginTop: 2 }}>
-                      {n.publisher}
-                      {n.publishedAt ? <> &middot; <b style={{ color: T.dim, fontWeight: 600 }}>{fmtDate(n.publishedAt)}</b> &middot; {timeAgo(n.publishedAt)}</> : ""}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </Card>
-      )}
     </div>
   );
 }

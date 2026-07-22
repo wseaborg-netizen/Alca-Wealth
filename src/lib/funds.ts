@@ -11,7 +11,7 @@
 
 import { cacheGet, cacheSet } from "./cache";
 import { fetchHistory, fetchEtfInfo, fetchMutualFundInfo } from "./fmp";
-import { computeKpis, type KpiResult } from "./kpi";
+import { computeKpis, EMPTY_PERIOD, type KpiResult } from "./kpi";
 export type { KpiResult };
 import fundMetaRaw from "../data/fund-meta.json";
 import { NAME_BY_TICKER } from "./universe";
@@ -79,6 +79,7 @@ const EMPTY_KPI: KpiResult = {
   upsideCapture3y: null, downsideCapture3y: null,
   battingAvg3y: null, ttmYield: null, divGrowth3y: null,
   rolling3y: [], stressTests: [],
+  periods: { "1Y": { ...EMPTY_PERIOD }, "3Y": { ...EMPTY_PERIOD }, "5Y": { ...EMPTY_PERIOD }, "10Y": { ...EMPTY_PERIOD } },
 };
 
 /**
