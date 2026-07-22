@@ -168,14 +168,15 @@ describe("dynamic universe migration + route wiring", () => {
     expect(read("src/app/api/funds/[ticker]/route.ts")).toContain("findMergedFund");
   });
 
-  test("Expansion Hub is reachable from the nav and mounts, with add + save wired", () => {
+  test("Expansion Operations Center is reachable from the nav and mounts", () => {
     const shell = read("src/components/AppShell.tsx");
     expect(shell).toContain('"Expansion"');
     expect(shell).toContain("ExpansionTab");
     const tab = read("src/components/ExpansionTab.tsx");
-    expect(tab).toContain("/api/fund-requests");
-    expect(tab).toContain("SaveToList");
-    expect(tab).toContain("Sign in to use the Expansion Hub");   // signed-out handling
+    expect(tab).toContain("/api/expansion/import");
+    expect(tab).toContain("/api/expansion/queue");
+    expect(tab).toContain("refreshMergedUniverse");             // live propagation on approve
+    expect(tab).toContain("Sign in to use the Expansion Operations Center"); // signed-out handling
   });
 
   test("expansion summary route is auth-gated (401 signed out)", () => {

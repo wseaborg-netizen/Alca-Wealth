@@ -187,6 +187,50 @@ export async function fundRequestCreate(sb: Supa, firmId: string, userId: string
   return data as unknown as FundRequestRow;
 }
 
+/** One request by id (firm-scoped). */
+export async function fundRequestGetById(sb: Supa, firmId: string, id: string): Promise<FundRequestRow | null> {
+  const { data, error } = await sb.from("fund_requests")
+    .select(FUND_REQUEST_COLS).eq("firm_id", firmId).eq("id", id).limit(1);
+  if (error) throw new Error(error.message);
+  return (data?.[0] as unknown as FundRequestRow) ?? null;
+}
+
+/** Requests in the given statuses (Review Queue / Failed Imports tabs). */
+export async function fundRequestsByStatuses(sb: Supa, firmId: string, statuses: string[], limit = 2000): Promise<FundRequestRow[]> {
+  const { data, error } = await sb.from("fund_requests")
+    .select(FUND_REQUEST_COLS).eq("firm_id", firmId).in("status", statuses)
+    .order("requested_at", { ascending: false }).limit(limit);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as FundRequestRow[];
+}
+
+/** Update a request's status (+ optional classification/failure/admin note). */
+export async function fundRequestSetStatus(sb: Supa, firmId: string, id: string, status: string, patch?: {
+  classificationStatus?: string | null; failureReason?: string | null; adminNote?: string | null;
+}): Promise<void> {
+  const row: Record<string, unknown> = { status };
+  if (patch?.classificationStatus !== undefined) row.classification_status = patch.classificationStatus;
+  if (patch?.failureReason !== undefined) row.failure_reason = patch.failureReason;
+  if (patch?.adminNote !== undefined) row.admin_note = patch.adminNote;
+  const { error } = await sb.from("fund_requests").update(row).eq("firm_id", firmId).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+/** Delete specific requests (firm-scoped). Returns the deleted count. */
+export async function fundRequestDeleteMany(sb: Supa, firmId: string, ids: string[]): Promise<number> {
+  if (!ids.length) return 0;
+  const { data, error } = await sb.from("fund_requests").delete().eq("firm_id", firmId).in("id", ids).select("id");
+  if (error) throw new Error(error.message);
+  return data?.length ?? 0;
+}
+
+/** Delete every request in the given statuses (Delete All Review / Failed). */
+export async function fundRequestDeleteByStatuses(sb: Supa, firmId: string, statuses: string[]): Promise<number> {
+  const { data, error } = await sb.from("fund_requests").delete().eq("firm_id", firmId).in("status", statuses).select("id");
+  if (error) throw new Error(error.message);
+  return data?.length ?? 0;
+}
+
 /** Status counts for the firm — used by System Health (informational). */
 export async function fundRequestCounts(sb: Supa, firmId: string): Promise<{
   total: number; pending: number; readyForReview: number; unsupported: number;
