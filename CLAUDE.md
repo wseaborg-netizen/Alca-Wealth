@@ -12,7 +12,7 @@ Next.js 16 (App Router, Turbopack), React 19, TypeScript. Deployed at
 - **Fund price history / KPIs** (returns/Sharpe/history): **FMP** primary, **Tiingo**
   fallback (`TIINGO_API_KEY`, prod only) for funds FMP doesn't cover.
 - **Expense ratios**: static `src/data/fund-meta.json` (FMP Starter doesn't expose ER).
-- **Market indices + news** (dashboard): Yahoo Finance (scrape, no key), FRED for macro.
+- **Market indices** (Advisor Overview): FMP (quote + light EOD history). No news provider — the news feature was removed.
 - Never print or hardcode `FMP_API_KEY` / `TIINGO_API_KEY`. Scripts read env → `.env.local`.
 
 ## Fund-universe pipeline
@@ -39,7 +39,11 @@ data/input/fund-tickers.txt
 - `src/lib/funds.ts` — per-fund record (KPIs + metadata) via FMP/Tiingo + `fund-meta.json`.
 - `src/lib/fmp.ts` — FMP/Tiingo provider layer.
 - `src/lib/portfolioModel.ts` — allocation + asset-location engine.
-- `src/lib/kpi.ts` — scoring. `src/app/api/portfolio/select` — per-sleeve fund selection.
+- `src/lib/kpi.ts` — KPI engine. `src/lib/metrics/score.ts` — THE Advisor Review Score
+  (contextual, peer-relative; screener/analysis/portfolio-select all use it via
+  `src/lib/metrics/recordScore.ts`). `src/app/api/portfolio/select` — per-sleeve fund selection.
+- Saved fund lists: firm-scoped `watchlists`/`watchlist_items` tables, `/api/lists`,
+  `src/components/SaveToList.tsx` + `ListsTab.tsx` (defaults: Commonly Used Funds, Watchlist).
 - `scripts/paths.mjs` — centralized data paths for the pipeline scripts.
 
 ## Guardrails

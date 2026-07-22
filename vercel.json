@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/sec-ticker-map",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/sec-refresh",
+      "schedule": "30 9 * * *"
+    }
+  ]
+}

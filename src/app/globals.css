@@ -167,6 +167,13 @@ button:focus-visible, a:focus-visible {
   100% { background-position: 400px 0; }
 }
 
+/* ── Reveal entrance (used by the Reveal component; ships in CSS so content
+   is visible even before/without JavaScript) ── */
+@keyframes alca-reveal {
+  from { opacity: 0; transform: translateY(var(--rv-y, 18px)); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ── Guided-builder step transition ── */
 @keyframes alca-step-in {
   from { opacity: 0; transform: translateY(6px); }
@@ -191,13 +198,25 @@ tbody tr:hover { background: var(--c-panel2); }
 [data-theme="dark"] ::selection { background: rgba(45, 212, 191, 0.22); }
 
 /* ── Reduced motion: ambient/decorative animation off, transitions near-instant ── */
+/* Motion: OS preference applies unless the user forces "full" in Settings;
+   forcing "reduced" in Settings applies regardless of the OS setting. */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  :root:not([data-motion="full"]) *,
+  :root:not([data-motion="full"]) *::before,
+  :root:not([data-motion="full"]) *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }
 
 /* ── Scroll-rail train animations ── */

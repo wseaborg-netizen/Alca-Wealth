@@ -1,9 +1,29 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import {
+  SITE_URL, SITE_NAME, SITE_TITLE, SITE_DESCRIPTION,
+  organizationJsonLd, softwareApplicationJsonLd,
+} from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "ALCA",
-  description: "ALCA Wealth - Investment Intelligence for Financial Advisors",
+  metadataBase: new URL(SITE_URL),
+  title: { default: SITE_TITLE, template: `%s — ${SITE_NAME}` },
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [{ url: "/og/alca-og.png", width: 1200, height: 630, alt: "ALCA Wealth — Research. Construct. Model." }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: ["/og/alca-og.png"],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -16,6 +36,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
+        {/* Structured data — software-focused only; no advice or regulatory claims. */}
+        <script type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }} />
+        <script type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationJsonLd()) }} />
       </head>
       <body>{children}</body>
     </html>
