@@ -155,7 +155,10 @@ describe("saved fund lists: migration + API + UI presence", () => {
 
   test("Saved Lists is reachable from the top nav and handles signed-out state", () => {
     const shell = read("src/components/AppShell.tsx");
-    expect(shell).toContain('"Saved Lists"');
+    // The "Saved Lists" label lives in the shared nav model (secondary Tools menu);
+    // the shell wires it to its tab and mounts the component.
+    expect(read("src/components/navModel.ts")).toContain('"Saved Lists"');
+    expect(shell).toContain('switchTab("lists")');
     expect(shell).toContain("ListsTab");
     const lists = read("src/components/ListsTab.tsx");
     expect(lists).toContain("Sign in to use Saved Lists");

@@ -15,6 +15,7 @@ export interface NavSection { id: string; label: string; leaves?: NavLeaf[]; onC
 
 interface TopNavProps {
   sections: NavSection[];
+  utilitySection?: NavSection;       // secondary "Tools" menu (NOT primary nav)
   activeSection: string | null;      // id of the section owning the current tab
   onBrand: () => void;               // → home
   onAbout: () => void;               // → home, scroll to About
@@ -143,7 +144,7 @@ function MegaMenu({ section, onLeaf }: { section: NavSection; onLeaf: () => void
 }
 
 export default function TopNav(props: TopNavProps) {
-  const { sections, activeSection, onBrand, onAbout, onSearch, onSettings, onAlerts, unreadCount,
+  const { sections, utilitySection, activeSection, onBrand, onAbout, onSearch, onSettings, onAlerts, unreadCount,
     authMode, authUser, accountName, onLogout, canBack, canForward, goBack, goForward } = props;
   const isMobile = useMediaQuery("(max-width: 960px)");
   const compact = useMediaQuery("(max-width: 1280px)");
@@ -299,9 +300,51 @@ export default function TopNav(props: TopNavProps) {
             </div>
           )}
 
-          {/* Right: search + bell + account (desktop) / hamburger (mobile) */}
+          {/* Right: tools + search + bell + account (desktop) / hamburger (mobile) */}
           {!isMobile ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+              {/* Secondary "Tools" utility menu — deliberately NOT a primary nav item. */}
+              {utilitySection && utilitySection.leaves && (
+                <div style={{ position: "relative" }}
+                  onMouseEnter={() => openMenu(utilitySection.id)}>
+                  <button
+                    aria-haspopup="menu" aria-expanded={openId === utilitySection.id}
+                    onClick={() => setOpenId(openId === utilitySection.id ? null : utilitySection.id)}
+                    style={{ display: "flex", alignItems: "center", gap: 6, height: 34, padding: "0 11px",
+                      borderRadius: 9, border: `1px solid ${LINE}`, cursor: "pointer",
+                      background: openId === utilitySection.id ? HOVER : "transparent",
+                      color: openId === utilitySection.id ? TXT : DIM, fontSize: 13, fontWeight: 500, ...ui,
+                      transition: "all 0.15s var(--ease-out)" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = TXT)}
+                    onMouseLeave={(e) => { if (openId !== utilitySection.id) e.currentTarget.style.color = DIM; }}>
+                    {utilitySection.label}
+                    <span style={{ color: MUT }}><IconChevron open={openId === utilitySection.id} /></span>
+                  </button>
+                  {openId === utilitySection.id && (
+                    <div style={{ position: "absolute", top: "100%", right: 0, paddingTop: 10, zIndex: 5 }}>
+                      <div role="menu" style={{ position: "relative", minWidth: 340, maxWidth: 460,
+                        background: "#FFFFFF", border: `1px solid ${LINE}`, borderRadius: 16, padding: 8,
+                        boxShadow: "0 24px 60px rgba(16,24,40,0.16), 0 4px 12px rgba(16,24,40,0.06)",
+                        animation: "alca-menu-in 0.15s cubic-bezier(0.16,1,0.3,1)" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: (utilitySection.leaves.length > 4 ? "1fr 1fr" : "1fr"), gap: 2 }}>
+                          {utilitySection.leaves.map((leaf) => (
+                            <button key={leaf.label} role="menuitem" onClick={() => { leaf.onClick(); setOpenId(null); }}
+                              style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2,
+                                padding: "11px 13px", borderRadius: 10, border: "none", cursor: "pointer", textAlign: "left",
+                                background: leaf.active ? "rgba(37,99,235,0.07)" : "transparent",
+                                transition: "background 0.14s var(--ease-out)" }}
+                              onMouseEnter={(e) => { if (!leaf.active) e.currentTarget.style.background = HOVER; }}
+                              onMouseLeave={(e) => { if (!leaf.active) e.currentTarget.style.background = "transparent"; }}>
+                              <span style={{ fontSize: 13.5, fontWeight: 600, color: leaf.active ? ACCENT : TXT, ...ui }}>{leaf.label}</span>
+                              {leaf.desc && <span style={{ fontSize: 11.5, color: MUT, ...ui, lineHeight: 1.45 }}>{leaf.desc}</span>}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               {compact ? (
                 <button onClick={onSearch} aria-label="Search funds" title="Search funds"
                   style={ctrlBtn()}
@@ -453,6 +496,20 @@ export default function TopNav(props: TopNavProps) {
                 {s.label}
               </button>
             ))}
+            {utilitySection?.leaves && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 10.5, fontWeight: 600, color: MUT, ...ui, textTransform: "uppercase",
+                  letterSpacing: "0.1em", padding: "6px 8px" }}>{utilitySection.label}</div>
+                {utilitySection.leaves.map((leaf) => (
+                  <button key={leaf.label} onClick={() => { leaf.onClick(); setMobileOpen(false); }}
+                    style={{ width: "100%", textAlign: "left", padding: "11px 10px", borderRadius: 10, border: "none",
+                      cursor: "pointer", background: leaf.active ? "rgba(37,99,235,0.07)" : "transparent",
+                      color: leaf.active ? ACCENT : TXT, fontSize: 15, fontWeight: 500, ...ui }}>
+                    {leaf.label}
+                  </button>
+                ))}
+              </div>
+            )}
             <button onClick={() => { onAbout(); setMobileOpen(false); }}
               style={{ width: "100%", textAlign: "left", padding: "11px 10px", borderRadius: 10, border: "none",
                 cursor: "pointer", background: "transparent", color: TXT, fontSize: 15, fontWeight: 500, ...ui }}>

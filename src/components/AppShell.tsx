@@ -18,7 +18,10 @@ import ModelTab, { type ModelMode } from "./ModelTab";
 import ListsTab from "./ListsTab";
 import ExpansionTab from "./ExpansionTab";
 import AlertsTab from "./AlertsTab";
+import FirmFundsTab from "./FirmFundsTab";
+import ReviewsTab from "./ReviewsTab";
 import TopNav, { type NavSection } from "./TopNav";
+import { UTILITY_NAV } from "./navModel";
 
 // ── Roadmap / idea tabs (placeholders - not built yet) ──────────────────────────
 const mk = (paths: React.ReactNode) => (
@@ -45,15 +48,18 @@ const ROADMAP: RoadmapSpec[] = [
 ];
 
 // ── Nav model ───────────────────────────────────────────────────────────────────
-export type TabId = "home" | "dashboard" | "research" | "workspace" | "ideas" | "analysis" | "comparison"
+export type TabId = "home" | "dashboard" | "firmfunds" | "reviews" | "research" | "workspace" | "ideas" | "analysis" | "comparison"
   | "portfolio" | "murderboard" | "watchlist" | "lists" | "model" | "backtest" | "correlation" | "peers" | "alerts" | "tax" | "assistant" | "expansion";
 
-// Which top-nav item "owns" each tab (drives the active dot in TopNav).
+// Which primary-nav item "owns" each tab (drives the active underline in TopNav).
+// Phase 2 primary nav: Home (dashboard) · Firm Funds · Discover (research family) · Reviews.
+// Everything under the secondary Tools menu owns no primary underline ("tools").
 const SECTION_OF: Partial<Record<TabId, string>> = {
-  dashboard: "overview",
-  research: "research", ideas: "research", comparison: "research", analysis: "research", watchlist: "research", lists: "tools",
-  workspace: "portfolio-ws", portfolio: "portfolio-ws", murderboard: "portfolio-ws",
-  model: "model",
+  dashboard: "home",
+  firmfunds: "firmfunds",
+  reviews: "reviews",
+  research: "discover", ideas: "discover", comparison: "discover", analysis: "discover", watchlist: "discover",
+  workspace: "tools", portfolio: "tools", murderboard: "tools", model: "tools", lists: "tools",
   correlation: "tools", peers: "tools", backtest: "tools", tax: "tools", alerts: "tools", assistant: "tools", expansion: "tools",
 };
 
@@ -187,7 +193,7 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
 
   // No automatic landing: everyone — signed in or not — starts on the
   // homepage and enters the workspace only by clicking Enter ALCA / the nav.
-  const WORKSPACE_TABS: TabId[] = ["dashboard", "research", "workspace", "model", "ideas", "comparison", "analysis", "watchlist", "portfolio", "murderboard"];
+  const WORKSPACE_TABS: TabId[] = ["dashboard", "firmfunds", "reviews", "research", "workspace", "model", "ideas", "comparison", "analysis", "watchlist", "portfolio", "murderboard"];
   useEffect(() => {
     if (WORKSPACE_TABS.includes(tab)) { try { localStorage.setItem("alca-last-tab", tab); } catch {} }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -238,30 +244,48 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
     else doScroll();
   };
 
-  // ── Top-nav model: direct links to each area overview + a Tools menu.
-  //    No Workspaces dropdown — every main label opens its overview page. ──
+  // ── Phase 2 primary navigation — exactly four destinations ──
+  //    Home (market dashboard) · Firm Funds · Discover (consolidated discovery
+  //    tools) · Reviews. Models and Portfolios are preserved but demoted to the
+  //    secondary Tools menu below (not primary navigation).
   const sections: NavSection[] = [
-    { id: "overview", label: "Advisor Overview", onClick: () => switchTab("dashboard") },
-    { id: "research", label: "Research", onClick: () => switchTab("research") },
-    { id: "portfolio-ws", label: "Portfolio", onClick: () => switchTab("workspace") },
-    { id: "model", label: "Model", onClick: () => switchTab("model") },
-    { id: "tools", label: "Tools", leaves: [
-      { label: "Expansion", desc: "Add funds to Alca's universe", onClick: () => switchTab("expansion"), active: tab === "expansion" },
-      { label: "Saved Lists", desc: "Commonly used funds & watchlists", onClick: () => switchTab("lists"), active: tab === "lists" },
-      { label: "Correlation", desc: "Find true diversifiers", onClick: () => switchTab("correlation"), active: tab === "correlation" },
-      { label: "Peer Rankings", desc: "Category leaderboards", onClick: () => switchTab("peers"), active: tab === "peers" },
-      { label: "Backtest", desc: "Historical what-if", onClick: () => switchTab("backtest"), active: tab === "backtest" },
-      { label: "Tax Center", desc: "Tax-aware fund analysis", onClick: () => switchTab("tax"), active: tab === "tax" },
-      { label: "Alerts", desc: "Threshold notifications", onClick: () => switchTab("alerts"), active: tab === "alerts" },
-      { label: "AI Assistant", desc: "Ask the fund universe", onClick: () => switchTab("assistant"), active: tab === "assistant" },
-    ] },
+    { id: "home", label: "Home", onClick: () => switchTab("dashboard") },
+    { id: "firmfunds", label: "Firm Funds", onClick: () => switchTab("firmfunds") },
+    { id: "discover", label: "Discover", onClick: () => switchTab("research") },
+    { id: "reviews", label: "Reviews", onClick: () => switchTab("reviews") },
   ];
+
+  // Secondary "Tools" utility menu — preserves Portfolio, Model, and the existing
+  // utility destinations without exposing them as primary nav. Sourced from the
+  // shared nav model so tests can assert the split.
+  const utilityGo: Record<string, () => void> = {
+    workspace: () => switchTab("workspace"),
+    model: () => goModel("overview"),
+    expansion: () => switchTab("expansion"),
+    lists: () => switchTab("lists"),
+    correlation: () => switchTab("correlation"),
+    peers: () => switchTab("peers"),
+    backtest: () => switchTab("backtest"),
+    tax: () => switchTab("tax"),
+    alerts: () => switchTab("alerts"),
+    assistant: () => switchTab("assistant"),
+  };
+  const PORTFOLIO_TABS = new Set<TabId>(["workspace", "portfolio", "murderboard"]);
+  const utilitySection: NavSection = {
+    id: "tools", label: "Tools",
+    leaves: UTILITY_NAV.map((n) => ({
+      label: n.label, desc: n.desc,
+      onClick: utilityGo[n.id] ?? (() => {}),
+      active: n.id === "workspace" ? PORTFOLIO_TABS.has(tab) : tab === (n.id as TabId),
+    })),
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: T.bg, display: "flex", flexDirection: "column" }}>
 
       <TopNav
         sections={sections}
+        utilitySection={utilitySection}
         activeSection={SECTION_OF[tab] ?? null}
         onBrand={() => switchTab("home")}
         onAbout={scrollToAbout}
@@ -288,12 +312,13 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
         background: tab === "home" || tab === "dashboard" ? "transparent"
           : "linear-gradient(180deg, rgba(14,116,144,0.045) 0%, rgba(14,116,144,0) 380px)" }}>
 
-        {/* Shared Research navigation — one consistent system across the whole
-            Research workspace: Overview | Find Funds | Compare | Analyze | Watchlist */}
+        {/* Shared Discover navigation — one consistent system across the whole
+            Discover workspace: Overview | Find Funds | Compare | Analyze | Watchlist.
+            These are Discover's internal sections, not primary navigation. */}
         {RESEARCH_TABS.has(tab) && (
           <div style={{ maxWidth: 1280, margin: "0 auto 22px" }}>
             <style>{`.alca-subnav::-webkit-scrollbar{display:none}`}</style>
-            <div className="alca-subnav" role="navigation" aria-label="Research sections"
+            <div className="alca-subnav" role="navigation" aria-label="Discover sections"
               style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--c-line)",
                 overflowX: "auto", scrollbarWidth: "none" }}>
               {([
@@ -331,6 +356,14 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
         <div style={{ display: tab === "dashboard" ? "block" : "none" }}>
           <DashboardTab onNavigate={dashNavigate} userEmail={authUser ?? null} onAnalyze={goAnalyze} />
         </div>
+        {/* Firm Funds — primary destination shell (real data model added later) */}
+        {mounted.has("firmfunds") && (
+          <div style={{ display: tab === "firmfunds" ? "block" : "none" }}><FirmFundsTab /></div>
+        )}
+        {/* Reviews — primary destination shell (real workflow added later) */}
+        {mounted.has("reviews") && (
+          <div style={{ display: tab === "reviews" ? "block" : "none" }}><ReviewsTab /></div>
+        )}
         {mounted.has("research") && (
           <div style={{ display: tab === "research" ? "block" : "none" }}><ResearchHubTab go={hubGo} onAnalyze={goAnalyze} /></div>
         )}
