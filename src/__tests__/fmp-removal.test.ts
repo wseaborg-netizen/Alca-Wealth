@@ -3,9 +3,8 @@
  * ever reintroduced: no provider module, no fmp/funds runtime import, no FMP API
  * URL, no FMP env var, no legacy FMP-era cache key, no FMP provider type/function.
  *
- * The only permitted "fmp" residue is the schema-bound `fmp_supported` /
- * `fmp_payload_summary` (Postgres column + migration CHECK-constraint status
- * value) which cannot change without a database migration — asserted explicitly.
+ * As of Stage 6B the schema-bound columns/status were renamed to provider-neutral
+ * names, so runtime source contains NO `fmp` identifier at all.
  */
 import * as fs from "fs";
 import * as path from "path";
@@ -75,17 +74,9 @@ describe("Stage 6: FMP is fully removed", () => {
     expect(env).toContain("TIINGO_API_KEY");
   });
 
-  test("the ONLY residual `fmp` is the schema-bound status/column (migration-gated)", () => {
-    // The fund_requests CHECK constraint hard-codes the status value 'fmp_supported'
-    // and dynamic_funds has an `fmp_payload_summary` column — neither can change
-    // without a Supabase migration (out of scope). Confirm no OTHER lowercase `fmp`.
+  test("runtime source contains NO fmp identifier (schema columns renamed in Stage 6B)", () => {
     for (const f of runtimeFiles()) {
-      const stripped = read(f)
-        .replace(/fmp_supported/g, "")
-        .replace(/fmpSupported/g, "")
-        .replace(/fmp_payload_summary/g, "")
-        .replace(/fmpPayloadSummary/g, "");
-      expect(stripped).not.toMatch(/\bfmp\b/i);
+      expect(read(f)).not.toMatch(/fmp/i);
     }
   });
 });

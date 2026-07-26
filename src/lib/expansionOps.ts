@@ -32,11 +32,11 @@ export function opsBucket(status: string): OpsBucket {
   if (status === "already_available") return "duplicate";
   if (status === "unsupported") return "unsupported";
   if (FAILED.has(status)) return "failed";
-  return "review"; // needs_classification / ready_for_review / failed_validation / fmp_supported / rejected
+  return "review"; // needs_classification / ready_for_review / failed_validation / provider_supported / rejected
 }
 
 /** Statuses that appear in the Review Queue vs the Failed Imports tab. */
-export const REVIEW_STATUSES = ["needs_classification", "ready_for_review", "failed_validation", "fmp_supported"];
+export const REVIEW_STATUSES = ["needs_classification", "ready_for_review", "failed_validation", "provider_supported"];
 export const FAILED_STATUSES = ["pending", "classification_failed", "unsupported"];
 
 /** Human "Issue" label for a review-queue row. */
@@ -44,7 +44,7 @@ export function issueLabel(status: string, reason: string | null): string {
   const r = (reason ?? "").toLowerCase();
   if (status === "failed_validation") return "Invalid Taxonomy Value";
   if (status === "ready_for_review") return "Needs Verification";
-  if (status === "fmp_supported") return "Incomplete Metadata";
+  if (status === "provider_supported") return "Incomplete Metadata";
   if (status === "needs_classification") {
     if (r.includes("market cap")) return "Missing Category";
     if (r.includes("no classification rule")) return "Unknown Classification";

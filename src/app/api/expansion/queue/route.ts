@@ -34,14 +34,14 @@ export async function GET() {
         issue: issueLabel(r.status, r.failure_reason), reason: r.failure_reason,
         suggestedPrimary, suggestedCategory, suggested,
         confidence: confidenceOf(r.status, r.classification_status),
-        provider: r.fmp_supported ? "Tiingo" : "—", status: r.status, imported_at: r.requested_at,
+        provider: r.provider_supported ? "Tiingo" : "—", status: r.status, imported_at: r.requested_at,
       };
     });
 
     const failed = failedRows.map((r) => ({
       id: r.id, ticker: r.normalized_ticker, fund_name: r.fund_name,
       failureReason: failureLabel(r.status, r.failure_reason),
-      providerResponse: r.fmp_supported ? "Provider returned data" : (r.failure_reason ?? "—"),
+      providerResponse: r.provider_supported ? "Provider returned data" : (r.failure_reason ?? "—"),
       status: r.status, attempted_at: r.requested_at,
     }));
 

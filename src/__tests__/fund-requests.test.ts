@@ -77,7 +77,7 @@ describe("evaluateFundRequest", () => {
     expect(out.ok).toBe(true);
     if (!out.ok) return;
     expect(out.result.status).toBe("ready_for_review");
-    expect(out.result.fmpSupported).toBe(true);
+    expect(out.result.providerSupported).toBe(true);
     expect(out.result.alreadyInUniverse).toBe(false);
     expect(out.result.fundName).toBe("Some New ETF");
     expect(out.result.classificationStatus).toBe("pending");
@@ -88,7 +88,7 @@ describe("evaluateFundRequest", () => {
     expect(out.ok).toBe(true);
     if (!out.ok) return;
     expect(out.result.status).toBe("unsupported");
-    expect(out.result.fmpSupported).toBe(false);
+    expect(out.result.providerSupported).toBe(false);
     expect(out.result.failureReason).toBeTruthy();
   });
 
@@ -109,7 +109,7 @@ describe("evaluateFundRequest", () => {
 
 describe("duplicate prevention (active-status set)", () => {
   test("active statuses block re-requests; terminal statuses do not", () => {
-    expect(ACTIVE_STATUSES).toEqual(["pending", "fmp_supported", "needs_classification", "ready_for_review"]);
+    expect(ACTIVE_STATUSES).toEqual(["pending", "provider_supported", "needs_classification", "ready_for_review"]);
     expect(isActiveStatus("ready_for_review")).toBe(true);
     expect(isActiveStatus("pending")).toBe(true);
     for (const terminal of ["already_available", "approved", "rejected", "unsupported"]) {

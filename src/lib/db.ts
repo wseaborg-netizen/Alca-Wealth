@@ -135,13 +135,13 @@ export async function listItemNote(sb: Supa, listId: string, ticker: string, not
 
 export interface FundRequestRow {
   id: string; ticker: string; normalized_ticker: string; status: string;
-  fund_name: string | null; fmp_supported: boolean; already_in_universe: boolean;
+  fund_name: string | null; provider_supported: boolean; already_in_universe: boolean;
   classification_status: string | null; failure_reason: string | null;
   admin_note: string | null; requested_at: string; updated_at: string;
 }
 
 const FUND_REQUEST_COLS =
-  "id, ticker, normalized_ticker, status, fund_name, fmp_supported, already_in_universe, " +
+  "id, ticker, normalized_ticker, status, fund_name, provider_supported, already_in_universe, " +
   "classification_status, failure_reason, admin_note, requested_at, updated_at";
 
 /** All fund requests visible to the caller's firm (newest first). */
@@ -174,13 +174,13 @@ export async function fundRequestActive(sb: Supa, firmId: string, normalized: st
 
 export async function fundRequestCreate(sb: Supa, firmId: string, userId: string, r: {
   ticker: string; normalizedTicker: string; status: string; fundName: string | null;
-  fmpSupported: boolean; alreadyInUniverse: boolean; classificationStatus: string | null;
+  providerSupported: boolean; alreadyInUniverse: boolean; classificationStatus: string | null;
   failureReason: string | null;
 }): Promise<FundRequestRow> {
   const { data, error } = await sb.from("fund_requests").insert({
     firm_id: firmId, created_by: userId,
     ticker: r.ticker, normalized_ticker: r.normalizedTicker.toUpperCase(), status: r.status,
-    fund_name: r.fundName, fmp_supported: r.fmpSupported, already_in_universe: r.alreadyInUniverse,
+    fund_name: r.fundName, provider_supported: r.providerSupported, already_in_universe: r.alreadyInUniverse,
     classification_status: r.classificationStatus, failure_reason: r.failureReason,
   }).select(FUND_REQUEST_COLS).single();
   if (error) throw new Error(error.message);
@@ -469,7 +469,7 @@ export async function dynamicFundInsert(sb: Supa, firmId: string, userId: string
   portfolioRole: string | null; investmentFocus: string | null; region: string | null;
   marketCap: string | null; style: string | null; styleBox: string | null;
   classificationSource: string | null; sourceRequestId: string | null;
-  fmpPayloadSummary: Record<string, unknown> | null;
+  providerPayloadSummary: Record<string, unknown> | null;
 }): Promise<DynamicFundRow> {
   const { data, error } = await sb.from("dynamic_funds").insert({
     firm_id: firmId, created_by: userId, source_request_id: f.sourceRequestId,
@@ -478,7 +478,7 @@ export async function dynamicFundInsert(sb: Supa, firmId: string, userId: string
     benchmark: f.benchmark, benchmark_category: f.benchmarkCategory, management_style: f.managementStyle,
     portfolio_role: f.portfolioRole, investment_focus: f.investmentFocus, region: f.region,
     market_cap: f.marketCap, style: f.style, style_box: f.styleBox,
-    classification_source: f.classificationSource, fmp_payload_summary: f.fmpPayloadSummary, verified: true,
+    classification_source: f.classificationSource, provider_payload_summary: f.providerPayloadSummary, verified: true,
   }).select(DYNAMIC_FUND_COLS).single();
   if (error) throw new Error(error.message);
   return data as unknown as DynamicFundRow;

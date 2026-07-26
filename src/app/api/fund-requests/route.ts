@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
 
     const request = await fundRequestCreate(ctx.sb, ctx.firm.id, ctx.user.id, {
       ticker: r.normalized, normalizedTicker: r.normalized, status: r.status,
-      fundName: r.fundName, fmpSupported: r.fmpSupported, alreadyInUniverse: r.alreadyInUniverse,
+      fundName: r.fundName, providerSupported: r.providerSupported, alreadyInUniverse: r.alreadyInUniverse,
       classificationStatus: r.classificationStatus, failureReason: r.failureReason,
     });
 
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
         managementStyle: f.management_style, portfolioRole: f.portfolio_role, investmentFocus: f.investment_focus,
         region: f.region, marketCap: f.market_cap, style: f.style, styleBox: f.style_box,
         classificationSource: r.classification.source, sourceRequestId: request.id,
-        fmpPayloadSummary: { name: r.fundName, assetType: r.vehicle }, // safe identity only
+        providerPayloadSummary: { name: r.fundName, assetType: r.vehicle }, // safe identity only
       });
       return NextResponse.json({ status: r.status, request, fund }, { status: 201 });
     }

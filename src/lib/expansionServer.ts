@@ -46,7 +46,7 @@ export async function processTicker(sb: Supa, firmId: string, userId: string, ra
 
   const request = await fundRequestCreate(sb, firmId, userId, {
     ticker: r.normalized, normalizedTicker: r.normalized, status: r.status,
-    fundName: r.fundName, fmpSupported: r.fmpSupported, alreadyInUniverse: r.alreadyInUniverse,
+    fundName: r.fundName, providerSupported: r.providerSupported, alreadyInUniverse: r.alreadyInUniverse,
     classificationStatus: r.classificationStatus, failureReason: r.failureReason,
   });
 
@@ -79,7 +79,7 @@ async function insertVerified(sb: Supa, firmId: string, userId: string, ticker: 
     benchmark: benchmark ?? benchmarkFor(f.asset_class, f.region), benchmarkCategory: f.benchmark_category,
     managementStyle: f.management_style, portfolioRole: f.portfolio_role, investmentFocus: f.investment_focus,
     region: f.region, marketCap: f.market_cap ?? null, style: f.style ?? null, styleBox: f.style_box ?? null,
-    classificationSource: source, sourceRequestId: requestId, fmpPayloadSummary: { name, vehicle },
+    classificationSource: source, sourceRequestId: requestId, providerPayloadSummary: { name, vehicle },
   });
 }
 

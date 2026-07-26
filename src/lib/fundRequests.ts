@@ -18,7 +18,7 @@ import type { RuntimeClassification } from "./classify";
 export type FundRequestStatus =
   | "pending"              // checks could not complete (e.g. provider unavailable) — retryable
   | "already_available"    // already in the merged universe (no request stored)
-  | "fmp_supported"        // provider has it (reserved intermediate state)
+  | "provider_supported"        // provider has it (reserved intermediate state)
   | "needs_classification" // provider-supported but the classifier could not confidently classify
   | "ready_for_review"     // provider-supported, no runtime classifier available — pipeline review
   | "approved"             // admin approved (added via pipeline later)
@@ -41,7 +41,7 @@ export interface FundRequestEval {
   normalized: string;
   status: FundRequestStatus;
   fundName: string | null;
-  fmpSupported: boolean;
+  providerSupported: boolean;
   alreadyInUniverse: boolean;
   classificationStatus: string | null;
   failureReason: string | null;
@@ -77,7 +77,7 @@ export async function evaluateFundRequest(raw: unknown, deps: EvaluateDeps): Pro
       ok: true,
       result: {
         ...blank, status: "already_available", fundName: existing.name,
-        fmpSupported: true, alreadyInUniverse: true, classificationStatus: "classified",
+        providerSupported: true, alreadyInUniverse: true, classificationStatus: "classified",
         failureReason: null, vehicle: existing.vehicle,
         existingFund: {
           ticker: existing.ticker, name: existing.name, vehicle: existing.vehicle,
@@ -93,14 +93,14 @@ export async function evaluateFundRequest(raw: unknown, deps: EvaluateDeps): Pro
 
   if (support.inconclusive) {
     return { ok: true, result: {
-      ...blank, status: "pending", fundName: support.name, fmpSupported: false, alreadyInUniverse: false,
+      ...blank, status: "pending", fundName: support.name, providerSupported: false, alreadyInUniverse: false,
       classificationStatus: null, failureReason: support.reason ?? "Provider check could not complete.", vehicle,
     } };
   }
 
   if (!support.supported) {
     return { ok: true, result: {
-      ...blank, status: "unsupported", fundName: support.name, fmpSupported: false, alreadyInUniverse: false,
+      ...blank, status: "unsupported", fundName: support.name, providerSupported: false, alreadyInUniverse: false,
       classificationStatus: null, failureReason: support.reason ?? "Not supported by the data provider.", vehicle,
     } };
   }
@@ -109,7 +109,7 @@ export async function evaluateFundRequest(raw: unknown, deps: EvaluateDeps): Pro
   //    No runtime classifier available → queue for offline-pipeline review.
   if (!deps.classify) {
     return { ok: true, result: {
-      ...blank, status: "ready_for_review", fundName: support.name, fmpSupported: true, alreadyInUniverse: false,
+      ...blank, status: "ready_for_review", fundName: support.name, providerSupported: true, alreadyInUniverse: false,
       classificationStatus: "pending", failureReason: null, vehicle,
     } };
   }
@@ -120,7 +120,7 @@ export async function evaluateFundRequest(raw: unknown, deps: EvaluateDeps): Pro
     cls = deps.classify({ normalizedTicker: t, name: support.name ?? t, fundType: support.assetType });
   } catch {
     return { ok: true, result: {
-      ...blank, status: "classification_failed", fundName: support.name, fmpSupported: true, alreadyInUniverse: false,
+      ...blank, status: "classification_failed", fundName: support.name, providerSupported: true, alreadyInUniverse: false,
       classificationStatus: "error", failureReason: "The classifier failed to run.", vehicle,
     } };
   }
@@ -132,7 +132,7 @@ export async function evaluateFundRequest(raw: unknown, deps: EvaluateDeps): Pro
     // route to human review with the verified evidence preserved.
     if (!vehicle) {
       return { ok: true, result: {
-        ...blank, status: "needs_classification", fundName: support.name, fmpSupported: true, alreadyInUniverse: false,
+        ...blank, status: "needs_classification", fundName: support.name, providerSupported: true, alreadyInUniverse: false,
         classificationStatus: "needs_classification",
         failureReason: "Provider cannot confirm the fund vehicle (ETF vs mutual fund); needs review.",
         vehicle, classification: cls,
@@ -140,26 +140,26 @@ export async function evaluateFundRequest(raw: unknown, deps: EvaluateDeps): Pro
     }
     // Confident + taxonomy-valid + known vehicle → add as a verified dynamic fund.
     return { ok: true, result: {
-      ...blank, status: "added_to_universe", fundName: support.name, fmpSupported: true, alreadyInUniverse: false,
+      ...blank, status: "added_to_universe", fundName: support.name, providerSupported: true, alreadyInUniverse: false,
       classificationStatus: "verified", failureReason: null, vehicle, classification: cls,
     } };
   }
   if (cls.status === "invalid_taxonomy") {
     return { ok: true, result: {
-      ...blank, status: "failed_validation", fundName: support.name, fmpSupported: true, alreadyInUniverse: false,
+      ...blank, status: "failed_validation", fundName: support.name, providerSupported: true, alreadyInUniverse: false,
       classificationStatus: "invalid_taxonomy", failureReason: cls.reason, vehicle, classification: cls,
     } };
   }
   // needs_classification — rules couldn't confidently classify; do NOT add.
   return { ok: true, result: {
-    ...blank, status: "needs_classification", fundName: support.name, fmpSupported: true, alreadyInUniverse: false,
+    ...blank, status: "needs_classification", fundName: support.name, providerSupported: true, alreadyInUniverse: false,
     classificationStatus: "needs_classification", failureReason: cls.reason, vehicle, classification: cls,
   } };
 }
 
 /** Statuses that count as an open/active request (block duplicates). */
 export const ACTIVE_STATUSES: FundRequestStatus[] = [
-  "pending", "fmp_supported", "needs_classification", "ready_for_review",
+  "pending", "provider_supported", "needs_classification", "ready_for_review",
 ];
 
 export function isActiveStatus(s: string): boolean {

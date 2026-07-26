@@ -17,7 +17,7 @@ describe("fund lifecycle → operator buckets", () => {
   test("every status maps to exactly one bucket (never undefined)", () => {
     const all = ["added_to_universe", "approved", "already_available", "unsupported",
       "pending", "classification_failed", "needs_classification", "ready_for_review",
-      "failed_validation", "fmp_supported", "rejected"];
+      "failed_validation", "provider_supported", "rejected"];
     const allowed = new Set(["verified", "review", "failed", "duplicate", "unsupported"]);
     for (const s of all) expect(allowed.has(opsBucket(s))).toBe(true);
     expect(opsBucket("added_to_universe")).toBe("verified");
