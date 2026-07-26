@@ -123,3 +123,12 @@ export interface SplitHistory {
   readonly availability: SeriesAvailability;
   readonly provenance: Provenance;
 }
+
+// ── Combined series ───────────────────────────────────────────────────────────
+
+/** Price/NAV history + distributions + splits derived from ONE `/prices` fetch. */
+export interface PriceSeries {
+  readonly history: PriceHistory;
+  readonly distributions: DistributionHistory;
+  readonly splits: SplitHistory;
+}

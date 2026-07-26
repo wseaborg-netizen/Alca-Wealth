@@ -5,7 +5,7 @@
  * with a plain-English articulation of why and by how much.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { getRecommendFund, getBenchmarkHistory, BENCHMARKS, inferVehicle } from "@/lib/funds";
+import { getRecommendFund, getBenchmarkHistory, BENCHMARKS, inferVehicle } from "@/lib/market-data/fundService";
 import { computePercentiles } from "@/lib/kpi";
 import { cacheGet } from "@/lib/cache";
 import { getMergedUniverse } from "@/lib/universeServer";

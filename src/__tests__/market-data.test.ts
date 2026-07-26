@@ -412,6 +412,28 @@ describe("Stage 2 capability behavior", () => {
   });
 });
 
+// ── Combined series (one fetch → history + distributions + splits) ────────────
+describe("getPriceSeries", () => {
+  test("single /prices fetch yields history, distributions, and splits", async () => {
+    const { provider, rec } = providerReturning(() => ({ status: 200, body: PRICE_ROWS }));
+    const r = await provider.getPriceSeries("VTI", INTERNAL, { kind: "price" });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.data.history.bars).toHaveLength(3);
+    expect(r.data.distributions.distributions).toEqual([{ exDate: "2026-07-23", amount: 0.5 }]);
+    expect(r.data.splits.splits).toEqual([{ date: "2026-07-24", factor: 2 }]);
+    expect(rec.calls).toHaveLength(1); // ONE request, not three
+  });
+
+  test("error propagates without partial data", async () => {
+    const { provider } = providerReturning(() => ({ status: 500 }));
+    const r = await provider.getPriceSeries("VTI", INTERNAL);
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.error.category).toBe("server_error");
+  });
+});
+
 // ── No import-time side effects ───────────────────────────────────────────────
 test("creating the provider makes no request until a method is called", () => {
   const rec: Recorder = { calls: [] };

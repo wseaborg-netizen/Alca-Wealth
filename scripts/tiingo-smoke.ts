@@ -16,6 +16,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { createTiingoProvider, type TokenContext } from "@/lib/market-data";
+import { getFund, getRecommendFund } from "@/lib/market-data/fundService";
 
 const MAX_REQUESTS = 20;
 let requestCount = 0;
@@ -124,6 +125,39 @@ describe("Tiingo live smoke (manual — bounded, sanitized)", () => {
     const r = await provider.getSecurityMetadata("ZZINVALIDXYZ", INTERNAL);
     console.log("META invalid:", { ok: r.ok, error: cat(r) });
     expect(r.ok).toBe(false);
+  });
+
+  // ── Migrated fund service (Stage 3) — the path the 5 workflows now use ──
+  const fsummary = (r: { ticker: string; aum: number | null; inceptionDate: string | null; dataSource?: string; error?: string; kpi: { return3y: number | null } }) =>
+    ({ ticker: r.ticker, dataSource: r.dataSource, aum: r.aum, aumFormatted: (r as { aumFormatted?: string }).aumFormatted, inceptionDate: r.inceptionDate, hasKpi: r.kpi != null, return3y: r.kpi?.return3y ?? null, error: r.error });
+
+  it("fundService: ETF (VTI) via getFund", async () => {
+    budget(); budget(); // getPriceSeries + benchmark
+    const r = await getFund("VTI", "ETF", "US Equity Large Blend", "SPY");
+    console.log("FUND VTI:", fsummary(r));
+    expect(r.error).toBeUndefined();
+    expect(r.aum).toBeNull();
+  });
+
+  it("fundService: mutual fund NAV (VFIAX) via getFund", async () => {
+    budget();
+    const r = await getFund("VFIAX", "Mutual Fund", "US Equity Large Blend", "SPY");
+    console.log("FUND VFIAX:", fsummary(r));
+    expect(r.error).toBeUndefined();
+  });
+
+  it("fundService: peer scan (BND) via getRecommendFund", async () => {
+    budget(); budget();
+    const r = await getRecommendFund("BND", "ETF", "Intermediate Core Bond", "AGG");
+    console.log("FUND BND:", fsummary(r));
+    expect(r.error).toBeUndefined();
+  });
+
+  it("fundService: invalid symbol → explicit error record", async () => {
+    budget();
+    const r = await getFund("ZZINVALIDXYZ", "ETF", "Other", "SPY");
+    console.log("FUND invalid:", fsummary(r));
+    expect(r.error).toBeDefined();
   });
 
   it("stayed within the request cap", () => {

@@ -20,6 +20,7 @@ import type {
   SecurityMetadata,
   PriceHistory,
   PriceSeriesKind,
+  PriceSeries,
   DistributionHistory,
   SplitHistory,
   Provenance,
@@ -40,6 +41,8 @@ export interface MarketDataProvider {
   getPriceHistory(symbol: string, ctx: TokenContext, opts?: HistoryOptions): Promise<Result<PriceHistory>>;
   getDistributions(symbol: string, ctx: TokenContext, opts?: HistoryOptions): Promise<Result<DistributionHistory>>;
   getSplits(symbol: string, ctx: TokenContext, opts?: HistoryOptions): Promise<Result<SplitHistory>>;
+  /** Price/NAV history + distributions + splits from a SINGLE `/prices` fetch. */
+  getPriceSeries(symbol: string, ctx: TokenContext, opts?: HistoryOptions): Promise<Result<PriceSeries>>;
 }
 
 export interface TiingoProviderDeps extends TransportDeps {
@@ -153,6 +156,23 @@ export function createTiingoProvider(deps: TiingoProviderDeps = {}): MarketDataP
       const rows = await fetchPriceRows(symbol, ctx, bound, opts?.startDate);
       if (!rows.ok) return { ok: false, error: rows.error };
       return { ok: true, data: normalizeSplits(symbol, rows.data, provenanceNow(bound.now)) };
+    },
+
+    async getPriceSeries(symbol, ctx, opts) {
+      const bad = guardSymbol(symbol);
+      if (bad) return { ok: false, error: bad };
+      const rows = await fetchPriceRows(symbol, ctx, bound, opts?.startDate);
+      if (!rows.ok) return { ok: false, error: rows.error };
+      const prov = provenanceNow(bound.now);
+      const observedAt = bound.now().toISOString();
+      return {
+        ok: true,
+        data: {
+          history: normalizePriceHistory(symbol, opts?.kind ?? "price", rows.data, prov, observedAt),
+          distributions: normalizeDistributions(symbol, rows.data, prov),
+          splits: normalizeSplits(symbol, rows.data, prov),
+        },
+      };
     },
   };
 }

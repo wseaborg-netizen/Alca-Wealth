@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFund, getRecommendFund, getBenchmarkHistory, BENCHMARKS, inferVehicle, type FundRecord } from "@/lib/funds";
+import { getFund, getRecommendFund, getBenchmarkHistory, BENCHMARKS, inferVehicle, type FundRecord } from "@/lib/market-data/fundService";
 import { computePercentiles } from "@/lib/kpi";
 import { cacheGet } from "@/lib/cache";
 import { getMergedUniverse } from "@/lib/universeServer";

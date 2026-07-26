@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFund, getBenchmarkHistory, BENCHMARKS } from "@/lib/funds";
+import { getFund, getBenchmarkHistory, BENCHMARKS } from "@/lib/market-data/fundService";
 import { computePercentiles } from "@/lib/kpi";
 import { getMergedUniverse } from "@/lib/universeServer";
 import { rankFundsForContext, type ScoreContext } from "@/lib/metrics/score";

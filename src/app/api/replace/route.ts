@@ -3,7 +3,7 @@
  * returns ranked alternatives in the same category.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { getRecommendFund, getBenchmarkHistory, BENCHMARKS, inferVehicle } from "@/lib/funds";
+import { getRecommendFund, getBenchmarkHistory, BENCHMARKS, inferVehicle } from "@/lib/market-data/fundService";
 import { computePercentiles } from "@/lib/kpi";
 import { rankRecords, REPLACE_REASON_CONTEXT } from "@/lib/metrics/recordScore";
 import { cacheGet } from "@/lib/cache";

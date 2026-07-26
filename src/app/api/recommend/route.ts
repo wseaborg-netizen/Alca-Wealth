@@ -3,7 +3,7 @@
  * Uses the existing screen + scoring infrastructure, tuned to the profile.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { getRecommendFund, getBenchmarkHistory, BENCHMARKS } from "@/lib/funds";
+import { getRecommendFund, getBenchmarkHistory, BENCHMARKS } from "@/lib/market-data/fundService";
 import { computePercentiles } from "@/lib/kpi";
 import { rankRecords, contextFromPriorities } from "@/lib/metrics/recordScore";
 import { cacheGet } from "@/lib/cache";
