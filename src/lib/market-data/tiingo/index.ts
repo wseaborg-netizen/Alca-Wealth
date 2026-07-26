@@ -6,7 +6,7 @@
  *
  * Importing this module performs NO network I/O: a provider is created explicitly
  * via createTiingoProvider(), and a request happens only when a method is called.
- * There is NO FMP fallback here. Token access is confined to the token resolver
+ * There is no provider fallback here. Token access is confined to the token resolver
  * and the transport boundary.
  *
  * Endpoints (Tiingo daily): metadata `GET /tiingo/daily/{symbol}`; price/NAV,

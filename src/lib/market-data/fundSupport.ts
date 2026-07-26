@@ -1,7 +1,7 @@
 /**
  * Tiingo-backed fund-support check for Expansion / fund-request validation —
- * SERVER-SIDE ONLY. Drop-in for the FMP `fetchFundSupport` (same FundSupport
- * shape), so the intake evaluator is unchanged.
+ * SERVER-SIDE ONLY. Provider-neutral support check (returns FundSupport), so the
+ * intake evaluator is unchanged.
  *
  * Evidence policy:
  *  - `supported` ⇒ Tiingo has metadata for the symbol (provider coverage).
@@ -14,7 +14,19 @@
  */
 import { createTiingoProvider } from "@/lib/market-data";
 import type { TokenContext, MarketDataProvider } from "@/lib/market-data";
-import type { FundSupport } from "@/lib/fmp";
+
+/**
+ * Provider-neutral fund-support evidence (identity + coverage flags). `assetType`
+ * is "Unknown" from Tiingo (vehicle is never guessed). ALCA-owned — no provider
+ * response fields.
+ */
+export interface FundSupport {
+  supported: boolean;
+  inconclusive: boolean; // provider unavailable / retryable — not a definitive "no"
+  name: string | null;
+  assetType: string | null;
+  reason: string | null;
+}
 
 let _provider: MarketDataProvider | null = null;
 const tiingo = (): MarketDataProvider => (_provider ??= createTiingoProvider());

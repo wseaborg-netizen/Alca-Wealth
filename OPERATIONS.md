@@ -109,9 +109,8 @@ Run every command **after** you are inside the project folder (Step 2 of Section
 | Open the project | TERMINAL | `cd ~/Desktop/"Alca Wealth"` | Moves Terminal into the project | Your cursor line ends with `Alca Wealth` |
 | Start Claude Code | CLAUDE CODE | *(not confirmed — open the app)* | Lets Claude read/edit the project | Claude shows the `Alca Wealth` folder |
 | Start the local website | TERMINAL | `npm run dev` | Runs the site on your computer | Shows `Ready` and `http://localhost:3000` |
-| Import funds from the data provider | TERMINAL | `npm run funds:import` | Looks up each ticker with FMP | Ends with a count written to `fund-reference-data.json` |
-| Classify funds | TERMINAL | `npm run funds:classify` | Sorts funds into categories | Shows `verified`, `need review`, and `0 invalid values` |
-| Run the whole fund pipeline | TERMINAL | `npm run funds:build` | Import, then classify | Both steps finish with no error |
+| Add funds | APP | Expansion tab | Adds a fund at runtime (Tiingo coverage check + human classification review) | The fund enters the verified universe once approved |
+| Classify funds | TERMINAL | `npm run funds:classify` | Sorts reference identity into categories | Shows `verified`, `need review`, and `0 invalid values` |
 | Check the fund data is correct | TERMINAL | `npm run funds:validate` | Six safety checks on the data | Ends with `PASS — fund data is valid.` |
 | Run tests | TERMINAL | `npm test` | Runs automated checks | `Tests: 11 passed, 11 total` |
 | Run the code style checker | TERMINAL | `npm run lint` | Flags code style issues | **See warning below** |
@@ -227,7 +226,7 @@ Open `~/Desktop/Alca Wealth/data/input/fund-tickers.txt` in TextEdit (or any pla
 **3. TERMINAL — Run the full fund pipeline.**
 
 ```
-npm run funds:build
+npm run funds:classify
 ```
 
 *Success looks like:* it finishes with a `verified` count, a `need review` count, and `taxonomy check: 0 invalid values`.
@@ -251,11 +250,11 @@ PASS — fund data is valid.
 |---|---|
 | `data/generated/fund-universe.json` | **Verified** funds. These are the funds the website actually shows. |
 | `data/generated/fund-review-queue.json` | **Review** funds. The computer could not confidently categorize them. They are **not** on the website. |
-| `data/generated/fund-import-failures.json` | **Failed** funds. The data provider (FMP) does not have this ticker at all. |
+| `data/generated/fund-import-failures.json` | **Failed** funds. The data provider (Tiingo) does not have this ticker at all. |
 
 - **Verified** = correctly categorized and live on the site.
 - **Review** = the fund exists, but its name did not clearly reveal its category. A human decision is needed. See Section 6.
-- **Failed** = FMP has no record of this ticker. Either the ticker is wrong, or FMP simply does not cover that fund.
+- **Failed** = Tiingo has no record of this ticker. Either the ticker is wrong, or Tiingo simply does not cover that fund.
 
 > **Do not manually edit anything inside `data/generated/`.** Those files are rewritten from scratch every time you run the pipeline. Your edits would be erased.
 
@@ -299,7 +298,7 @@ data/config/fund-classification-overrides.json
 Resolve every fund currently in the generated review queue.
 
 Requirements:
-- Inspect each ticker, official fund name, available FMP metadata, current taxonomy, and existing classifier rules.
+- Inspect each ticker, official fund name, available Tiingo metadata, current taxonomy, and existing classifier rules.
 - Use only valid controlled-taxonomy values.
 - Add a deterministic classifier rule when the logic applies to multiple similar funds.
 - Use the classification overrides file only for genuine exceptions.
@@ -349,7 +348,7 @@ Report exactly what changed.
 - `node_modules/` can be rebuilt with `npm install`, but normally you should leave it alone.
 - `tsconfig.tsbuildinfo` is a temporary speed-up file. It is safe to delete and it will come back on its own.
 - **`.env.local` contains secrets.** Never share it, never upload it, never commit it, never post it online.
-- **Never paste an API key into a Claude chat, into this document, or into any message.** Your keys are `FMP_API_KEY` and `APP_PASSWORD`. Claude reads them from the file automatically — it never needs you to type them.
+- **Never paste an API key into a Claude chat, into this document, or into any message.** Your keys are `TIINGO_API_KEY` and `APP_PASSWORD`. Claude reads them from the file automatically — it never needs you to type them.
 
 ---
 
@@ -671,21 +670,21 @@ npm install
 5. **Stop and ask Claude** if it ends with errors.
 
 ### Environment variable missing
-1. **Means:** a required secret (such as `FMP_API_KEY`) is not in `.env.local`.
+1. **Means:** a required secret (such as `TIINGO_API_KEY`) is not in `.env.local`.
 2. **Safest first action:** check which keys exist — **this prints only names, never the secret values.**
 3. **Command:**
 ```
 grep -oE '^[A-Z_]+=' ~/Desktop/"Alca Wealth"/.env.local
 ```
-4. **Success:** you see `FMP_API_KEY=` and `APP_PASSWORD=`.
+4. **Success:** you see `TIINGO_API_KEY=` and `APP_PASSWORD=`.
 5. **Stop and ask Claude Code to inspect it** if one is missing. **Never paste the key itself into chat.**
 
-### FMP ticker import failure
+### Tiingo ticker import failure
 1. **Means:** the data provider has no record of that ticker. It appears in `data/generated/fund-import-failures.json`.
 2. **Safest first action:** check the ticker is spelled correctly in `data/input/fund-tickers.txt`.
 3. **Command:**
 ```
-npm run funds:build
+npm run funds:classify
 ```
 4. **Success:** the failure count drops to `0`.
 5. **Stop and ask Claude** if the ticker is spelled right but still fails — the provider may genuinely not cover that fund, and Claude must decide what to do.
@@ -784,7 +783,7 @@ After editing:
 I have added new tickers to data/input/fund-tickers.txt.
 
 Please:
-- Run npm run funds:build.
+- Run npm run funds:classify.
 - Run npm run funds:validate.
 - Report the verified, review, and failed counts.
 - If any tickers failed to import, tell me which ones and why.
@@ -798,7 +797,7 @@ Please:
 Resolve every fund currently in the generated review queue.
 
 Requirements:
-- Inspect each ticker, official fund name, available FMP metadata, current taxonomy, and existing classifier rules.
+- Inspect each ticker, official fund name, available Tiingo metadata, current taxonomy, and existing classifier rules.
 - Use only valid controlled-taxonomy values.
 - Add a deterministic classifier rule when the logic applies to multiple similar funds.
 - Use the classification overrides file only for genuine exceptions.
@@ -987,7 +986,7 @@ If any box is unchecked and you do not know why, **do not deploy.** Leave it for
 
 - **What it is:** Settings → **System Health** — compact status cards (Healthy /
   Warning / Needs attention) for eight core systems: Fund Universe (now including
-  the classifier/taxonomy self-test + static/dynamic/merged counts), FMP Data,
+  the classifier/taxonomy self-test + static/dynamic/merged counts), Market Data (Tiingo),
   Scoring Engine, Saved Lists / Supabase, Fund Requests, Portfolio Builder, API
   Routes, and App Build. An internal diagnostic, **not** a marketing/uptime claim.
 - **Where:** the checks live in `src/lib/health.ts` (server-only), the endpoint
@@ -1002,7 +1001,7 @@ If any box is unchecked and you do not know why, **do not deploy.** Leave it for
   PII, and the saved-lists check returns **counts only**, never list contents.
   Real errors are logged server-side; the client sees a generic note.
 - **Lightweight:** one probe fund (VTI) is fetched once (cached) and shared
-  across the FMP / scoring / portfolio checks. Scoring uses already-cached peers
+  across the Tiingo / scoring / portfolio checks. Scoring uses already-cached peers
   only (no cold fan-out), so early after a cold start it may report a documented
   "peer data unavailable" **warning** rather than a full score.
 - **App Build card** reads deployment metadata only (Vercel commit/env, never a
@@ -1015,7 +1014,7 @@ If any box is unchecked and you do not know why, **do not deploy.** Leave it for
 When an advisor searches a ticker that isn't in the verified universe, they can
 **request** it. The request is tracked so it can be reviewed and, later, fed into
 the offline fund pipeline. **This never mutates the *static* verified universe on
-its own.** (As of the Expansion Hub below, a request that FMP supports **and** the
+its own.** (As of the Expansion Hub below, a request that Tiingo supports **and** the
 classifier confidently classifies is added to the **dynamic** universe overlay —
 see the next section. The `fund_requests` table + API here are the intake layer.)
 
@@ -1026,7 +1025,7 @@ see the next section. The `fund_requests` table + API here are the intake layer.
   **Run it in the Supabase SQL editor / `supabase db push` before this ships.**
 - **API:**
   - `POST /api/fund-requests` — body `{ ticker }`. Normalizes the ticker (trim /
-    uppercase / shape-validate → 400 on junk), checks the universe, then FMP,
+    uppercase / shape-validate → 400 on junk), checks the universe, then Tiingo,
     dedupes any open request, and records the result. Requires a signed-in
     session (401 otherwise).
   - `GET /api/fund-requests` — the firm's requests (RLS-scoped).
@@ -1035,9 +1034,9 @@ see the next section. The `fund_requests` table + API here are the intake layer.
 - **How a ticker flows:**
   1. Already verified → status **already_available**, returns the existing fund
      metadata, stores **no** request.
-  2. FMP has usable data but it's not in the universe → **ready_for_review**
+  2. Tiingo has usable data but it's not in the universe → **ready_for_review**
      (`fmp_supported=true`, `classification_status=pending`).
-  3. FMP can't return usable data → **unsupported** with a reason.
+  3. Tiingo can't return usable data → **unsupported** with a reason.
   4. Provider unavailable / no key → **pending** (retryable — *this* is what the
      health card flags as "stuck").
 - **Statuses:** `pending` · `already_available` · `fmp_supported` (reserved) ·
@@ -1049,13 +1048,13 @@ see the next section. The `fund_requests` table + API here are the intake layer.
   (or an owner/admin can read them via `GET /api/fund-requests`).
 - **Approve / add a ticker manually (today):** review the `ready_for_review`
   rows, add the good tickers to `data/input/fund-tickers.txt`, run
-  `npm run funds:build` then `npm run funds:validate`, and commit the regenerated
+  `npm run funds:classify` then `npm run funds:validate`, and commit the regenerated
   `data/generated/*`. Then mark the row `approved` (e.g. `update fund_requests set
   status='approved', admin_note='added <date>' where normalized_ticker='XXXX';`).
   A future task can automate this hand-off and wire an admin UI.
 - **Health:** the **Fund Requests** card is informational — healthy for normal
   backlogs (it reports `readyForReview` / `unsupported` counts), and warns only
-  when `pending` (stuck) requests exist. No FMP key or raw provider payload is
+  when `pending` (stuck) requests exist. No Tiingo key or raw provider payload is
   ever returned by the support check.
 
 ## Expansion Hub — add funds from the website
@@ -1084,7 +1083,7 @@ the static base record.
 1. Normalize (trim/upper/shape → 400 on junk).
 2. In the **merged** universe already → **already_available** (returns metadata,
    stores nothing, links to Analyze).
-3. Else FMP support check: unsupported → **unsupported**; provider down/no key →
+3. Else Tiingo support check: unsupported → **unsupported**; provider down/no key →
    **pending** (retryable).
 4. Supported → **classify** with the shared pipeline rules (`src/lib/classify/`):
    - confident + taxonomy-valid → stored as a **verified dynamic fund** →
@@ -1106,7 +1105,7 @@ is wired) · `approved` · `rejected` · `unsupported` · `classification_failed
 
 **Permissions:** any signed-in firm user can submit and see the firm's requests
 (RLS via `is_firm_member`); verified dynamic funds are readable by any
-authenticated user (one shared internal universe). Auto-add happens only when FMP
+authenticated user (one shared internal universe). Auto-add happens only when Tiingo
 support **and** classifier validation pass — users can't bypass validation.
 owner/admin/member roles exist for future review/reject controls.
 
@@ -1119,7 +1118,7 @@ a live `COUNT`, never hardcoded) and runs a classifier + taxonomy self-test —
 **Folding dynamic funds into the static base (periodic maintenance):**
 1. List them: `select normalized_ticker from dynamic_funds where verified order by created_at;`
 2. Add those tickers to `data/input/fund-tickers.txt`.
-3. `npm run funds:build` → `npm run funds:validate`, commit the regenerated
+3. `npm run funds:classify` → `npm run funds:validate`, commit the regenerated
    `data/generated/*`, and deploy the static baseline.
 4. Optionally delete the now-static rows from `dynamic_funds` (the merge prefers
    the static record regardless, so leaving them is harmless — they just stop

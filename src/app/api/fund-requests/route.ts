@@ -11,12 +11,12 @@ import { checkFundSupport } from "@/lib/market-data/fundSupport";
  * Add Missing Fund — request intake + runtime add.
  *
  * GET  → the caller's firm fund requests (RLS-scoped).
- * POST → normalize a ticker, check the MERGED universe + FMP, classify with the
+ * POST → normalize a ticker, check the MERGED universe + Tiingo, classify with the
  *        shared pipeline rules, and — when confident + taxonomy-valid — store it
  *        as a verified dynamic fund (added_to_universe). Never fakes a
  *        classification or an add; unclear funds become needs_classification.
  *
- * Requires an authenticated session. No FMP key/raw payload is ever returned.
+ * Requires an authenticated session. No provider key/raw payload is ever returned.
  */
 export async function GET() {
   const ctx = await requireFirmContext();
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   const outcome = await evaluateFundRequest(body?.ticker, {
     lookupUniverse: (t) => findMergedFund(t, ctx.sb),
-    checkFmp: (t) => checkFundSupport(t),
+    checkSupport: (t) => checkFundSupport(t),
     classify: classifyFund,
   });
   if (!outcome.ok) return NextResponse.json({ error: outcome.reason }, { status: 400 });

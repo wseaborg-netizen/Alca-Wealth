@@ -8,7 +8,7 @@ first-pass audit in `docs/analysis-accuracy-audit.md`.
 
 ## Input data
 
-- **Adjusted daily price history** from FMP (Tiingo fallback): split-adjusted and
+- **Adjusted daily price history** from Tiingo (Tiingo fallback): split-adjusted and
   distribution-adjusted → a **total-return** series, **net of fund expenses**.
   Expense ratios are display facts and are never subtracted from these returns.
 - Month-end observations are the last available trading day of each calendar month.
@@ -83,7 +83,7 @@ missing adjusted series, or the metric is unsupported for the asset class
 (bond duration/maturity/credit quality have no source and are not displayed).
 Zero is only shown when the computed value is zero.
 
-## Why ALCA may differ from Morningstar / FMP
+## Why ALCA may differ from Morningstar / Tiingo
 
 1. **Benchmark**: ALCA uses category proxies (SPY/AGG/VXUS); Morningstar uses
    per-category or prospectus benchmarks.

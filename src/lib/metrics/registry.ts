@@ -13,7 +13,7 @@
  */
 
 export type MetricSource =
-  | "provider"        // supplied directly by FMP/Tiingo/SEC
+  | "provider"        // supplied directly by Tiingo/SEC
   | "calculated"      // computed by ALCA from provider price/dividend history
   | "static"          // manually maintained classification/reference data
   | "assumption"      // user/model input — illustrative, not a measurement
@@ -106,7 +106,7 @@ export const METRICS: MetricDef[] = [
   },
   {
     key: "expenseRatio", label: "Expense Ratio", basis: "current", source: "static", unit: "%",
-    definition: "Published net expense ratio from ALCA's maintained reference file (FMP Starter does not expose ER).",
+    definition: "Published net expense ratio from ALCA's maintained reference file (the market-data provider does not expose ER).",
     inputs: ["data/fund-meta.json entry"],
     calc: "None — static reference value; reviewed manually. Never subtracted from adjusted-price historical returns (those are already net of expenses).",
     whenMissing: "Show —.",
@@ -120,7 +120,7 @@ export const METRICS: MetricDef[] = [
   },
   {
     key: "ttmYield", label: "TTM Yield", basis: "historical", source: "calculated", unit: "%",
-    definition: "Trailing-12-month distribution yield from the provider dividend stream, winsorized to damp year-end capital-gains distributions that FMP folds into the dividend series.",
+    definition: "Trailing-12-month distribution yield from the provider dividend stream, winsorized to damp year-end capital-gains distributions that the provider folds into the dividend series.",
     inputs: ["12m dividend records", "current price"],
     calc: "Σ(clamped TTM payments)/price; outliers > 2.5× median AND > 2% of price clamp to the median; capped at 15%. Documented limitation: funds distributing cap gains every period may still read high.",
     whenMissing: "Show —.",
@@ -141,8 +141,8 @@ export const METRICS: MetricDef[] = [
   },
   {
     key: "marketIndices", label: "Market indices (Advisor Overview)", basis: "current", source: "provider", unit: "%",
-    definition: "Index/ETF proxy quotes and day moves from FMP at request time (short server cache).",
-    inputs: ["FMP quote endpoint"],
+    definition: "Index/ETF proxy quotes and day moves from Tiingo (ETF proxies) at request time (short server cache).",
+    inputs: ["Tiingo daily prices"],
     calc: "Provider-supplied; ALCA displays as delivered.",
     whenMissing: "Strip shows a loading/blank state — no cached fake quotes.",
   },
@@ -170,7 +170,7 @@ export const METRICS: MetricDef[] = [
   // ── Explicitly unavailable — no provider on the current stack ──
   {
     key: "duration", label: "Bond Duration", basis: "current", source: "unavailable", unit: "ratio",
-    definition: "Not supplied by FMP Starter/Tiingo. ALCA does not estimate or fake it.",
+    definition: "Not supplied by Tiingo. ALCA does not estimate or fake it.",
     inputs: [], calc: "None.", whenMissing: "Metric is not displayed anywhere.",
   },
   {
@@ -181,7 +181,7 @@ export const METRICS: MetricDef[] = [
   {
     key: "aum", label: "AUM / Net Assets", basis: "current", source: "provider", unit: "$",
     definition: "Provider-supplied net assets where available.",
-    inputs: ["FMP profile"], calc: "Displayed as delivered, formatted.",
+    inputs: ["Tiingo metadata"], calc: "Displayed as delivered, formatted.",
     whenMissing: "Show —.",
   },
 ];

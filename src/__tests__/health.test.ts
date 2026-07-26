@@ -9,7 +9,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 // Isolate the provider layer: the probe fetch must never hit the network here.
-jest.mock("@/lib/funds", () => ({
+jest.mock("@/lib/market-data/fundService", () => ({
   getFund: jest.fn(async () => { throw new Error("network isolated in test"); }),
   inferVehicle: () => "ETF",
   getRecommendFund: jest.fn(),

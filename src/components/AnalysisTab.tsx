@@ -5,7 +5,7 @@ import {
 } from "recharts";
 import { T, ui, mono, chartTooltip } from "./tokens";
 import { Btn, Label, Card, Spinner, ErrBanner, KPI, PageHeader } from "./ui";
-import type { FundRecord } from "../lib/funds";
+import type { FundRecord } from "../lib/market-data/fundService";
 import { analyzeFund } from "../lib/analysis";
 import { computeTaxEfficiency } from "../lib/tax";
 import { PERIODS, blendOverall, type Period, type PeriodOrOverall } from "../lib/metrics/periods";

@@ -1,18 +1,18 @@
 /**
  * Add Missing Fund — request evaluation logic.
  *
- * `evaluateFundRequest` is dependency-injected (universe lookup + FMP support
+ * `evaluateFundRequest` is dependency-injected (universe lookup + provider support
  * check are passed in), so it is pure/deterministic and testable without any
  * network or database. The API route wires the real universe (`findFund`) and
- * the real provider (`fetchFundSupport`), then persists via db.ts.
+ * the real Tiingo support check, then persists via db.ts.
  *
- * This module NEVER mutates the verified fund universe. An FMP-supported ticker
+ * This module NEVER mutates the verified fund universe. A provider-supported ticker
  * that isn't in the universe lands in `ready_for_review` for the offline
  * pipeline + a human — nothing is auto-added to production.
  */
 import { normalizeTicker } from "./tickerNormalize";
 import type { UniverseFund } from "./universe";
-import type { FundSupport } from "./fmp";
+import type { FundSupport } from "./market-data/fundSupport";
 import type { RuntimeClassification } from "./classify";
 
 export type FundRequestStatus =
@@ -46,14 +46,14 @@ export interface FundRequestEval {
   classificationStatus: string | null;
   failureReason: string | null;
   existingFund: ExistingFund | null;
-  vehicle: string | null;                          // FMP asset type, when known
+  vehicle: string | null;                          // provider asset type, when known
   classification: RuntimeClassification | null;    // present when classified → add
 }
 
 export interface EvaluateDeps {
   /** Merged-universe lookup (static base + verified dynamic). May be async. */
   lookupUniverse: (normalized: string) => UniverseFund | undefined | Promise<UniverseFund | undefined>;
-  checkFmp: (normalized: string) => Promise<FundSupport>;
+  checkSupport: (normalized: string) => Promise<FundSupport>;
   /** Runtime classifier. When omitted, supported funds stop at ready_for_review
       (offline-pipeline review) instead of being auto-added. */
   classify?: (input: { normalizedTicker: string; name: string; fundType: string | null }) => RuntimeClassification;
@@ -88,20 +88,20 @@ export async function evaluateFundRequest(raw: unknown, deps: EvaluateDeps): Pro
   }
 
   // 2) Not in universe — ask the provider whether it can return usable data.
-  const fmp = await deps.checkFmp(t);
-  const vehicle = fmp.assetType && fmp.assetType !== "Unknown" ? fmp.assetType : null;
+  const support = await deps.checkSupport(t);
+  const vehicle = support.assetType && support.assetType !== "Unknown" ? support.assetType : null;
 
-  if (fmp.inconclusive) {
+  if (support.inconclusive) {
     return { ok: true, result: {
-      ...blank, status: "pending", fundName: fmp.name, fmpSupported: false, alreadyInUniverse: false,
-      classificationStatus: null, failureReason: fmp.reason ?? "Provider check could not complete.", vehicle,
+      ...blank, status: "pending", fundName: support.name, fmpSupported: false, alreadyInUniverse: false,
+      classificationStatus: null, failureReason: support.reason ?? "Provider check could not complete.", vehicle,
     } };
   }
 
-  if (!fmp.supported) {
+  if (!support.supported) {
     return { ok: true, result: {
-      ...blank, status: "unsupported", fundName: fmp.name, fmpSupported: false, alreadyInUniverse: false,
-      classificationStatus: null, failureReason: fmp.reason ?? "Not supported by the data provider.", vehicle,
+      ...blank, status: "unsupported", fundName: support.name, fmpSupported: false, alreadyInUniverse: false,
+      classificationStatus: null, failureReason: support.reason ?? "Not supported by the data provider.", vehicle,
     } };
   }
 
@@ -109,7 +109,7 @@ export async function evaluateFundRequest(raw: unknown, deps: EvaluateDeps): Pro
   //    No runtime classifier available → queue for offline-pipeline review.
   if (!deps.classify) {
     return { ok: true, result: {
-      ...blank, status: "ready_for_review", fundName: fmp.name, fmpSupported: true, alreadyInUniverse: false,
+      ...blank, status: "ready_for_review", fundName: support.name, fmpSupported: true, alreadyInUniverse: false,
       classificationStatus: "pending", failureReason: null, vehicle,
     } };
   }
@@ -117,10 +117,10 @@ export async function evaluateFundRequest(raw: unknown, deps: EvaluateDeps): Pro
   // 4) Classify with the SAME rules + taxonomy as the offline pipeline.
   let cls: RuntimeClassification;
   try {
-    cls = deps.classify({ normalizedTicker: t, name: fmp.name ?? t, fundType: fmp.assetType });
+    cls = deps.classify({ normalizedTicker: t, name: support.name ?? t, fundType: support.assetType });
   } catch {
     return { ok: true, result: {
-      ...blank, status: "classification_failed", fundName: fmp.name, fmpSupported: true, alreadyInUniverse: false,
+      ...blank, status: "classification_failed", fundName: support.name, fmpSupported: true, alreadyInUniverse: false,
       classificationStatus: "error", failureReason: "The classifier failed to run.", vehicle,
     } };
   }
@@ -132,7 +132,7 @@ export async function evaluateFundRequest(raw: unknown, deps: EvaluateDeps): Pro
     // route to human review with the verified evidence preserved.
     if (!vehicle) {
       return { ok: true, result: {
-        ...blank, status: "needs_classification", fundName: fmp.name, fmpSupported: true, alreadyInUniverse: false,
+        ...blank, status: "needs_classification", fundName: support.name, fmpSupported: true, alreadyInUniverse: false,
         classificationStatus: "needs_classification",
         failureReason: "Provider cannot confirm the fund vehicle (ETF vs mutual fund); needs review.",
         vehicle, classification: cls,
@@ -140,19 +140,19 @@ export async function evaluateFundRequest(raw: unknown, deps: EvaluateDeps): Pro
     }
     // Confident + taxonomy-valid + known vehicle → add as a verified dynamic fund.
     return { ok: true, result: {
-      ...blank, status: "added_to_universe", fundName: fmp.name, fmpSupported: true, alreadyInUniverse: false,
+      ...blank, status: "added_to_universe", fundName: support.name, fmpSupported: true, alreadyInUniverse: false,
       classificationStatus: "verified", failureReason: null, vehicle, classification: cls,
     } };
   }
   if (cls.status === "invalid_taxonomy") {
     return { ok: true, result: {
-      ...blank, status: "failed_validation", fundName: fmp.name, fmpSupported: true, alreadyInUniverse: false,
+      ...blank, status: "failed_validation", fundName: support.name, fmpSupported: true, alreadyInUniverse: false,
       classificationStatus: "invalid_taxonomy", failureReason: cls.reason, vehicle, classification: cls,
     } };
   }
   // needs_classification — rules couldn't confidently classify; do NOT add.
   return { ok: true, result: {
-    ...blank, status: "needs_classification", fundName: fmp.name, fmpSupported: true, alreadyInUniverse: false,
+    ...blank, status: "needs_classification", fundName: support.name, fmpSupported: true, alreadyInUniverse: false,
     classificationStatus: "needs_classification", failureReason: cls.reason, vehicle, classification: cls,
   } };
 }

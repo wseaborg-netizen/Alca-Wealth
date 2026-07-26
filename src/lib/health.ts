@@ -11,7 +11,7 @@
  *    raw provider/SQL bodies, no stack traces, no user PII, no fund contents.
  *    Real errors are logged server-side; the client sees a generic note.
  *  - Lightweight: a single probe fund is fetched once (cached) and shared
- *    across the FMP / scoring / portfolio checks. No self-HTTP fan-out.
+ *    across the provider / scoring / portfolio checks. No self-HTTP fan-out.
  */
 import { UNIVERSE, findFund, UNIVERSE_GENERATED_AT } from "./universe";
 import { getFund, inferVehicle, type FundRecord } from "@/lib/market-data/fundService";
@@ -375,7 +375,7 @@ function checkPortfolioBuilder(): CheckBody {
 // ── 6. API Routes (composed from underlying capability — no self-HTTP) ─────────
 
 function checkApiRoutes(
-  universe: HealthCheckResult, fmp: HealthCheckResult, savedLists: HealthCheckResult,
+  universe: HealthCheckResult, marketData: HealthCheckResult, savedLists: HealthCheckResult,
 ): CheckBody {
   // /api/screen — exercise the screener's ranking path deterministically.
   let screenOk = false;
@@ -391,7 +391,7 @@ function checkApiRoutes(
 
   const routes = [
     { path: "/api/universe", status: universe.status === "error" ? "error" : "healthy" as HealthStatus },
-    { path: "/api/funds/VTI", status: fmp.status },
+    { path: "/api/funds/VTI", status: marketData.status },
     { path: "/api/screen", status: (screenOk ? "healthy" : "error") as HealthStatus },
     { path: "/api/lists", status: savedLists.status },
   ];
@@ -444,7 +444,7 @@ export async function runSystemHealth(ctx: HealthAuthContext): Promise<SystemHea
   let dynamicCount = 0;
   if (ctx.dynamicFundCount) { try { dynamicCount = await ctx.dynamicFundCount(); } catch { dynamicCount = 0; } }
 
-  const [universe, fmp, scoring, savedLists, fundRequests, secAlerts, portfolio] = await Promise.all([
+  const [universe, marketData, scoring, savedLists, fundRequests, secAlerts, portfolio] = await Promise.all([
     safeCheck("fundUniverse", "Fund Universe", async () => checkFundUniverse(dynamicCount)),
     safeCheck("marketData", "Market Data (Tiingo)", async () => checkProviderData(probe)),
     safeCheck("scoringEngine", "Scoring Engine", () => checkScoringEngine(probe)),
@@ -455,10 +455,10 @@ export async function runSystemHealth(ctx: HealthAuthContext): Promise<SystemHea
   ]);
 
   const apiRoutes = await safeCheck("apiRoutes", "API Routes", async () =>
-    checkApiRoutes(universe, fmp, savedLists));
+    checkApiRoutes(universe, marketData, savedLists));
   const appBuild = await safeCheck("appBuild", "App Build", async () => checkAppBuild());
 
-  const checks = [universe, fmp, scoring, savedLists, fundRequests, secAlerts, portfolio, apiRoutes, appBuild];
+  const checks = [universe, marketData, scoring, savedLists, fundRequests, secAlerts, portfolio, apiRoutes, appBuild];
   return {
     generatedAt: new Date().toISOString(),
     overall: worst(checks.map((c) => c.status)),

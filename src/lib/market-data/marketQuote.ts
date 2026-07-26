@@ -3,13 +3,13 @@
  *
  * Computes a dashboard quote (latest value + 1D/1W/1M/YTD change + optional
  * sparkline) from the canonical Tiingo provider's ADJUSTED daily history. The
- * change-window math is the same as the prior FMP path — only the data source
+ * change-window math is the same as the prior provider path — only the data source
  * (Tiingo, adjusted values + normalized dates) changed.
  *
- * Contract matches the FMP-era quote: returns a MarketQuote on success or `null`
+ * Contract matches the prior quote: returns a MarketQuote on success or `null`
  * when data is missing/insufficient or the provider errors (an explicit
  * unavailable state — the UI shows "—"). Nulls are NEVER cached, so an
- * unauthorized/rate-limited/transient failure retries next time. No FMP, no
+ * unauthorized/rate-limited/transient failure retries next time. No
  * fallback, no synthetic data, no zeroed quote.
  *
  * Index note: Tiingo has no native `^`-index history. Dashboard index rows use
@@ -28,7 +28,7 @@ const INTERNAL: TokenContext = { kind: "internal" };
 const SCOPE = "internal";
 const QUOTE_TTL = 15 * 60; // 15 minutes (market data)
 
-/** Same shape the FMP-era market quote produced (drop-in for the callers). */
+/** Same shape the prior market quote produced (drop-in for the callers). */
 export interface MarketQuote {
   price: number;
   change1d: number;

@@ -62,7 +62,7 @@ for (const f of funds) {
   const base = { ticker: f.ticker, fund_name: f.fund_name, issuer: f.issuer ?? null, fund_type: f.fund_type ?? null };
   const ov = overrides.get(String(f.ticker).toUpperCase());
   if (ov) {
-    // Override wins over the rules. Keep the FMP identity as the base, overlay
+    // Override wins over the rules. Keep the reference identity as the base, overlay
     // the manual classification, and mark its provenance.
     usedOverrides.add(String(f.ticker).toUpperCase());
     classified.push({ ...base, ...ov, ticker: base.ticker, classification_confidence: "manual", verified: ov.verified ?? true, source: ov.source ?? "manual-override" });
@@ -76,7 +76,7 @@ for (const f of funds) {
   }
 }
 
-// Overrides for tickers not present in the reference data (e.g. funds FMP can't
+// Overrides for tickers not present in the reference data (e.g. funds the pipeline can't
 // find) are still honored — appended so nothing you manually classify is lost.
 for (const [ticker, ov] of overrides) {
   if (usedOverrides.has(ticker)) continue;

@@ -6,7 +6,7 @@
  * 1–12 characters, letters/digits with optional single dot or hyphen class
  * suffix (e.g. BRK.B, RDS-A), at least one letter. This is a shape guard only —
  * whether the ticker actually exists is decided later by the universe lookup
- * and the FMP support check, never here.
+ * and the provider support check, never here.
  */
 
 export interface NormalizedTicker {

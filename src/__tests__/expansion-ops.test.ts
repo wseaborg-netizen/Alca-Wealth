@@ -80,7 +80,7 @@ describe("expansion server orchestration", () => {
   test("reuses the real classifier/provider pipeline (no fabricated classification)", () => {
     expect(src).toContain("evaluateFundRequest");
     expect(src).toContain("classifyFund");
-    expect(src).toContain("fetchFundSupport");
+    expect(src).toContain("checkFundSupport");
   });
   test("approve requires real inferred fields — no blank/faked insert", () => {
     expect(src).toMatch(/No suggested classification to approve/);

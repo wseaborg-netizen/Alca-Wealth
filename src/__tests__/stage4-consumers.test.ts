@@ -1,6 +1,6 @@
 /**
  * Stage 4 — remaining runtime consumers migrated to Tiingo. Offline only:
- * services take an injected fake provider; no network, no FMP, no fixtures at
+ * services take an injected fake provider; no network, no provider, no fixtures at
  * runtime. Covers quote math, fund records, support checks, the Expansion
  * unknown-vehicle rule, health categories, proxy labels, and FMP isolation.
  */
@@ -147,7 +147,7 @@ describe("Expansion support + unknown-vehicle rule", () => {
   test("verified classification but UNKNOWN vehicle + not canonical → needs review (not auto-added)", async () => {
     const out = await evaluateFundRequest("NEWETF", {
       lookupUniverse: () => undefined,
-      checkFmp: async () => ({ supported: true, inconclusive: false, name: "Schwab US Dividend ETF", assetType: "Unknown", reason: null }),
+      checkSupport: async () => ({ supported: true, inconclusive: false, name: "Schwab US Dividend ETF", assetType: "Unknown", reason: null }),
       classify: () => ({ status: "verified", fields: { asset_class: "Equity", primary_category: "US Large Value" } as never, category: "US Equity Large Value", benchmark: "SPY", source: "rule-based", reason: null }),
     });
     expect(out.ok).toBe(true);
@@ -159,7 +159,7 @@ describe("Expansion support + unknown-vehicle rule", () => {
   test("known vehicle + verified → added_to_universe (unchanged path)", async () => {
     const out = await evaluateFundRequest("NEWETF", {
       lookupUniverse: () => undefined,
-      checkFmp: async () => ({ supported: true, inconclusive: false, name: "Schwab US Dividend ETF", assetType: "ETF", reason: null }),
+      checkSupport: async () => ({ supported: true, inconclusive: false, name: "Schwab US Dividend ETF", assetType: "ETF", reason: null }),
       classify: () => ({ status: "verified", fields: { asset_class: "Equity", primary_category: "US Large Value" } as never, category: "US Equity Large Value", benchmark: "SPY", source: "rule-based", reason: null }),
     });
     expect(out.ok && out.result.status).toBe("added_to_universe");

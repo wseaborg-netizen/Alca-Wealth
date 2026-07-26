@@ -7,25 +7,31 @@ Next.js 16 (App Router, Turbopack), React 19, TypeScript. Deployed at
 **alcawealth.vercel.app**.
 
 ## Data sources
-- **Fund reference/identity** (name, issuer, ETF/MF): **FMP** (`FMP_API_KEY`) — used
-  by the offline fund pipeline and by runtime `/api/funds` requests.
-- **Fund price history / KPIs** (returns/Sharpe/history): **FMP** primary, **Tiingo**
-  fallback (`TIINGO_API_KEY`, prod only) for funds FMP doesn't cover.
-- **Expense ratios**: static `src/data/fund-meta.json` (FMP Starter doesn't expose ER).
-- **Market indices** (Advisor Overview): FMP (quote + light EOD history). No news provider — the news feature was removed.
-- Never print or hardcode `FMP_API_KEY` / `TIINGO_API_KEY`. Scripts read env → `.env.local`.
+- **Market data** (price/NAV history, adjusted prices, distributions, dashboard
+  quotes): **Tiingo** (`TIINGO_API_KEY`, server-only) — the sole provider. ETFs use
+  adjusted price history; mutual funds use NAV history; dashboard indices use
+  clearly-labeled ETF proxies (SPY/DIA/QQQ), never native index names.
+- **Fund identity / classification** (name, vehicle, category, benchmark): the
+  canonical merged universe (`data/generated/fund-universe.json` + verified
+  `dynamic_funds`). Security type is never guessed from Tiingo metadata or ticker shape.
+- **Expense ratios**: static `src/data/fund-meta.json` (a verified source Tiingo does not expose).
+- **AUM / inception**: **Unavailable** (Tiingo supplies neither; never fabricated). Tiingo
+  `startDate` is a *coverage start date*, never inception.
+- Canonical provider layer: `src/lib/market-data/` (`tiingo/` adapter, `fundService`,
+  `marketQuote`, `fundSupport`). Server-only; the token never reaches the browser.
+- Never print or hardcode `TIINGO_API_KEY`. Read from env → `.env.local`.
 
 ## Fund-universe pipeline
 The website's fund list is generated offline, never fetched at runtime in bulk.
 
 ```
-data/input/fund-tickers.txt
-  → npm run funds:import   (FMP) → data/generated/fund-reference-data.json  (+ fund-import-failures.json)
+data/input/fund-tickers.txt  +  data/generated/fund-reference-data.json (identity)
   → npm run funds:classify        → data/generated/fund-universe.json       (+ fund-review-queue.json)
                                     reads data/config/fund-taxonomy.json + fund-classification-overrides.json
 ```
 
-- `npm run funds:build` = import then classify.
+- New funds are added at runtime via **Expansion** (Tiingo coverage check + human
+  classification review for unknown vehicles) — not a bulk import script.
 - `npm run funds:validate` = structure, dup tickers, taxonomy validity, all-verified, empty review, empty failures.
 - **`data/generated/fund-universe.json` is the ONLY fund-universe source the website reads**,
   via `src/lib/universe.ts` (verified funds only). Do not import fund lists anywhere else.
@@ -36,8 +42,8 @@ data/input/fund-tickers.txt
 - `src/app/page.tsx` — lock screen / splash. `SHOW_TOOL_DIRECTLY = true` bypasses login (demo mode).
 - `src/components/AppShell.tsx` — app shell + nav + tab routing.
 - `src/lib/universe.ts` — the single fund-universe loader (verified-only).
-- `src/lib/funds.ts` — per-fund record (KPIs + metadata) via FMP/Tiingo + `fund-meta.json`.
-- `src/lib/fmp.ts` — FMP/Tiingo provider layer.
+- `src/lib/market-data/fundService.ts` — per-fund record (KPIs + metadata) via Tiingo + `fund-meta.json`.
+- `src/lib/market-data/` — canonical Tiingo provider layer (adapter + normalized types + quote/support services).
 - `src/lib/portfolioModel.ts` — allocation + asset-location engine.
 - `src/lib/kpi.ts` — KPI engine. `src/lib/metrics/score.ts` — THE Advisor Review Score
   (contextual, peer-relative; screener/analysis/portfolio-select all use it via

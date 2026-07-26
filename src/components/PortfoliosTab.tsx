@@ -17,7 +17,7 @@ import {
   targetSleeves, placeAssets, assetClassMix, equityFraction,
 } from "../lib/portfolioModel";
 import { computeTaxEfficiency } from "../lib/tax";
-import type { FundRecord } from "../lib/funds";
+import type { FundRecord } from "../lib/market-data/fundService";
 import { setModelHandoff } from "../lib/handoff";
 import { blendKpis, blendReturns, type Holding, type BlendedKpis, type BlendedChartPoint } from "../lib/portfolioCalc";
 

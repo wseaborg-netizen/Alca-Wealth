@@ -7,7 +7,7 @@
  * intentionally NOT re-exported, so no consumer can depend on a provider shape.
  * Do not import this barrel from a "use client" module.
  *
- * This is the foundation only — Stage 1 does not migrate any consumer off FMP.
+ * This is the foundation only.
  */
 export * from "./types";
 export * from "./errors";

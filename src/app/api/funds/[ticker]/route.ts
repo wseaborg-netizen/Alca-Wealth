@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getFund, getRecommendFund, inferVehicle, type FundRecord } from "@/lib/market-data/fundService";
 import { UNIVERSE } from "@/lib/universe";
 import { findMergedFund } from "@/lib/universeServer";
-import { cacheGet } from "@/lib/cache";
 import { computeTaxEfficiency } from "@/lib/tax";
 import { peersOf, rankAmong, MIN_PEERS, type CategoryRank } from "@/lib/metrics/peers";
 import { PERIODS, type Period } from "@/lib/metrics/periods";
@@ -60,11 +59,9 @@ async function peerIntel(ticker: string, record: FundRecord): Promise<PeerIntel 
       unavailableReasons: [`Fewer than ${MIN_PEERS} funds in this category.`] };
   }
 
-  const warmFlags = await Promise.all(others.map((p) => cacheGet(`fund:rec:${p.ticker}`).then((v) => !!v)));
-  const warm = others.filter((_, i) => warmFlags[i]);
-  const cold = others.filter((_, i) => !warmFlags[i]).slice(0, MAX_COLD_PEERS);
+  const cold = others.slice(0, MAX_COLD_PEERS); // deterministic bounded peer set
   const settled = await Promise.allSettled(
-    [...warm, ...cold].map((p) => getRecommendFund(p.ticker, p.vehicle, p.category, p.benchmark)),
+    cold.map((p) => getRecommendFund(p.ticker, p.vehicle, p.category, p.benchmark)),
   );
   const peerRecords = settled
     .filter((r): r is PromiseFulfilledResult<FundRecord> => r.status === "fulfilled" && !r.value.error)

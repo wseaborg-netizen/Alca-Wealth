@@ -2,7 +2,7 @@
  * Expansion Operations Center — server orchestration (SERVER ONLY).
  *
  * Reuses the exact intake pipeline (evaluateFundRequest + classifyFund +
- * fetchFundSupport) plus the verified dynamic-fund store, so imports, approvals,
+ * Tiingo support check) plus the verified dynamic-fund store, so imports, approvals,
  * edits, and retries all resolve to one real lifecycle state. Approving inserts
  * a VERIFIED dynamic fund → the merged universe updates live (no redeploy).
  * Never fabricates classification data.
@@ -28,7 +28,7 @@ export interface TickerOutcome { ticker: string; status: string; bucket: OpsBuck
 
 const evalDeps = () => ({
   lookupUniverse: (t: string) => findMergedFund(t),
-  checkFmp: (t: string) => checkFundSupport(t),
+  checkSupport: (t: string) => checkFundSupport(t),
   classify: classifyFund,
 });
 

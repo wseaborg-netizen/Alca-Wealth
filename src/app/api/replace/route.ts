@@ -6,7 +6,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getRecommendFund, getBenchmarkHistory, BENCHMARKS, inferVehicle } from "@/lib/market-data/fundService";
 import { computePercentiles } from "@/lib/kpi";
 import { rankRecords, REPLACE_REASON_CONTEXT } from "@/lib/metrics/recordScore";
-import { cacheGet } from "@/lib/cache";
 import { getMergedUniverse } from "@/lib/universeServer";
 
 const REASON_PRIORITIES: Record<string, string[]> = {
@@ -71,11 +70,8 @@ export async function POST(req: NextRequest) {
   const rest = candidates.filter(u => u.category !== currentFund.category);
   candidates = [...sameCat, ...rest].slice(0, 50);
 
-  // Split warm / cold
-  const hits = await Promise.all(candidates.map(c => cacheGet(`fund:rec:${c.ticker}`).then(v => !!v)));
-  const warm = candidates.filter((_, i) => hits[i]);
-  const cold = candidates.filter((_, i) => !hits[i]);
-  const toFetch = [...warm, ...cold.slice(0, 16)];
+  // Deterministic candidate selection: the first 16 candidates (3y data, parallel).
+  const toFetch = candidates.slice(0, 16);
 
   const settled = await Promise.allSettled(
     toFetch.map(c => getRecommendFund(c.ticker, c.vehicle, c.category, c.benchmark))

@@ -2,18 +2,18 @@
  * Tiingo-backed fund data service — SERVER-SIDE ONLY.
  *
  * The provider-neutral migration seam for the Research / Analysis / Screener /
- * Similar Funds / Comparison workflows. It is a DROP-IN for the FMP-backed
- * src/lib/funds.ts surface (same function names + FundRecord shape), so the
- * in-scope routes migrate by swapping their import path only.
+ * Similar Funds / Comparison workflows. Canonical per-fund record surface
+ * (getFund / getRecommendFund / getBenchmarkHistory) used by every research and
+ * portfolio route.
  *
  * Data policy (final):
- *  - Price / NAV history + distributions: canonical Tiingo provider ONLY. No FMP,
- *    no fallback, no fixtures, no synthetic values.
+ *  - Price / NAV history + distributions: canonical Tiingo provider ONLY.
+ *    No fallback, no fixtures, no synthetic values.
  *  - Security type / vehicle → price-vs-NAV `kind`: from the caller's CANONICAL
  *    universe classification (never guessed from Tiingo metadata or ticker shape).
- *  - Expense ratio: curated static src/data/fund-meta.json (a verified non-FMP
- *    source; FMP never exposed it) — carried through unchanged.
- *  - AUM: Unavailable (Tiingo has none; FMP-derived AUM is not retained).
+ *  - Expense ratio: curated static src/data/fund-meta.json (a verified source the
+ *    market-data provider does not expose) — carried through unchanged.
+ *  - AUM: Unavailable (Tiingo has none; no provider-derived AUM is retained).
  *  - Inception date: Unavailable (no verified source). Tiingo `startDate` is a
  *    coverage start, never substituted for inception.
  *  - KPIs: computed by the UNCHANGED kpi engine from adjusted prices + dividends.
@@ -26,9 +26,30 @@ import { NAME_BY_TICKER } from "@/lib/universe";
 import { createTiingoProvider } from "@/lib/market-data";
 import type { TokenContext, PriceSeriesKind, MarketDataProvider } from "@/lib/market-data";
 import fundMetaRaw from "@/data/fund-meta.json";
-import type { FundRecord } from "@/lib/funds";
 
-export type { FundRecord };
+export type { KpiResult };
+
+/**
+ * ALCA-owned per-fund record: identity + normalized KPIs. Provider-neutral —
+ * no provider response fields. AUM is always Unavailable (`null`); inception is
+ * Unavailable (`null`); `dataSource` is the provider that supplied history.
+ */
+export interface FundRecord {
+  ticker: string;
+  name: string;
+  vehicle: string;
+  category: string;
+  benchmark: string;
+  expenseRatio: number | null; // curated static source (not a provider field)
+  aum: number | null;          // Unavailable (no verified source)
+  aumFormatted: string;
+  inceptionDate: string | null; // Unavailable (coverage start is never inception)
+  fundAge: number | null;
+  kpi: KpiResult;
+  fetchedAt: number;
+  dataSource?: string;
+  error?: string;
+}
 
 const FUND_META = fundMetaRaw as unknown as Record<string, { er: number; aum: number } | undefined>;
 
@@ -41,7 +62,7 @@ export function __setProviderForTests(p: MarketDataProvider | null): void { _pro
 const INTERNAL: TokenContext = { kind: "internal" };
 /** Safe credential-scope id for cache keys — the CONTEXT KIND, never the token. */
 const SCOPE = "internal";
-const HISTORY_TTL = 24 * 60 * 60; // 24h, matching the FMP-era fund cache
+const HISTORY_TTL = 24 * 60 * 60; // 24h fund-record cache
 
 export const BENCHMARKS = ["SPY", "AGG", "VXUS"] as const;
 
@@ -89,7 +110,7 @@ function baseRecord(ticker: string, vehicle: string, category: string, benchmark
     category,
     benchmark,
     expenseRatio: FUND_META[ticker.toUpperCase()]?.er ?? null, // verified static source
-    aum: null,                 // Unavailable — Tiingo has no AUM; FMP AUM not retained
+    aum: null,                 // Unavailable — Tiingo has no AUM; none retained
     aumFormatted: "Unavailable",
     inceptionDate: null,       // Unavailable — no verified inception source
     fundAge: null,             // derived from inception → unavailable

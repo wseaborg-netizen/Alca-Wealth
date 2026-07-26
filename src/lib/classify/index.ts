@@ -2,7 +2,7 @@
  * Runtime fund classification for the Expansion Hub — same rules + taxonomy as
  * the offline pipeline (imports the shared core.mjs; no forked/weaker logic).
  *
- * Given an FMP profile (name + fund type), it runs the shared classifier, honors
+ * Given a provider profile (name + fund type), it runs the shared classifier, honors
  * the same manual overrides, and validates against the controlled taxonomy. It
  * returns a definite outcome — never a guessed classification:
  *   - "verified"             → confident + taxonomy-valid → safe to add
@@ -66,7 +66,7 @@ function finalize(fields: ClassifiedFields, source: "manual-override" | "rule-ba
   };
 }
 
-/** Classify a fund from its FMP identity. `normalizedTicker` is upper-cased. */
+/** Classify a fund from its provider identity. `normalizedTicker` is upper-cased. */
 export function classifyFund(input: { normalizedTicker: string; name: string; fundType: string | null }): RuntimeClassification {
   const ov = OVERRIDES.get(input.normalizedTicker.toUpperCase());
   if (ov) {

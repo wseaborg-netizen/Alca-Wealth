@@ -20,7 +20,7 @@ import { classifyFund, classifierSelfTest } from "@/lib/classify";
 import { evaluateFundRequest } from "@/lib/fundRequests";
 import { dynamicRowToUniverseFund, getMergedUniverse, getUniverseCounts, findMergedFund } from "@/lib/universeServer";
 import { UNIVERSE } from "@/lib/universe";
-import type { FundSupport } from "@/lib/fmp";
+import type { FundSupport } from "@/lib/market-data/fundSupport";
 
 const ROOT = path.resolve(__dirname, "../..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8");
@@ -66,7 +66,7 @@ describe("evaluateFundRequest with classification", () => {
   test("supported + classifiable → added_to_universe with fields to persist", async () => {
     const out = await evaluateFundRequest("newetf", {
       lookupUniverse: noUniverse,
-      checkFmp: async () => supported("Schwab US Dividend Equity ETF"),
+      checkSupport: async () => supported("Schwab US Dividend Equity ETF"),
       classify: classifyFund,
     });
     expect(out.ok).toBe(true);
@@ -79,7 +79,7 @@ describe("evaluateFundRequest with classification", () => {
   test("supported but unclassifiable → needs_classification, NOT added", async () => {
     const out = await evaluateFundRequest("weird", {
       lookupUniverse: noUniverse,
-      checkFmp: async () => supported("ABC Opportunities Trust", "Mutual Fund"),
+      checkSupport: async () => supported("ABC Opportunities Trust", "Mutual Fund"),
       classify: classifyFund,
     });
     expect(out.ok).toBe(true);
@@ -88,11 +88,11 @@ describe("evaluateFundRequest with classification", () => {
     expect(out.result.classification?.status).toBe("needs_classification");
   });
 
-  test("async merged-universe lookup hit → already_available (no FMP, no classify)", async () => {
+  test("async merged-universe lookup hit → already_available (no provider, no classify)", async () => {
     let touched = false;
     const out = await evaluateFundRequest("vti", {
       lookupUniverse: async (t) => UNIVERSE.find((f) => f.ticker === t),
-      checkFmp: async () => { touched = true; return supported("x"); },
+      checkSupport: async () => { touched = true; return supported("x"); },
       classify: () => { touched = true; throw new Error("should not classify"); },
     });
     expect(out.ok).toBe(true);

@@ -1,6 +1,6 @@
 /**
  * Stage 5 — analytics revalidation over Tiingo inputs. Offline only: the fund
- * service takes an injected fake provider (no network, no FMP, no fixtures at
+ * service takes an injected fake provider (no network, no provider, no fixtures at
  * runtime). Verifies that adjusted-price / NAV inputs produce mathematically
  * coherent, deterministic results and that missing data never becomes zero.
  * Methodology (kpi.ts / metrics) is unchanged — this asserts the INTEGRATION.

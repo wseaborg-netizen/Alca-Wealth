@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { T, ui, mono } from "./tokens";
-import type { FundRecord } from "@/lib/funds";
+import type { FundRecord } from "@/lib/market-data/fundService";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -378,7 +378,7 @@ export default function WatchlistTab({ onAddToCompare, onAnalyze, onDiscover, au
         {/* Footer */}
         <div style={{ padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontSize: 11, color: T.muted, ...ui }}>
-            {tickers.length} fund{tickers.length !== 1 ? "s" : ""} · prices delayed · fund data via Financial Modeling Prep
+            {tickers.length} fund{tickers.length !== 1 ? "s" : ""} · prices delayed · fund data via Tiingo
           </div>
           <button
             onClick={() => { tickers.forEach((t) => { setData((prev) => { const n = { ...prev }; delete n[t]; return n; }); }); tickers.forEach(fetchFund); }}

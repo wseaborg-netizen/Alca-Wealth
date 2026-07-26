@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { T, ui, mono } from "./tokens";
 import { Card, Label, Btn, PageHeader } from "./ui";
-import type { FundRecord } from "../lib/funds";
+import type { FundRecord } from "../lib/market-data/fundService";
 
 const KEY = "tool_murderboard_v1";
 

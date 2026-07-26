@@ -9,7 +9,7 @@ import { secUserAgentConfigured } from "@/lib/monitoring";
 import { getMarketQuote } from "@/lib/market-data/marketQuote";
 import { cacheGet, cacheSet } from "@/lib/cache";
 
-// Real per-fund quote (1D/1W/1M/YTD) via the existing FMP provider, cached 15m
+// Real per-fund quote (1D/1W/1M/YTD) via the Tiingo quote service, cached 15m
 // per ticker so the overview never re-hammers the API. Null when uncovered.
 const QUOTE_TTL = 15 * 60;
 async function deskQuote(ticker: string): Promise<{ change1d: number; change1w: number; change1m: number; changeYtd: number } | null> {

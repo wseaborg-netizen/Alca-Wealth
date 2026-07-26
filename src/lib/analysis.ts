@@ -2,7 +2,7 @@
  * Heuristic pros/cons rundown for a single fund - pure & reusable.
  * All kpi values + expenseRatio are in PERCENT units.
  */
-import type { FundRecord } from "./funds";
+import type { FundRecord } from "./market-data/fundService";
 
 export interface FundAnalysis {
   pros: string[];

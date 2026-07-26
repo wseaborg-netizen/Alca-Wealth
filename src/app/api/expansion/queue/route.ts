@@ -34,7 +34,7 @@ export async function GET() {
         issue: issueLabel(r.status, r.failure_reason), reason: r.failure_reason,
         suggestedPrimary, suggestedCategory, suggested,
         confidence: confidenceOf(r.status, r.classification_status),
-        provider: r.fmp_supported ? "FMP" : "—", status: r.status, imported_at: r.requested_at,
+        provider: r.fmp_supported ? "Tiingo" : "—", status: r.status, imported_at: r.requested_at,
       };
     });
 

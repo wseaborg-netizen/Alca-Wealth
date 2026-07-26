@@ -203,7 +203,7 @@ export function FundBenchmark({ prefill }: { prefill?: SavedScenario | null }) {
               </table>
             </div>
             <p style={{ fontSize: 11, color: T.muted, ...ui, margin: "12px 0 0" }}>
-              Source: platform price history (FMP, Tiingo fallback){asOf ? ` · data as of ${asOf}` : ""} ·
+              Source: platform price history (Tiingo){asOf ? ` · data as of ${asOf}` : ""} ·
               returns computed from adjusted prices, already net of fund expenses.
             </p>
           </Card>

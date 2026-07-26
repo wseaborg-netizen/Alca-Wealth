@@ -2,7 +2,7 @@
  * ALCA canonical market-data types — provider-neutral, server-serializable.
  *
  * These are the ONLY shapes Stage 3+ consumers will import. Provider response
- * objects (Tiingo, FMP, …) are never exposed here: every field is ALCA-owned and
+ * objects (Tiingo, …) are never exposed here: every field is ALCA-owned and
  * carries explicit availability, provenance, and freshness so a consumer can
  * always distinguish "the value is 0" from "we don't have it, and here is why".
  *
@@ -13,7 +13,7 @@
  *  - Timestamps (fetchedAt / observedAt) are full ISO-8601 UTC instants.
  */
 
-/** Which upstream supplied a piece of data. The new layer never says "fmp". */
+/** Which upstream supplied a piece of data (provider-neutral; extensible). */
 export type ProviderSource = "tiingo";
 
 /** Why a field has no value — preserved, never collapsed into a bare null. */

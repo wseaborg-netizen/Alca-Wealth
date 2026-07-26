@@ -6,7 +6,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getRecommendFund, getBenchmarkHistory, BENCHMARKS } from "@/lib/market-data/fundService";
 import { computePercentiles } from "@/lib/kpi";
 import { rankRecords, contextFromPriorities } from "@/lib/metrics/recordScore";
-import { cacheGet } from "@/lib/cache";
 import { getMergedUniverse } from "@/lib/universeServer";
 import type { UniverseFund } from "@/lib/universe";
 
@@ -123,18 +122,9 @@ export async function POST(req: NextRequest) {
   // Warm benchmark caches (parallel, non-blocking on failure)
   await Promise.allSettled(BENCHMARKS.map(b => getBenchmarkHistory(b)));
 
-  // Split into warm (already in rec cache) vs cold.
-  // getRecommendFund uses its own cache key "fund:rec:<ticker>" with 3y history.
-  const cacheHits = await Promise.all(
-    candidates.map(c => cacheGet(`fund:rec:${c.ticker}`).then(v => !!v))
-  );
-  const warm = candidates.filter((_, i) => cacheHits[i]);
-  const cold = candidates.filter((_, i) => !cacheHits[i]);
-
-  // All warm + up to 20 cold in parallel.
-  // getRecommendFund fetches 3y of data (~0.5s each) vs 10y (~2s each),
-  // so 20 parallel cold calls complete in ~1-2s total.
-  const toFetch = [...warm, ...cold.slice(0, 20)];
+  // Deterministic candidate selection: the first 20 candidates (3y history each,
+  // fetched in parallel). The fund service handles its own caching/coalescing.
+  const toFetch = candidates.slice(0, 20);
 
   const settled = await Promise.allSettled(
     toFetch.map(c => getRecommendFund(c.ticker, c.vehicle, c.category, c.benchmark))

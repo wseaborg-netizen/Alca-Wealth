@@ -8,9 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "jest",
-    "funds:import": "node scripts/import-funds-from-fmp.mjs",
     "funds:classify": "node scripts/classify-funds.mjs",
-    "funds:build": "npm run funds:import && npm run funds:classify",
     "funds:validate": "node scripts/validate-funds.mjs"
   },
   "dependencies": {

@@ -11,7 +11,7 @@ import pkg from "../../package.json";
 // Methodology, About. Preferences persist per device via localStorage — there
 // is no cross-device sync, and the drawer says so. Every control shown here is
 // wired to real application behavior; the data facts below are verified against
-// the actual pipeline (FMP primary, Tiingo history fallback; the classification
+// the actual pipeline (Tiingo market data; the classification
 // file carries its real generatedAt).
 
 export type Theme = "light" | "dark" | "system";
@@ -399,7 +399,7 @@ export default function SettingsDrawer({ open, onClose, theme, setTheme, environ
               sub="Fund profiles, market quotes, historical prices & dividends, expenses, risk metrics, classifications, and benchmark comparisons." />
             <Row label="Data sources" sub="Prices delayed and unofficial.">
               <span style={{ fontSize: 11.5, color: T.dim, ...ui, textAlign: "right" }}>
-                Financial Modeling Prep · Tiingo
+                Tiingo
               </span>
             </Row>
             {generated && (
@@ -416,10 +416,9 @@ export default function SettingsDrawer({ open, onClose, theme, setTheme, environ
               projections are deterministic, assumption-based illustrations — not simulations or forecasts.
             </InfoDisclosure>
             <InfoDisclosure title="View Data Disclosures">
-              Market data is provided by third-party sources (Financial Modeling Prep as primary, Tiingo as a
-              history fallback), is delayed, and may contain errors or gaps. Expense ratios come from static reference data and may lag
-              provider updates. Nothing in ALCA Wealth is investment advice; historical performance does not
-              guarantee future results.
+              Market data is provided by a third-party source (Tiingo), is delayed, and may contain errors or gaps.
+              Expense ratios come from static reference data and may lag provider updates. Nothing in ALCA Wealth is
+              investment advice; historical performance does not guarantee future results.
             </InfoDisclosure>
           </section>
 

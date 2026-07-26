@@ -8,7 +8,7 @@ import * as path from "path";
 import { normalizeTicker, isValidTicker } from "@/lib/tickerNormalize";
 import { evaluateFundRequest, ACTIVE_STATUSES, isActiveStatus } from "@/lib/fundRequests";
 import { findFund } from "@/lib/universe";
-import type { FundSupport } from "@/lib/fmp";
+import type { FundSupport } from "@/lib/market-data/fundSupport";
 
 const ROOT = path.resolve(__dirname, "../..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8");
@@ -54,26 +54,26 @@ describe("evaluateFundRequest", () => {
   const noUniverse = () => undefined;
 
   test("invalid ticker is rejected before any lookup", async () => {
-    const out = await evaluateFundRequest("!!", { lookupUniverse: noUniverse, checkFmp: async () => { throw new Error("should not be called"); } });
+    const out = await evaluateFundRequest("!!", { lookupUniverse: noUniverse, checkSupport: async () => { throw new Error("should not be called"); } });
     expect(out.ok).toBe(false);
   });
 
-  test("already-in-universe detection short-circuits (no FMP call)", async () => {
-    let fmpCalled = false;
+  test("already-in-universe detection short-circuits (no provider call)", async () => {
+    let supportCalled = false;
     const out = await evaluateFundRequest("spy", {
       lookupUniverse: universeWith({ SPY: { name: "SPDR S&P 500 ETF", category: "US Equity Large Blend" } }),
-      checkFmp: async () => { fmpCalled = true; return unsupported(); },
+      checkSupport: async () => { supportCalled = true; return unsupported(); },
     });
     expect(out.ok).toBe(true);
     if (!out.ok) return;
     expect(out.result.status).toBe("already_available");
     expect(out.result.alreadyInUniverse).toBe(true);
     expect(out.result.existingFund?.ticker).toBe("SPY");
-    expect(fmpCalled).toBe(false);
+    expect(supportCalled).toBe(false);
   });
 
-  test("FMP-supported but not in universe → ready_for_review (never auto-added)", async () => {
-    const out = await evaluateFundRequest("ABCD", { lookupUniverse: noUniverse, checkFmp: async () => supported("Some New ETF") });
+  test("Provider-supported but not in universe → ready_for_review (never auto-added)", async () => {
+    const out = await evaluateFundRequest("ABCD", { lookupUniverse: noUniverse, checkSupport: async () => supported("Some New ETF") });
     expect(out.ok).toBe(true);
     if (!out.ok) return;
     expect(out.result.status).toBe("ready_for_review");
@@ -84,7 +84,7 @@ describe("evaluateFundRequest", () => {
   });
 
   test("unsupported ticker → unsupported with a reason", async () => {
-    const out = await evaluateFundRequest("ZZZZ", { lookupUniverse: noUniverse, checkFmp: async () => unsupported() });
+    const out = await evaluateFundRequest("ZZZZ", { lookupUniverse: noUniverse, checkSupport: async () => unsupported() });
     expect(out.ok).toBe(true);
     if (!out.ok) return;
     expect(out.result.status).toBe("unsupported");
@@ -93,14 +93,14 @@ describe("evaluateFundRequest", () => {
   });
 
   test("inconclusive provider → pending (retryable), not unsupported", async () => {
-    const out = await evaluateFundRequest("ABCD", { lookupUniverse: noUniverse, checkFmp: async () => inconclusive() });
+    const out = await evaluateFundRequest("ABCD", { lookupUniverse: noUniverse, checkSupport: async () => inconclusive() });
     expect(out.ok).toBe(true);
     if (!out.ok) return;
     expect(out.result.status).toBe("pending");
   });
 
   test("real verified universe ticker (VTI) is detected as already_available", async () => {
-    const out = await evaluateFundRequest("VTI", { lookupUniverse: (t) => findFund(t), checkFmp: async () => { throw new Error("no FMP"); } });
+    const out = await evaluateFundRequest("VTI", { lookupUniverse: (t) => findFund(t), checkSupport: async () => { throw new Error("no provider call"); } });
     expect(out.ok).toBe(true);
     if (!out.ok) return;
     expect(out.result.status).toBe("already_available");
@@ -153,10 +153,10 @@ describe("fund-request API routes", () => {
     expect(detail).toContain("status: 401");
   });
 
-  test("POST normalizes, checks universe + FMP, and dedupes before insert", () => {
+  test("POST normalizes, checks universe + provider, and dedupes before insert", () => {
     expect(post).toContain("evaluateFundRequest");
     expect(post).toContain("findMergedFund");
-    expect(post).toContain("checkFundSupport"); // Stage 4: Tiingo support check (was fetchFundSupport)
+    expect(post).toContain("checkFundSupport"); // Stage 4: Tiingo support check
     expect(post).toContain("fundRequestActive");
     expect(post).toContain("classifyFund");
   });
@@ -168,14 +168,15 @@ describe("fund-request API routes", () => {
   });
 });
 
-describe("FMP support check exposes safe fields only", () => {
-  test("fetchFundSupport returns identity/support flags, never the key or raw payload", () => {
-    const fmp = read("src/lib/fmp.ts");
-    const fn = fmp.slice(fmp.indexOf("export async function fetchFundSupport"), fmp.indexOf("PRICE + DIVIDEND HISTORY"));
-    expect(fn).toContain("supported");
-    expect(fn).toContain("inconclusive");
-    // The function must not return or log the raw key.
-    expect(fn).not.toMatch(/return[^;]*FMP_KEY/);
-    expect(fn).not.toMatch(/console\.(log|warn|error)\([^)]*FMP_KEY/);
+describe("Tiingo support check exposes safe fields only", () => {
+  test("checkFundSupport returns provider-neutral support flags; never guesses vehicle or leaks the token", () => {
+    const src = read("src/lib/market-data/fundSupport.ts");
+    expect(src).toContain("supported");
+    expect(src).toContain("inconclusive");
+    expect(src).toContain('assetType: "Unknown"'); // vehicle never guessed from Tiingo
+    // No token in output/logs, and no provider fallback.
+    expect(src).not.toMatch(/console\.(log|warn|error)/);
+    expect(src).not.toMatch(/\bfmp\b|financialmodel/i);
+    expect(src).not.toMatch(/TIINGO_API_KEY/);
   });
 });

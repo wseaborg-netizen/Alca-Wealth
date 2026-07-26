@@ -21,8 +21,9 @@ substitution for missing volatility/ER, and a few labels missing their period.
 
 | Source | What it supplies | Where |
 |---|---|---|
-| FMP (primary) | adjusted price history, dividends, profile/AUM, market quotes | `src/lib/fmp.ts`, `/api/market`, `/api/compare`, `/api/funds` |
-| Tiingo (fallback, prod) | price history when FMP lacks coverage | `src/lib/fmp.ts` |
+| Tiingo (sole provider) | adjusted price/NAV history, dividends, dashboard quotes (ETF proxies) | `src/lib/market-data/*`, `/api/market`, `/api/compare`, `/api/funds` |
+| Canonical universe | fund identity, vehicle, category, benchmark | `data/generated/fund-universe.json` + `dynamic_funds` |
+| Curated static | expense ratios (Tiingo does not expose ER); AUM/inception are Unavailable | `src/data/fund-meta.json` |
 | SEC/EDGAR | filings data (separate feature, untouched) | `src/lib/sec*.ts` |
 | Static reference | expense ratios (`data/fund-meta.json`), classifications (`data/generated/fund-universe.json`) | offline pipeline, manually verified |
 | ALCA calculation | all KPIs, weighted portfolio stats, tax heuristic, composite scores | `src/lib/kpi.ts`, `tax.ts`, screen/compare routes |
@@ -38,7 +39,7 @@ substitution for missing volatility/ER, and a few labels missing their period.
 | Sharpe 3Y / Sortino 3Y | Analysis, Compare, Screen | calculated | (ann ret − rf)/σ; rf = static 4.5% T-bill proxy | reliable | Registry documents the rf assumption; Watchlist header now says "Sharpe 3Y" | rf is static — update `RISK_FREE_ANNUAL` periodically |
 | Alpha/Beta 3Y | Analysis, Compare, Portfolios | calculated | CAPM vs mapped benchmark (SPY/AGG/VXUS), monthly, 3y | reliable | — | Benchmark is the category-mapped proxy, not prospectus benchmark |
 | Info ratio, capture, batting avg, Calmar | Analysis, Compare | calculated | standard formulas over aligned 3y monthlies | reliable | — | — |
-| Expense ratio | everywhere | static | manually maintained `fund-meta.json` (FMP Starter has no ER) | reliable (static) | Registry marks it static; never double-counted vs net-of-expense returns (Model engine v2 + tests) | Manual upkeep required when funds reprice |
+| Expense ratio | everywhere | static | manually maintained `fund-meta.json` (Tiingo Starter has no ER) | reliable (static) | Registry marks it static; never double-counted vs net-of-expense returns (Model engine v2 + tests) | Manual upkeep required when funds reprice |
 | Weighted expense ratio / weighted portfolio stats | Portfolios, Model | calculated | Σ(wᵢ·xᵢ)/Σwᵢ, labeled "Weighted" | **fixed → reliable** | Missing per-fund vol/ER no longer silently replaced with invented 10%/0.1% — each stat averages only holdings that have it; null → "—" | Weighted vol ignores correlations (stated in Methodology) |
 | TTM yield | Analysis, Compare, Watchlist, Portfolios | calculated | winsorized TTM distributions / price, capped 15% | reliable | Watchlist header now says "TTM Yield" | Funds distributing cap gains every period may still read high (documented in code) |
 | Dividend growth 3Y | Analysis | calculated | full-calendar-year totals CAGR | reliable | — | — |
@@ -48,8 +49,8 @@ substitution for missing volatility/ER, and a few labels missing their period.
 | Category/style box/asset class | Research, Screen | static | offline pipeline + manual verification, locked taxonomy | reliable | — | Reclassify when a fund's mandate changes |
 | Composite/fit scores | Screen, Compare | calculated | category-relative percentiles, fixed weights | reliable (ranking aid) | Registry documents it is not a rating of future performance | Peer pool depends on warm cache breadth |
 | Tax efficiency A–D | Compare | calculated (heuristic) | category/vehicle/ER/yield heuristic with stated reasons | reliable (labeled estimate) | Registry entry documents heuristic nature | Not a measured after-tax figure |
-| Market indices strip | Advisor Overview | provider | FMP quotes at request time | reliable | — | Short server cache; shows loading state, never stale fakes |
-| AUM / inception | Analysis | provider | FMP profile | reliable | — | — |
+| Market indices strip | Advisor Overview | provider | Tiingo quotes at request time | reliable | — | Short server cache; shows loading state, never stale fakes |
+| AUM / inception | Analysis | provider | Tiingo profile | reliable | — | — |
 | Bond duration / maturity / credit quality | — | unavailable | not supplied by current providers | **not displayed** | Registry pins them `unavailable` so they can't be added casually | Needs a data source before ever showing |
 | Homepage showcase numbers | public homepage | demo | animated marketing mock | **fixed** | Explicit note added: "Animated product preview with illustrative sample values…" | — |
 | "Expected return" wording | Portfolios risk description | prose | — | **fixed** | Re-worded to "potential return" (the only "expected return" in the app) | — |
@@ -83,5 +84,5 @@ registry explain why a value can be missing (insufficient history, provider gap)
 4. Weighted portfolio volatility ignores cross-holding correlations (stated in UI).
 5. TTM yield winsorization can still overstate funds that distribute capital gains
    every period.
-6. 56 tickers were dropped from the universe because FMP has no data for them —
+6. 56 tickers were dropped from the universe because Tiingo has no data for them —
    nothing is shown rather than something invented.

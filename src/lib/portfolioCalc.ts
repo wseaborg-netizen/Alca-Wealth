@@ -3,7 +3,8 @@
  * Takes an array of {fund, weight} holdings and returns blended KPIs + chart data.
  */
 
-import type { FundRecord, KpiResult } from "./funds";
+import type { FundRecord } from "./market-data/fundService";
+import type { KpiResult } from "./kpi";
 
 export interface Holding {
   ticker: string;

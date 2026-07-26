@@ -100,10 +100,14 @@ export async function cacheClear(): Promise<void> {
   const redis = getRedis();
   if (redis) {
     try {
-      // FLUSHDB would wipe everything - instead scan for our keys
-      const keys = await redis.keys("fund:*");
-      const bkeys = await redis.keys("bench:*");
-      const all = [...keys, ...bkeys];
+      // FLUSHDB would wipe everything — instead scan only ALCA's active namespaces
+      // (the Tiingo-backed fund/benchmark/quote caches + the dashboard payload).
+      const groups = await Promise.all([
+        redis.keys("td:*"),
+        redis.keys("market:*"),
+        redis.keys("ovq:*"),
+      ]);
+      const all = groups.flat();
       if (all.length) await redis.del(...all as [string, ...string[]]);
     } catch { /* ignore */ }
   }

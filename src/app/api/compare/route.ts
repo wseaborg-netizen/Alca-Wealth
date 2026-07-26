@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFund, getRecommendFund, getBenchmarkHistory, BENCHMARKS, inferVehicle, type FundRecord } from "@/lib/market-data/fundService";
 import { computePercentiles } from "@/lib/kpi";
-import { cacheGet } from "@/lib/cache";
 import { getMergedUniverse } from "@/lib/universeServer";
 import { type UniverseFund } from "@/lib/universe";
 
@@ -37,16 +36,13 @@ export async function POST(req: NextRequest) {
   const distinctCats = [...new Set(records.map((r) => r.category))];
   const comparedTickers = new Set(limited);
 
-  // Build a peer fetch plan, warm-first, capped to a cold budget.
-  const peerPlan: { ticker: string; entry: UniverseFund; cold: boolean }[] = [];
+  // Deterministic peer fetch plan, capped to a bounded budget.
+  const peerPlan: { ticker: string; entry: UniverseFund }[] = [];
   for (const cat of distinctCats) {
     const peers = UNIVERSE.filter((u) => u.category === cat && !comparedTickers.has(u.ticker));
-    const warmFlags = await Promise.all(peers.map((p) => cacheGet(`fund:rec:${p.ticker}`).then((v) => !!v)));
-    peers.forEach((p, i) => peerPlan.push({ ticker: p.ticker, entry: p, cold: !warmFlags[i] }));
+    peers.forEach((p) => peerPlan.push({ ticker: p.ticker, entry: p }));
   }
-  const warmPeers = peerPlan.filter((p) => !p.cold);
-  const coldPeers = peerPlan.filter((p) => p.cold).slice(0, MAX_COLD_PEERS);
-  const toFetch = [...warmPeers, ...coldPeers];
+  const toFetch = peerPlan.slice(0, MAX_COLD_PEERS);
 
   const peerSettled = await Promise.allSettled(
     toFetch.map((p) => getRecommendFund(p.ticker, p.entry.vehicle, p.entry.category, p.entry.benchmark))
