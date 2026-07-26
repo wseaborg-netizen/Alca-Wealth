@@ -46,12 +46,29 @@ function providerReturning(respond: (url: string) => FakeResp) {
   return { rec, provider: createTiingoProvider({ resolveToken: withToken, fetchImpl: fakeFetch(rec, respond), now: NOW }) };
 }
 
-// ── Fixtures (synthetic) ─────────────────────────────────────────────────────
+// ── Fixtures (synthetic; shapes mirror observed live Tiingo responses) ────────
+// Observed live: /tiingo/daily/{symbol} returns ticker/name/description/
+// startDate/endDate/exchangeCode and NO assetType — so securityType is "unknown".
 const META_FIXTURE = {
-  ticker: "VTI", name: "Vanguard Total Stock Market ETF", assetType: "ETF",
-  startDate: "2001-05-31", endDate: "2026-07-24", exchangeCode: "NYSE ARCA",
+  ticker: "VTI", name: "Vanguard Total Stock Market Index Fund ETF Shares",
+  description: "…", startDate: "2001-05-31", endDate: "2026-07-24", exchangeCode: "NYSE ARCA",
 };
+const META_MF = {
+  ticker: "VFIAX", name: "Vanguard 500 Index Fund Admiral Shares",
+  description: "…", startDate: "2000-11-13", endDate: "2026-07-24", exchangeCode: "NASDAQ",
+};
+// Hypothetical shape IF a future Tiingo field/endpoint supplies asset type.
+const META_TYPED_ETF = { ticker: "SPY", name: "SPDR S&P 500 ETF Trust", assetType: "ETF", startDate: "1993-01-29" };
+const META_TYPED_MF = { ticker: "VFIAX", name: "Vanguard 500 Admiral", assetType: "Mutual Fund", startDate: "2000-11-13" };
 const META_MINIMAL = { ticker: "ZZZZ" };
+const DUP_ROWS = [
+  { date: "2026-07-22T00:00:00.000Z", close: 100, adjClose: 99, open: 98, high: 101, low: 97, volume: 1000 },
+  { date: "2026-07-22T00:00:00.000Z", close: 200, adjClose: 199, open: 198, high: 201, low: 197, volume: 2000 }, // duplicate date, later value wins
+  { date: "2026-07-21T00:00:00.000Z", close: 90, adjClose: 89, open: 88, high: 91, low: 87, volume: 900 }, // out of order → must sort ascending
+];
+const MISSING_ADJ_ROWS = [
+  { date: "2026-07-23T00:00:00.000Z", close: 50, open: 49, high: 51, low: 48, volume: 500 }, // no adjClose field
+];
 const PRICE_ROWS = [
   { date: "2026-07-22T00:00:00.000Z", close: 100, adjClose: 99, open: 98, high: 101, low: 97, volume: 1000, divCash: 0, splitFactor: 1 },
   { date: "2026-07-23T00:00:00.000Z", close: 102, adjClose: 101, open: 100, high: 103, low: 99, volume: 1100, divCash: 0.5, splitFactor: 1 },
@@ -70,8 +87,8 @@ describe("security metadata normalization", () => {
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.data.symbol).toBe("VTI");
-    expect(r.data.displayName).toBe("Vanguard Total Stock Market ETF");
-    expect(r.data.securityType).toBe("etf");
+    expect(r.data.displayName).toBe("Vanguard Total Stock Market Index Fund ETF Shares");
+    expect(r.data.securityType).toBe("unknown"); // Tiingo metadata has no assetType field
     expect(r.data.coverageStartDate).toBe("2001-05-31");
     expect(r.data.aum).toEqual({ status: "unavailable", reason: "not_supported_by_provider" });
     expect(r.data.provenance.source).toBe("tiingo");
@@ -294,6 +311,104 @@ describe("token isolation", () => {
     const r = await provider.getSecurityMetadata("VTI", INTERNAL);
     expect(r.ok).toBe(false);
     expect(JSON.stringify(r)).not.toContain(SECRET);
+  });
+});
+
+// ── Stage 2: realistic shapes, dedup, missing values, timeout, retries ────────
+describe("Stage 2 capability behavior", () => {
+  test("realistic mutual-fund metadata → unknown type, coverage start, AUM unavailable", async () => {
+    const { provider } = providerReturning(() => ({ status: 200, body: META_MF }));
+    const r = await provider.getSecurityMetadata("VFIAX", INTERNAL);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.data.displayName).toBe("Vanguard 500 Index Fund Admiral Shares");
+    expect(r.data.securityType).toBe("unknown");
+    expect(r.data.coverageStartDate).toBe("2000-11-13");
+    expect(r.data.aum).toEqual({ status: "unavailable", reason: "not_supported_by_provider" });
+  });
+
+  test("securityType maps only when a real assetType field is present", async () => {
+    const etf = providerReturning(() => ({ status: 200, body: META_TYPED_ETF }));
+    const mf = providerReturning(() => ({ status: 200, body: META_TYPED_MF }));
+    const re = await etf.provider.getSecurityMetadata("SPY", INTERNAL);
+    const rm = await mf.provider.getSecurityMetadata("VFIAX", INTERNAL);
+    expect(re.ok && re.data.securityType).toBe("etf");
+    expect(rm.ok && rm.data.securityType).toBe("mutual_fund");
+  });
+
+  test("duplicate dates de-duplicated (last wins) and sorted ascending", async () => {
+    const { provider } = providerReturning(() => ({ status: 200, body: DUP_ROWS }));
+    const r = await provider.getPriceHistory("VTI", INTERNAL);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.data.bars.map((b) => b.date)).toEqual(["2026-07-21", "2026-07-22"]);
+    const dup = r.data.bars.find((b) => b.date === "2026-07-22");
+    expect(dup?.close).toBe(200); // later duplicate wins
+    expect(r.data.availability).toEqual({ status: "available", count: 2 });
+  });
+
+  test("missing adjusted values → adjClose null, not fabricated", async () => {
+    const { provider } = providerReturning(() => ({ status: 200, body: MISSING_ADJ_ROWS }));
+    const r = await provider.getPriceHistory("VTI", INTERNAL);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.data.bars[0].close).toBe(50);
+    expect(r.data.bars[0].adjClose).toBeNull();
+  });
+
+  test("insufficient history (1 bar) → insufficient availability", async () => {
+    const { provider } = providerReturning(() => ({ status: 200, body: MISSING_ADJ_ROWS }));
+    const r = await provider.getPriceHistory("VTI", INTERNAL);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.data.availability).toEqual({ status: "insufficient", count: 1 });
+  });
+
+  test("timeout (AbortError) → normalized timeout error (retryable)", async () => {
+    const abortingFetch = (async () => {
+      const e = new Error("aborted"); e.name = "AbortError"; throw e;
+    }) as unknown as typeof fetch;
+    const provider = createTiingoProvider({ resolveToken: withToken, fetchImpl: abortingFetch, now: NOW, maxRetries: 0, sleep: async () => {} });
+    const r = await provider.getPriceHistory("VTI", INTERNAL);
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.error.category).toBe("timeout");
+    expect(r.error.retryable).toBe(true);
+  });
+
+  test("bounded retries: retryable error retried up to maxRetries, then returned", async () => {
+    let calls = 0;
+    const flaky = (async () => { calls += 1; return { ok: false, status: 503, json: async () => ({}) } as unknown as Response; }) as unknown as typeof fetch;
+    const provider = createTiingoProvider({ resolveToken: withToken, fetchImpl: flaky, now: NOW, maxRetries: 2, sleep: async () => {} });
+    const r = await provider.getPriceHistory("VTI", INTERNAL);
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.error.category).toBe("server_error");
+    expect(calls).toBe(3); // initial + 2 retries
+  });
+
+  test("bounded retries: eventual success after transient failures", async () => {
+    let calls = 0;
+    const recovering = (async () => {
+      calls += 1;
+      if (calls < 2) return { ok: false, status: 429, json: async () => ({}) } as unknown as Response;
+      return { ok: true, status: 200, json: async () => PRICE_ROWS } as unknown as Response;
+    }) as unknown as typeof fetch;
+    const provider = createTiingoProvider({ resolveToken: withToken, fetchImpl: recovering, now: NOW, maxRetries: 3, sleep: async () => {} });
+    const r = await provider.getPriceHistory("VTI", INTERNAL);
+    expect(r.ok).toBe(true);
+    expect(calls).toBe(2);
+  });
+
+  test("no retry for non-retryable errors (401 tried once)", async () => {
+    let calls = 0;
+    const unauth = (async () => { calls += 1; return { ok: false, status: 401, json: async () => ({}) } as unknown as Response; }) as unknown as typeof fetch;
+    const provider = createTiingoProvider({ resolveToken: withToken, fetchImpl: unauth, now: NOW, maxRetries: 3, sleep: async () => {} });
+    const r = await provider.getSecurityMetadata("VTI", INTERNAL);
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.error.category).toBe("unauthorized");
+    expect(calls).toBe(1); // never retried
   });
 });
 

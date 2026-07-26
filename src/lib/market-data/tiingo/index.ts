@@ -46,11 +46,31 @@ export interface TiingoProviderDeps extends TransportDeps {
   /** Injectable token resolver + clock for tests. */
   readonly resolveToken?: (ctx: TokenContext) => ResolvedToken | ProviderError;
   readonly now?: () => Date;
+  /** Max retries for RETRYABLE errors only (default 2). Never retries
+      unauthorized / not_found / malformed / invalid_symbol / no_token. */
+  readonly maxRetries?: number;
+  readonly backoffBaseMs?: number;
+  /** Injectable delay so tests exercise retries without real waits. */
+  readonly sleep?: (ms: number) => Promise<void>;
 }
 
 interface BoundDeps extends TransportDeps {
   resolveToken: (ctx: TokenContext) => ResolvedToken | ProviderError;
   now: () => Date;
+  maxRetries: number;
+  backoffBaseMs: number;
+  sleep: (ms: number) => Promise<void>;
+}
+
+/** Single-shot transport wrapped with bounded retries for retryable errors only. */
+async function getWithRetry(path: string, token: string, deps: BoundDeps) {
+  let attempt = 0;
+  for (;;) {
+    const res = await tiingoGet(path, token, deps);
+    if (res.ok || !res.error.retryable || attempt >= deps.maxRetries) return res;
+    attempt += 1;
+    await deps.sleep(deps.backoffBaseMs * attempt);
+  }
 }
 
 // Conservative symbol guard (letters, digits, dot, dash, caret for index proxies).
@@ -74,7 +94,7 @@ async function fetchPriceRows(
 ): Promise<Result<TiingoPriceRaw[]>> {
   const resolved = deps.resolveToken(ctx);
   if (!isResolvedToken(resolved)) return { ok: false, error: resolved };
-  const res = await tiingoGet(pricePath(symbol, startDate), resolved.token, deps);
+  const res = await getWithRetry(pricePath(symbol, startDate), resolved.token, deps);
   if (!res.ok) return { ok: false, error: res.error };
   if (!Array.isArray(res.json)) return { ok: false, error: providerError("malformed") };
   return { ok: true, data: res.json as TiingoPriceRaw[] };
@@ -85,6 +105,9 @@ export function createTiingoProvider(deps: TiingoProviderDeps = {}): MarketDataP
     ...deps,
     resolveToken: deps.resolveToken ?? resolveTiingoToken,
     now: deps.now ?? (() => new Date()),
+    maxRetries: deps.maxRetries ?? 2,
+    backoffBaseMs: deps.backoffBaseMs ?? 200,
+    sleep: deps.sleep ?? ((ms) => new Promise<void>((r) => setTimeout(r, ms))),
   };
 
   const guardSymbol = (symbol: string): ProviderError | null =>
@@ -96,7 +119,7 @@ export function createTiingoProvider(deps: TiingoProviderDeps = {}): MarketDataP
       if (bad) return { ok: false, error: bad };
       const resolved = bound.resolveToken(ctx);
       if (!isResolvedToken(resolved)) return { ok: false, error: resolved };
-      const res = await tiingoGet(`/tiingo/daily/${encodeURIComponent(symbol)}`, resolved.token, bound);
+      const res = await getWithRetry(`/tiingo/daily/${encodeURIComponent(symbol)}`, resolved.token, bound);
       if (!res.ok) return { ok: false, error: res.error };
       if (typeof res.json !== "object" || res.json === null || Array.isArray(res.json)) {
         return { ok: false, error: providerError("malformed") };
