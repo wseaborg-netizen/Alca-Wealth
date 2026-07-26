@@ -107,9 +107,11 @@ export async function getBenchmarkHistory(benchmark: string): Promise<{ date: st
     if (again) return again;
     const r = await tiingo().getPriceHistory(benchmark, INTERNAL, { kind: "price", startDate: yearsAgoISO(10) });
     if (!r.ok) return []; // failure → empty; NEVER cached, so it can retry
+    // Total-return basis: ADJUSTED close only — never substitute raw close (would
+    // mix adjusted + raw within one series and distort returns).
     const series = r.data.bars
-      .map((b) => ({ date: b.date, price: b.adjClose ?? b.close ?? 0 }))
-      .filter((p) => p.price > 0);
+      .map((b) => ({ date: b.date, price: b.adjClose }))
+      .filter((p): p is { date: string; price: number } => p.price != null && p.price > 0);
     if (series.length > 0) await cacheSet(key, series, HISTORY_TTL);
     return series;
   });
@@ -139,9 +141,12 @@ async function getFundData(
       return { ...baseRecord(norm, vehicle, category, benchmark), kpi: EMPTY_KPI, fetchedAt: Date.now(), error: series.error.category };
     }
 
+    // Total-return basis: ADJUSTED close only (adjClose already incorporates
+    // distributions + splits). Dividends below feed ONLY income metrics
+    // (ttmYield / divGrowth) — never added to returns, so no double counting.
     const fundPrices = series.data.history.bars
-      .map((b) => ({ date: b.date, price: b.adjClose ?? b.close ?? 0 }))
-      .filter((p) => p.price > 0);
+      .map((b) => ({ date: b.date, price: b.adjClose }))
+      .filter((p): p is { date: string; price: number } => p.price != null && p.price > 0);
     const dividends = series.data.distributions.distributions.map((d) => ({ date: d.exDate, amount: d.amount }));
     const currentPrice = fundPrices.at(-1)?.price ?? 0;
 

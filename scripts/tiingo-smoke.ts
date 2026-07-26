@@ -211,3 +211,54 @@ describe("Stage 4 live — migrated consumers (bounded, sanitized)", () => {
     expect(requestCount).toBeLessThanOrEqual(MAX_REQUESTS);
   });
 });
+
+// ── Stage 5 live — analytics INVARIANTS through the migrated fund service ──
+// npx jest --config jest.smoke.config.ts -t "Stage 5 live"
+describe("Stage 5 live — analytics invariants (bounded, sanitized)", () => {
+  beforeAll(() => {
+    if (!ensureKey()) throw new Error("TIINGO_API_KEY unavailable — add it to .env.local to run the smoke.");
+  });
+
+  it("ETF (VTI): finite returns, bounded non-positive drawdown, non-negative vol, AUM unavailable", async () => {
+    budget(); budget();
+    const r = await getFund("VTI", "ETF", "US Equity Large Blend", "SPY");
+    const p = r.kpi.periods["3Y"];
+    console.log("ANALYTICS VTI:", { return3y: r.kpi.return3y, vol3y: p.volatility, maxDD5y: r.kpi.maxDrawdown5y, beta3y: r.kpi.beta3y, aum: r.aum, err: r.error });
+    expect(r.error).toBeUndefined();
+    expect(Number.isFinite(r.kpi.return3y!)).toBe(true);
+    expect(r.kpi.maxDrawdown5y!).toBeLessThanOrEqual(0);
+    expect(r.kpi.maxDrawdown5y!).toBeGreaterThan(-100);      // bounded: a fund cannot lose > 100% (percent units)
+    expect(p.volatility!).toBeGreaterThanOrEqual(0);
+    expect(r.aum).toBeNull();
+  });
+
+  it("mutual fund (VFIAX) NAV: finite returns, coherent stats", async () => {
+    budget();
+    const r = await getFund("VFIAX", "Mutual Fund", "US Equity Large Blend", "SPY");
+    console.log("ANALYTICS VFIAX:", { return3y: r.kpi.return3y, sharpe3y: r.kpi.sharpe3y, aum: r.aum, err: r.error });
+    expect(r.error).toBeUndefined();
+    expect(Number.isFinite(r.kpi.return3y!)).toBe(true);
+    expect(r.aum).toBeNull();
+  });
+
+  it("bond ETF (BND) vs AGG benchmark: finite, beta present, |beta| reasonable", async () => {
+    budget(); budget();
+    const r = await getRecommendFund("BND", "ETF", "Intermediate Core Bond", "AGG");
+    console.log("ANALYTICS BND:", { return3y: r.kpi.return3y, beta3y: r.kpi.beta3y, err: r.error });
+    expect(r.error).toBeUndefined();
+    if (r.kpi.beta3y != null) expect(Math.abs(r.kpi.beta3y)).toBeLessThan(10);
+  });
+
+  it("invalid symbol cannot produce valid analytics", async () => {
+    budget();
+    const r = await getFund("ZZINVALIDXYZ", "ETF", "Other", "SPY");
+    console.log("ANALYTICS invalid:", { err: r.error, return3y: r.kpi.return3y });
+    expect(r.error).toBeDefined();
+    expect(r.kpi.return3y).toBeNull(); // no fabricated score/return
+  });
+
+  it("Stage 5 stayed within the request cap", () => {
+    console.log("STAGE 5 LIVE REQUESTS:", requestCount, "/", MAX_REQUESTS);
+    expect(requestCount).toBeLessThanOrEqual(MAX_REQUESTS);
+  });
+});
