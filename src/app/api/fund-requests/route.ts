@@ -5,7 +5,7 @@ import {
 import { evaluateFundRequest, ACTIVE_STATUSES } from "@/lib/fundRequests";
 import { findMergedFund } from "@/lib/universeServer";
 import { classifyFund } from "@/lib/classify";
-import { fetchFundSupport } from "@/lib/fmp";
+import { checkFundSupport } from "@/lib/market-data/fundSupport";
 
 /**
  * Add Missing Fund — request intake + runtime add.
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   const outcome = await evaluateFundRequest(body?.ticker, {
     lookupUniverse: (t) => findMergedFund(t, ctx.sb),
-    checkFmp: (t) => fetchFundSupport(t),
+    checkFmp: (t) => checkFundSupport(t),
     classify: classifyFund,
   });
   if (!outcome.ok) return NextResponse.json({ error: outcome.reason }, { status: 400 });

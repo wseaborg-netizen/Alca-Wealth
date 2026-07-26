@@ -156,7 +156,7 @@ describe("fund-request API routes", () => {
   test("POST normalizes, checks universe + FMP, and dedupes before insert", () => {
     expect(post).toContain("evaluateFundRequest");
     expect(post).toContain("findMergedFund");
-    expect(post).toContain("fetchFundSupport");
+    expect(post).toContain("checkFundSupport"); // Stage 4: Tiingo support check (was fetchFundSupport)
     expect(post).toContain("fundRequestActive");
     expect(post).toContain("classifyFund");
   });

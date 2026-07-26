@@ -6,7 +6,7 @@ import {
 import { UNIVERSE } from "@/lib/universe";
 import { greetingName } from "@/lib/profile";
 import { secUserAgentConfigured } from "@/lib/monitoring";
-import { fetchMarketQuoteFmp } from "@/lib/fmp";
+import { getMarketQuote } from "@/lib/market-data/marketQuote";
 import { cacheGet, cacheSet } from "@/lib/cache";
 
 // Real per-fund quote (1D/1W/1M/YTD) via the existing FMP provider, cached 15m
@@ -16,7 +16,7 @@ async function deskQuote(ticker: string): Promise<{ change1d: number; change1w: 
   const key = `ovq:${ticker}`;
   const cached = await cacheGet<{ change1d: number; change1w: number; change1m: number; changeYtd: number } | "none">(key);
   if (cached) return cached === "none" ? null : cached;
-  const q = await fetchMarketQuoteFmp(ticker).catch(() => null);
+  const q = await getMarketQuote(ticker).catch(() => null);
   const val = q ? { change1d: q.change1d, change1w: q.change1w, change1m: q.change1m, changeYtd: q.changeYtd } : null;
   await cacheSet(key, val ?? "none", QUOTE_TTL);
   return val;

@@ -14,7 +14,7 @@
  *    across the FMP / scoring / portfolio checks. No self-HTTP fan-out.
  */
 import { UNIVERSE, findFund, UNIVERSE_GENERATED_AT } from "./universe";
-import { getFund, inferVehicle, type FundRecord } from "./funds";
+import { getFund, inferVehicle, type FundRecord } from "@/lib/market-data/fundService";
 import { cacheGet } from "./cache";
 import { peersOf, rankAmong, MIN_PEERS } from "./metrics/peers";
 import { scoreFundForContext, type ScoreInputs } from "./metrics/score";
@@ -147,32 +147,51 @@ function checkFundUniverse(dynamicCount: number): CheckBody {
   return { status: "healthy", summary: `${merged} verified funds (${staticCount} base + ${dynamicCount} dynamic); classifier + taxonomy OK.`, details };
 }
 
-// ── 2. FMP Data ────────────────────────────────────────────────────────────────
+// ── 2. Market Data Provider (Tiingo) ─────────────────────────────────────────
 
-function checkFmpData(rec: FundRecord | null): CheckBody {
-  if (!rec) {
-    return {
-      status: "error",
-      summary: "Provider returned no usable data for the probe fund.",
-      details: { probeTicker: PROBE_TICKER },
-    };
+/** Map a normalized provider error category (carried on the fund record) onto a
+    health status + safe summary. Never exposes tokens, headers, URLs, or stacks. */
+function providerErrorHealth(category: string): CheckBody {
+  const details = { probeTicker: PROBE_TICKER, errorCategory: category };
+  switch (category) {
+    case "no_token":
+      return { status: "error", summary: "Tiingo internal token is not configured.", details };
+    case "unauthorized":
+      return { status: "error", summary: "Tiingo rejected the credentials (unauthorized).", details };
+    case "rate_limited":
+      return { status: "warning", summary: "Tiingo rate limit reached — data may be delayed.", details };
+    case "timeout":
+      return { status: "warning", summary: "Tiingo request timed out.", details };
+    case "network":
+    case "server_error":
+      return { status: "error", summary: "Tiingo provider is unavailable.", details };
+    case "not_found":
+    case "invalid_symbol":
+      return { status: "error", summary: "Probe symbol not found by the provider.", details };
+    default:
+      return { status: "error", summary: "Tiingo request failed.", details };
   }
+}
+
+function checkProviderData(rec: FundRecord | null): CheckBody {
+  if (!rec) {
+    return { status: "error", summary: "Provider returned no usable data for the probe fund.", details: { probeTicker: PROBE_TICKER } };
+  }
+  if (rec.error) return providerErrorHealth(rec.error);
+
   const hasName = !!rec.name && rec.name.toUpperCase() !== PROBE_TICKER;
   const hasHistory = probeHasHistory(rec);
   const details = {
     probeTicker: PROBE_TICKER,
-    resolvedName: hasName,        // boolean only — never leak raw provider payload
+    resolvedName: hasName,      // boolean only — never leak raw provider payload
     priceHistory: hasHistory,
-    expenseRatio: rec.expenseRatio != null,
-    source: rec.dataSource ?? "unknown",
+    expenseRatio: rec.expenseRatio != null, // static curated source (not Tiingo)
+    source: rec.dataSource ?? "unknown",     // "tiingo"
   };
-  if (rec.error || (!hasName && !hasHistory)) {
-    return { status: "error", summary: "Provider request failed or returned no usable fund data.", details };
+  if (!hasHistory) {
+    return { status: "warning", summary: "Tiingo responded, but the probe fund has missing/insufficient history.", details };
   }
-  if (!hasHistory || !hasName) {
-    return { status: "warning", summary: "Provider responded, but some fund data is missing.", details };
-  }
-  return { status: "healthy", summary: "Provider config works — usable profile and price history returned.", details };
+  return { status: "healthy", summary: "Tiingo provider works — usable adjusted price history returned.", details };
 }
 
 // ── 3. Scoring Engine ────────────────────────────────────────────────────────
@@ -187,7 +206,9 @@ async function checkScoringEngine(rec: FundRecord | null): Promise<CheckBody> {
   if (pg) {
     for (const p of pg.peers) {
       if (p.ticker === PROBE_TICKER) continue;
-      const cp = await cacheGet<FundRecord>(`fund:${p.ticker}`);
+      // Match the Tiingo fund-service cache key (internal scope, 10y, price/NAV kind).
+      const kind = p.vehicle === "Mutual Fund" ? "nav" : "price";
+      const cp = await cacheGet<FundRecord>(`td:fund:${"internal"}:${p.ticker}:10y:${kind}`);
       if (cp) cachedPeers.push(cp);
     }
   }
@@ -425,7 +446,7 @@ export async function runSystemHealth(ctx: HealthAuthContext): Promise<SystemHea
 
   const [universe, fmp, scoring, savedLists, fundRequests, secAlerts, portfolio] = await Promise.all([
     safeCheck("fundUniverse", "Fund Universe", async () => checkFundUniverse(dynamicCount)),
-    safeCheck("fmpData", "FMP Data", async () => checkFmpData(probe)),
+    safeCheck("marketData", "Market Data (Tiingo)", async () => checkProviderData(probe)),
     safeCheck("scoringEngine", "Scoring Engine", () => checkScoringEngine(probe)),
     safeCheck("savedLists", "Saved Lists / Supabase", () => checkSavedLists(ctx)),
     safeCheck("fundRequests", "Fund Requests", () => checkFundRequests(ctx)),

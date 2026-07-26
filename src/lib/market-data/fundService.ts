@@ -24,7 +24,7 @@ import { cacheGet, cacheSet, coalesce } from "@/lib/cache";
 import { computeKpis, EMPTY_PERIOD, type KpiResult } from "@/lib/kpi";
 import { NAME_BY_TICKER } from "@/lib/universe";
 import { createTiingoProvider } from "@/lib/market-data";
-import type { TokenContext, PriceSeriesKind } from "@/lib/market-data";
+import type { TokenContext, PriceSeriesKind, MarketDataProvider } from "@/lib/market-data";
 import fundMetaRaw from "@/data/fund-meta.json";
 import type { FundRecord } from "@/lib/funds";
 
@@ -32,9 +32,12 @@ export type { FundRecord };
 
 const FUND_META = fundMetaRaw as unknown as Record<string, { er: number; aum: number } | undefined>;
 
-// One internal-context provider for the whole app process (no BYOK yet). A
-// created provider performs no I/O until a method is called.
-const provider = createTiingoProvider();
+// One internal-context provider for the whole app process (no BYOK yet), created
+// lazily. A created provider performs no I/O until a method is called.
+let _provider: MarketDataProvider | null = null;
+const tiingo = (): MarketDataProvider => (_provider ??= createTiingoProvider());
+/** TEST ONLY — inject a fake provider. Never used by production code paths. */
+export function __setProviderForTests(p: MarketDataProvider | null): void { _provider = p; }
 const INTERNAL: TokenContext = { kind: "internal" };
 /** Safe credential-scope id for cache keys — the CONTEXT KIND, never the token. */
 const SCOPE = "internal";
@@ -102,7 +105,7 @@ export async function getBenchmarkHistory(benchmark: string): Promise<{ date: st
   return coalesce(key, async () => {
     const again = await cacheGet<{ date: string; price: number }[]>(key);
     if (again) return again;
-    const r = await provider.getPriceHistory(benchmark, INTERNAL, { kind: "price", startDate: yearsAgoISO(10) });
+    const r = await tiingo().getPriceHistory(benchmark, INTERNAL, { kind: "price", startDate: yearsAgoISO(10) });
     if (!r.ok) return []; // failure → empty; NEVER cached, so it can retry
     const series = r.data.bars
       .map((b) => ({ date: b.date, price: b.adjClose ?? b.close ?? 0 }))
@@ -127,7 +130,7 @@ async function getFundData(
 
     const startDate = yearsAgoISO(range === "3y" ? 3 : 10);
     const [series, benchItems] = await Promise.all([
-      provider.getPriceSeries(norm, INTERNAL, { kind, startDate }),
+      tiingo().getPriceSeries(norm, INTERNAL, { kind, startDate }),
       getBenchmarkHistory(benchmark),
     ]);
 

@@ -17,6 +17,8 @@ import * as fs from "fs";
 import * as path from "path";
 import { createTiingoProvider, type TokenContext } from "@/lib/market-data";
 import { getFund, getRecommendFund } from "@/lib/market-data/fundService";
+import { getMarketQuote } from "@/lib/market-data/marketQuote";
+import { checkFundSupport } from "@/lib/market-data/fundSupport";
 
 const MAX_REQUESTS = 20;
 let requestCount = 0;
@@ -162,6 +164,50 @@ describe("Tiingo live smoke (manual — bounded, sanitized)", () => {
 
   it("stayed within the request cap", () => {
     console.log("TOTAL LIVE REQUESTS:", requestCount, "/", MAX_REQUESTS);
+    expect(requestCount).toBeLessThanOrEqual(MAX_REQUESTS);
+  });
+});
+
+// ── Stage 4 live — migrated Dashboard + Expansion paths (run in isolation) ──
+// npx jest --config jest.smoke.config.ts -t "Stage 4 live"
+describe("Stage 4 live — migrated consumers (bounded, sanitized)", () => {
+  beforeAll(() => {
+    if (!ensureKey()) throw new Error("TIINGO_API_KEY unavailable — add it to .env.local to run the smoke.");
+  });
+
+  it("market quote SPY (S&P 500 ETF proxy)", async () => {
+    budget();
+    const q = await getMarketQuote("SPY", true);
+    console.log("QUOTE SPY:", q ? { price: q.price, change1d: q.change1d, changeYtd: q.changeYtd, hasSpark: !!q.spark6m } : null);
+    expect(q).not.toBeNull();
+  });
+
+  it("market quotes DIA + QQQ proxies", async () => {
+    budget(); budget();
+    const dia = await getMarketQuote("DIA");
+    const qqq = await getMarketQuote("QQQ");
+    console.log("QUOTE DIA/QQQ:", { dia: dia?.price ?? null, qqq: qqq?.price ?? null });
+    expect(dia).not.toBeNull();
+    expect(qqq).not.toBeNull();
+  });
+
+  it("fund support VTI (canonical) → supported, assetType Unknown (never guessed)", async () => {
+    budget();
+    const s = await checkFundSupport("VTI");
+    console.log("SUPPORT VTI:", { supported: s.supported, inconclusive: s.inconclusive, assetType: s.assetType, hasName: !!s.name });
+    expect(s.supported).toBe(true);
+    expect(s.assetType).toBe("Unknown");
+  });
+
+  it("fund support invalid → not-found unsupported (not inconclusive)", async () => {
+    budget();
+    const s = await checkFundSupport("ZZINVALIDXYZ");
+    console.log("SUPPORT invalid:", { supported: s.supported, inconclusive: s.inconclusive });
+    expect(s.supported).toBe(false);
+  });
+
+  it("Stage 4 stayed within the request cap", () => {
+    console.log("STAGE 4 LIVE REQUESTS:", requestCount, "/", MAX_REQUESTS);
     expect(requestCount).toBeLessThanOrEqual(MAX_REQUESTS);
   });
 });

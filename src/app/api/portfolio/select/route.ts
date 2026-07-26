@@ -9,7 +9,7 @@
  * honestly (reason states it) — scores are never invented.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { getFund, getBenchmarkHistory, BENCHMARKS } from "@/lib/funds";
+import { getFund, getBenchmarkHistory, BENCHMARKS } from "@/lib/market-data/fundService";
 import { getMergedUniverse } from "@/lib/universeServer";
 import { rankRecords, sleeveContext } from "@/lib/metrics/recordScore";
 import { CONTEXT_LABELS } from "@/lib/metrics/score";

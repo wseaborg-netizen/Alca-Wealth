@@ -126,7 +126,19 @@ export async function evaluateFundRequest(raw: unknown, deps: EvaluateDeps): Pro
   }
 
   if (cls.status === "verified") {
-    // Confident + taxonomy-valid → add as a verified dynamic fund.
+    // The classifier is confident on the NAME, but the provider could not
+    // establish the vehicle (ETF vs mutual fund) and the ticker is not yet in
+    // the canonical universe. Do NOT auto-approve on a guessed/unknown vehicle —
+    // route to human review with the verified evidence preserved.
+    if (!vehicle) {
+      return { ok: true, result: {
+        ...blank, status: "needs_classification", fundName: fmp.name, fmpSupported: true, alreadyInUniverse: false,
+        classificationStatus: "needs_classification",
+        failureReason: "Provider cannot confirm the fund vehicle (ETF vs mutual fund); needs review.",
+        vehicle, classification: cls,
+      } };
+    }
+    // Confident + taxonomy-valid + known vehicle → add as a verified dynamic fund.
     return { ok: true, result: {
       ...blank, status: "added_to_universe", fundName: fmp.name, fmpSupported: true, alreadyInUniverse: false,
       classificationStatus: "verified", failureReason: null, vehicle, classification: cls,

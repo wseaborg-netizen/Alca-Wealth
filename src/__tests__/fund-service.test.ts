@@ -148,8 +148,12 @@ describe("migration isolation", () => {
     }
   });
 
-  test("out-of-scope consumers still on FMP funds.ts (deferred to Stage 4)", () => {
-    expect(read("src/app/api/portfolio/select/route.ts")).toMatch(/from "@\/lib\/funds"/);
-    expect(read("src/lib/health.ts")).toMatch(/from "\.\/funds"/);
+  test("Stage 4: Portfolio + Health migrated to the Tiingo fund service (no funds.ts runtime)", () => {
+    const portfolio = read("src/app/api/portfolio/select/route.ts");
+    const health = read("src/lib/health.ts");
+    expect(portfolio).toMatch(/from "@\/lib\/market-data\/fundService"/);
+    expect(portfolio).not.toMatch(/from "@\/lib\/funds"/);
+    expect(health).toMatch(/from "@\/lib\/market-data\/fundService"/);
+    expect(health).not.toMatch(/from "\.\/funds"/);
   });
 });

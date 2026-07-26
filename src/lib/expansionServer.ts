@@ -16,7 +16,7 @@ import { evaluateFundRequest, ACTIVE_STATUSES } from "./fundRequests";
 import { findMergedFund } from "./universeServer";
 import { classifyFund } from "./classify";
 import { validateFields } from "./classify/core.js";
-import { fetchFundSupport } from "./fmp";
+import { checkFundSupport } from "./market-data/fundSupport";
 import { legacyCategory, benchmarkFor } from "./universe";
 import { opsBucket, type OpsBucket } from "./expansionOps";
 import taxonomyRaw from "@/../data/config/fund-taxonomy.json";
@@ -28,7 +28,7 @@ export interface TickerOutcome { ticker: string; status: string; bucket: OpsBuck
 
 const evalDeps = () => ({
   lookupUniverse: (t: string) => findMergedFund(t),
-  checkFmp: (t: string) => fetchFundSupport(t),
+  checkFmp: (t: string) => checkFundSupport(t),
   classify: classifyFund,
 });
 
@@ -110,7 +110,7 @@ export async function editApproveRequest(sb: Supa, firmId: string, userId: strin
   const invalid = validateFields(edit as unknown as Record<string, unknown>, taxonomy);
   if (invalid.length) return { ok: false, reason: `Invalid taxonomy value(s): ${invalid.join(", ")}` };
   // Vehicle/name from the provider (best-effort; classification is operator-set).
-  const support = await fetchFundSupport(req.normalized_ticker).catch(() => null);
+  const support = await checkFundSupport(req.normalized_ticker).catch(() => null);
   const name = support?.name ?? req.fund_name ?? req.normalized_ticker;
   const vehicle = support?.assetType && support.assetType !== "Unknown" ? support.assetType : null;
   await insertVerified(sb, firmId, userId, req.normalized_ticker, name, vehicle, edit, null, null, "manual-review", req.id);

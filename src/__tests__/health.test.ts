@@ -21,7 +21,7 @@ const ROOT = path.resolve(__dirname, "../..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8");
 
 const ALLOWED = new Set(["healthy", "warning", "error"]);
-const EXPECTED_KEYS = ["fundUniverse", "fmpData", "scoringEngine", "savedLists", "fundRequests", "secAlerts", "portfolioBuilder", "apiRoutes", "appBuild"];
+const EXPECTED_KEYS = ["fundUniverse", "marketData", "scoringEngine", "savedLists", "fundRequests", "secAlerts", "portfolioBuilder", "apiRoutes", "appBuild"];
 
 function assertNormalized(c: HealthCheckResult) {
   expect(typeof c.key).toBe("string");
@@ -50,10 +50,10 @@ describe("runSystemHealth: normalized, safe, isolated", () => {
     expect(d.mergedFunds).toBeGreaterThanOrEqual(d.staticFunds);
   });
 
-  test("FMP check degrades to error (not a crash) when the probe fails", async () => {
-    const fmp = (await runSystemHealth({ signedIn: false })).checks.find((c) => c.key === "fmpData")!;
-    expect(fmp.status).toBe("error");
-    expect(fmp.summary).toBeTruthy();
+  test("Market Data (Tiingo) check degrades to error (not a crash) when the probe fails", async () => {
+    const md = (await runSystemHealth({ signedIn: false })).checks.find((c) => c.key === "marketData")!;
+    expect(md.status).toBe("error");
+    expect(md.summary).toBeTruthy();
   });
 
   test("a single failing check is isolated — the others still return", async () => {
