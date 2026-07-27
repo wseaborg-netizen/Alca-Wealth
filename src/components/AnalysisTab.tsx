@@ -11,6 +11,7 @@ import { computeTaxEfficiency } from "../lib/tax";
 import { PERIODS, blendOverall, type Period, type PeriodOrOverall } from "../lib/metrics/periods";
 import { rankSentence, type CategoryRank } from "../lib/metrics/peers";
 import { SaveToList } from "./SaveToList";
+import FirmContextPanel from "./FirmContextPanel";
 import {
   scoreFundForContext, overallReviewScore, getPeerAlternativesForContext, displayScore,
   SCORE_CONTEXTS, CONTEXT_LABELS,
@@ -62,11 +63,17 @@ function equityStyle(category: string): string | null {
 
 export default function AnalysisTab({
   ticker, setTicker, onCompare, onFindSimilar,
+  firmOrigin, onBackToFirmFunds, onStartReview, onAddToFirmFunds,
 }: {
   ticker: string;
   setTicker: (t: string) => void;
   onCompare?: (t: string) => void;
   onFindSimilar?: (t: string) => void;
+  // Phase 2D contextual-workspace wiring (firm context lives in FirmContextPanel).
+  firmOrigin?: boolean;
+  onBackToFirmFunds?: () => void;
+  onStartReview?: (firmFundId: string, ticker: string) => void;
+  onAddToFirmFunds?: (ticker: string) => void;
 }) {
   const [input, setInput] = useState(ticker);
   const [loading, setLoading] = useState(false);
@@ -320,6 +327,11 @@ export default function AnalysisTab({
               </div>
             </div>
           </Card>
+
+          {/* Firm context — status/role/rationale/reviews for this fund when it is
+              in Firm Funds; Add to Firm Funds otherwise. Contextual only. */}
+          <FirmContextPanel ticker={record.ticker} cameFromFirmFunds={firmOrigin}
+            onBack={onBackToFirmFunds} onStartReview={onStartReview} onAddToFirmFunds={onAddToFirmFunds} />
 
           {/* ── Advisor Review — category-relative score + peer alternatives.
                 Internal review aid: peer comparison only, never a recommendation. ── */}

@@ -105,6 +105,10 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
   const [recommendSeed, setRecommendSeed]   = useState("");
   const [ideasMode, setIdeasMode]           = useState<IdeasMode>("find");
   const [modelMode, setModelMode]           = useState<ModelMode>("overview");
+  // Phase 2D contextual-workspace navigation glue.
+  const [analysisFromFirm, setAnalysisFromFirm] = useState(false);
+  const [reviewCtx, setReviewCtx]           = useState<{ firmFundId: string; ticker: string } | null>(null);
+  const [firmFundsAddTicker, setFirmFundsAddTicker] = useState<string | null>(null);
 
   // ── Theme (persisted per device; "system" follows the OS preference) ──
   const [theme, setThemeState] = useState<Theme>("light");
@@ -200,7 +204,11 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
   }, [tab]);
 
   // ── Cross-tab actions ──
-  const goAnalyze = (t: string) => { setAnalysisTicker(t.toUpperCase()); navigate("analysis"); };
+  const goAnalyze = (t: string, fromFirm = false) => { setAnalysisFromFirm(fromFirm); setAnalysisTicker(t.toUpperCase()); navigate("analysis"); };
+  // Contextual-workspace actions (Phase 2D).
+  const goBackToFirmFunds = () => switchTab("firmfunds");
+  const goStartReview = (firmFundId: string, t: string) => { setReviewCtx({ firmFundId, ticker: t.toUpperCase() }); switchTab("reviews"); };
+  const goAddToFirmFunds = (t: string) => { setFirmFundsAddTicker(t.toUpperCase()); switchTab("firmfunds"); };
   // Add to the comparison tray WITHOUT navigating away - build a list from anywhere.
   const addToCompare = (t: string) => {
     const up = t.toUpperCase();
@@ -358,11 +366,14 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
         </div>
         {/* Firm Funds — primary destination shell (real data model added later) */}
         {mounted.has("firmfunds") && (
-          <div style={{ display: tab === "firmfunds" ? "block" : "none" }}><FirmFundsTab onAnalyze={goAnalyze} /></div>
+          <div style={{ display: tab === "firmfunds" ? "block" : "none" }}>
+            <FirmFundsTab onAnalyze={(t) => goAnalyze(t, true)}
+              initialAddTicker={firmFundsAddTicker} onAddTickerConsumed={() => setFirmFundsAddTicker(null)} />
+          </div>
         )}
         {/* Reviews — primary destination shell (real workflow added later) */}
         {mounted.has("reviews") && (
-          <div style={{ display: tab === "reviews" ? "block" : "none" }}><ReviewsTab /></div>
+          <div style={{ display: tab === "reviews" ? "block" : "none" }}><ReviewsTab context={reviewCtx} /></div>
         )}
         {mounted.has("research") && (
           <div style={{ display: tab === "research" ? "block" : "none" }}><ResearchHubTab go={hubGo} onAnalyze={goAnalyze} /></div>
@@ -379,7 +390,9 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
         {mounted.has("analysis") && (
           <div style={{ display: tab === "analysis" ? "block" : "none" }}>
             <AnalysisTab ticker={analysisTicker} setTicker={setAnalysisTicker}
-              onCompare={addToCompare} onFindSimilar={goFindSimilar} />
+              onCompare={addToCompare} onFindSimilar={goFindSimilar}
+              firmOrigin={analysisFromFirm} onBackToFirmFunds={goBackToFirmFunds}
+              onStartReview={goStartReview} onAddToFirmFunds={goAddToFirmFunds} />
           </div>
         )}
         {mounted.has("comparison") && (

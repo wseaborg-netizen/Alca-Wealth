@@ -14,10 +14,10 @@ import { useMediaQuery } from "./motion";
  * have no reliable relationship yet → an explicit "Not connected" state.
  */
 
-const STATUSES = ["approved", "watch", "candidate", "restricted", "retired"] as const;
-type Status = (typeof STATUSES)[number];
+export const STATUSES = ["approved", "watch", "candidate", "restricted", "retired"] as const;
+export type Status = (typeof STATUSES)[number];
 
-const STATUS_META: Record<Status, { label: string; fg: string; bg: string; bd: string }> = {
+export const STATUS_META: Record<Status, { label: string; fg: string; bg: string; bd: string }> = {
   approved:   { label: "Approved",   fg: "#047857", bg: "rgba(4,120,87,0.10)",  bd: "rgba(4,120,87,0.30)" },
   watch:      { label: "Watch",      fg: "#B45309", bg: "rgba(180,83,9,0.10)",  bd: "rgba(180,83,9,0.30)" },
   candidate:  { label: "Candidate",  fg: "#0E7490", bg: "rgba(14,116,144,0.10)", bd: "rgba(14,116,144,0.30)" },
@@ -54,7 +54,7 @@ function Sparkline({ data }: { data: number[] | null }) {
   );
 }
 
-function StatusBadge({ status }: { status: Status }) {
+export function StatusBadge({ status }: { status: Status }) {
   const m = STATUS_META[status];
   return (
     <span style={{ display: "inline-block", padding: "3px 9px", borderRadius: 999, fontSize: 11.5,
@@ -67,10 +67,10 @@ const NotConnected = ({ title }: { title: string }) => (
 );
 
 // ── Add / Edit form (shared) ─────────────────────────────────────────────────
-interface FormState { ticker: string; status: Status; fundRole: string; approvalRationale: string; nextReviewDate: string }
+export interface FormState { ticker: string; status: Status; fundRole: string; approvalRationale: string; nextReviewDate: string }
 const emptyForm: FormState = { ticker: "", status: "candidate", fundRole: "", approvalRationale: "", nextReviewDate: "" };
 
-function FundDialog({ mode, initial, busy, error, onClose, onSubmit }: {
+export function FundDialog({ mode, initial, busy, error, onClose, onSubmit }: {
   mode: "add" | "edit"; initial: FormState; busy: boolean; error: string | null;
   onClose: () => void; onSubmit: (f: FormState) => void;
 }) {
@@ -143,8 +143,10 @@ function FundDialog({ mode, initial, busy, error, onClose, onSubmit }: {
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────────
-export default function FirmFundsTab({ onAnalyze }: {
+export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerConsumed }: {
   onAnalyze?: (ticker: string) => void;
+  initialAddTicker?: string | null;   // prefill + open the Add dialog (from "Add to Firm Funds")
+  onAddTickerConsumed?: () => void;
 }) {
   const isMobile = useMediaQuery("(max-width: 820px)");
   const [rows, setRows] = useState<Row[] | null>(null);
@@ -159,6 +161,7 @@ export default function FirmFundsTab({ onAnalyze }: {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const [addOpen, setAddOpen] = useState(false);
+  const [addInitial, setAddInitial] = useState<FormState>(emptyForm);
   const [editRow, setEditRow] = useState<Row | null>(null);
   const [dialogBusy, setDialogBusy] = useState(false);
   const [dialogError, setDialogError] = useState<string | null>(null);
@@ -183,6 +186,17 @@ export default function FirmFundsTab({ onAnalyze }: {
   // rule can't see across the memoized callback, so the guarantee is asserted here.
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void load(); }, [load]);
+
+  // "Add to Firm Funds" from the contextual workspace prefills + opens the dialog.
+  useEffect(() => {
+    if (!initialAddTicker) return;
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setAddInitial({ ...emptyForm, ticker: initialAddTicker.toUpperCase() });
+    setDialogError(null);
+    setAddOpen(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
+    onAddTickerConsumed?.();
+  }, [initialAddTicker, onAddTickerConsumed]);
 
   // Bounded performance enrichment — one request for the loaded inventory.
   // State is only updated inside the async callbacks (never synchronously in the
@@ -429,8 +443,8 @@ export default function FirmFundsTab({ onAnalyze }: {
       )}
 
       {addOpen && (
-        <FundDialog mode="add" initial={emptyForm} busy={dialogBusy} error={dialogError}
-          onClose={() => setAddOpen(false)} onSubmit={submitAdd} />
+        <FundDialog mode="add" initial={addInitial} busy={dialogBusy} error={dialogError}
+          onClose={() => { setAddOpen(false); setAddInitial(emptyForm); }} onSubmit={submitAdd} />
       )}
       {editRow && (
         <FundDialog mode="edit" busy={dialogBusy} error={dialogError}

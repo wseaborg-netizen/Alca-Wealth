@@ -152,6 +152,15 @@ export async function firmFundGet(sb: Supa, firmId: string, id: string): Promise
   return ((data ?? [])[0] as unknown as FirmFundRow) ?? null;
 }
 
+/** One firm fund by canonical ticker (firm-scoped), or null when not in the
+ *  firm's inventory. Ticker is matched normalized/uppercase. */
+export async function firmFundByTicker(sb: Supa, firmId: string, ticker: string): Promise<FirmFundRow | null> {
+  const { data, error } = await sb.from("firm_funds")
+    .select(FIRM_FUND_COLS).eq("firm_id", firmId).eq("normalized_ticker", String(ticker).toUpperCase()).limit(1);
+  if (error) fail("db_error", error);
+  return ((data ?? [])[0] as unknown as FirmFundRow) ?? null;
+}
+
 export async function firmFundCreate(sb: Supa, firmId: string, userId: string, input: {
   ticker: string; status?: FirmFundStatus; fundRole?: string | null;
   approvalRationale?: string | null; nextReviewDate?: string | null;
@@ -196,6 +205,16 @@ export async function reviewsList(sb: Supa, firmId: string, opts?: { statuses?: 
   let q = sb.from("fund_reviews").select(REVIEW_COLS).eq("firm_id", firmId);
   if (opts?.statuses?.length) q = q.in("status", opts.statuses.map(assertReviewStatus));
   const { data, error } = await q.order("opened_date", { ascending: false }).limit(1000);
+  if (error) fail("db_error", error);
+  return (data ?? []) as unknown as FundReviewRow[];
+}
+
+/** All reviews (open + completed + any status) for one firm fund, newest first.
+ *  Firm-scoped; used by the contextual workspace's read-only review history. */
+export async function reviewsForFirmFund(sb: Supa, firmId: string, firmFundId: string): Promise<FundReviewRow[]> {
+  const { data, error } = await sb.from("fund_reviews")
+    .select(REVIEW_COLS).eq("firm_id", firmId).eq("firm_fund_id", firmFundId)
+    .order("opened_date", { ascending: false }).limit(200);
   if (error) fail("db_error", error);
   return (data ?? []) as unknown as FundReviewRow[];
 }

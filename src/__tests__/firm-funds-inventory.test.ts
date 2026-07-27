@@ -188,7 +188,7 @@ describe("Firm Funds inventory UI", () => {
 
   test("clicking a ticker opens the existing contextual Analysis (no new primary nav, no AnalysisTab dup)", () => {
     expect(ui).toContain("onAnalyze");
-    expect(shell).toContain("<FirmFundsTab onAnalyze={goAnalyze}");
+    expect(shell).toContain("onAnalyze={(t) => goAnalyze(t, true)}");
     expect(ui).not.toContain("AnalysisTab");   // does not duplicate the workspace
   });
   test("no synthetic inventory data (no random, no hardcoded fund arrays)", () => {

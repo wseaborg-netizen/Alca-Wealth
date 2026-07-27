@@ -11,7 +11,11 @@ import { T, ui } from "./tokens";
  * structured so the real review list/workflow can drop into the region below
  * without another navigation rewrite.
  */
-export default function ReviewsTab() {
+export default function ReviewsTab({ context }: {
+  // Phase 2D: enough client-side context to identify the selected firm fund when
+  // arriving via "Start Review". Phase 2E builds the actual review form/record.
+  context?: { firmFundId: string; ticker: string } | null;
+} = {}) {
   return (
     <div style={{ maxWidth: 1180, margin: "0 auto", display: "flex", flexDirection: "column", gap: 22 }}>
       {/* Header */}
@@ -24,6 +28,17 @@ export default function ReviewsTab() {
           investments it uses. This workspace is not configured yet.
         </p>
       </header>
+
+      {/* Selected firm-fund context passed from "Start Review" (Phase 2D). No
+          review record is created here — the workflow arrives in Phase 2E. */}
+      {context && (
+        <div role="status" style={{ background: T.blueL, border: `1px solid ${T.blue}33`, borderRadius: 12,
+          padding: "14px 16px", ...ui }}>
+          <span style={{ fontSize: 12.5, color: T.text }}>
+            Review context received for <strong>{context.ticker}</strong>. The review workflow arrives in a later phase — no review has been created.
+          </span>
+        </div>
+      )}
 
       {/* Not-yet-configured state (no synthetic cases) */}
       <section
