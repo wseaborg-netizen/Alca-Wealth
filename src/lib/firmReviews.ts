@@ -30,7 +30,8 @@ export type ReviewDecision = (typeof REVIEW_DECISIONS)[number];
 
 export type FirmReviewErrorCode =
   | "invalid_ticker" | "invalid_status" | "invalid_decision"
-  | "decision_required" | "date_order" | "not_found" | "db_error";
+  | "decision_required" | "date_order" | "not_found" | "duplicate"
+  | "not_in_universe" | "db_error";
 
 export class FirmReviewError extends Error {
   code: FirmReviewErrorCode;
@@ -162,7 +163,13 @@ export async function firmFundCreate(sb: Supa, firmId: string, userId: string, i
     fund_role: input.fundRole ?? null, approval_rationale: input.approvalRationale ?? null,
     next_review_date: input.nextReviewDate ?? null,
   }).select(FIRM_FUND_COLS).single();
-  if (error) fail("db_error", error);
+  if (error) {
+    // unique (firm_id, normalized_ticker) violation → explicit duplicate error
+    if ((error as { code?: string }).code === "23505") {
+      throw new FirmReviewError("duplicate", `${normalized_ticker} is already in this firm's inventory.`);
+    }
+    fail("db_error", error);
+  }
   return data as unknown as FirmFundRow;
 }
 
@@ -259,6 +266,22 @@ export async function reviewUpdate(sb: Supa, firmId: string, id: string, patch: 
     .eq("firm_id", firmId).eq("id", id).select(REVIEW_COLS).single();
   if (error) fail("db_error", error);
   return data as unknown as FundReviewRow;
+}
+
+/** Latest completed-review date per firm_fund (derived — never stored on
+ *  firm_funds). Keyed by firm_fund_id; only reviews with status='completed' and
+ *  a completed_date count. */
+export async function lastCompletedReviews(sb: Supa, firmId: string): Promise<Record<string, string>> {
+  const { data, error } = await sb.from("fund_reviews")
+    .select("firm_fund_id, completed_date")
+    .eq("firm_id", firmId).eq("status", "completed").not("completed_date", "is", null)
+    .order("completed_date", { ascending: false });
+  if (error) fail("db_error", error);
+  const out: Record<string, string> = {};
+  for (const r of (data ?? []) as { firm_fund_id: string; completed_date: string }[]) {
+    if (!(r.firm_fund_id in out)) out[r.firm_fund_id] = r.completed_date; // first = newest
+  }
+  return out;
 }
 
 // ── Review candidates ─────────────────────────────────────────────────────────

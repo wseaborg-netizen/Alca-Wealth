@@ -114,21 +114,21 @@ describe("public marketing routing unchanged", () => {
 
 // ── New shells introduce no synthetic data ────────────────────────────────────
 
-describe("Firm Funds and Reviews shells", () => {
-  const files = ["src/components/FirmFundsTab.tsx", "src/components/ReviewsTab.tsx"];
-
-  test("render honest not-yet-configured empty states", () => {
-    expect(read("src/components/FirmFundsTab.tsx")).toMatch(/No firm fund shelf yet|not configured/i);
-    expect(read("src/components/ReviewsTab.tsx")).toMatch(/No reviews yet|not configured/i);
+describe("Reviews shell + Firm Funds inventory", () => {
+  test("Reviews remains an honest not-yet-configured shell (no synthetic data)", () => {
+    const src = read("src/components/ReviewsTab.tsx");
+    expect(src).toMatch(/No reviews yet|not configured/i);
+    expect(src).not.toMatch(/Math\.random/);
+    expect(src).not.toMatch(/from\s+["']@\/lib\/(universe|market-data|kpi|fundService)/);
+    expect(src).not.toMatch(/useMergedUniverse|fetch\(/);
   });
 
-  test("introduce NO synthetic funds, counts, reviews, or random values", () => {
-    for (const f of files) {
-      const src = read(f);
-      expect(src).not.toMatch(/Math\.random/);
-      // No data/universe/fund-service imports — these are pure static shells.
-      expect(src).not.toMatch(/from\s+["']@\/lib\/(universe|market-data|kpi|fundService)/);
-      expect(src).not.toMatch(/useMergedUniverse|fetch\(/);
-    }
+  // Phase 2C replaced the Firm Funds empty shell with the real inventory; it now
+  // fetches firm-scoped data from the API and keeps an honest empty state.
+  test("Firm Funds is the real inventory with an honest empty state and no synthetic records", () => {
+    const src = read("src/components/FirmFundsTab.tsx");
+    expect(src).toMatch(/No funds in your inventory yet/i);
+    expect(src).not.toMatch(/Math\.random/);
+    expect(src).not.toMatch(/mockFunds|sampleFunds|demoFunds|fakeFunds/i);
   });
 });

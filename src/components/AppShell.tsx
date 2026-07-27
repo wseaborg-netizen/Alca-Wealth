@@ -358,7 +358,7 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
         </div>
         {/* Firm Funds — primary destination shell (real data model added later) */}
         {mounted.has("firmfunds") && (
-          <div style={{ display: tab === "firmfunds" ? "block" : "none" }}><FirmFundsTab /></div>
+          <div style={{ display: tab === "firmfunds" ? "block" : "none" }}><FirmFundsTab onAnalyze={goAnalyze} /></div>
         )}
         {/* Reviews — primary destination shell (real workflow added later) */}
         {mounted.has("reviews") && (
