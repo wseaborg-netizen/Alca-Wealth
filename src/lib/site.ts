@@ -7,10 +7,10 @@ export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://alcawealth
 
 export const SITE_NAME = "ALCA Wealth";
 
-export const SITE_TITLE = "ALCA Wealth | Investment Research and Portfolio Modeling for Advisors";
+export const SITE_TITLE = "ALCA Wealth | Fund Oversight and Review for Advisory Firms";
 
 export const SITE_DESCRIPTION =
-  "ALCA Wealth helps financial advisors research funds, compare alternatives, review de-identified portfolios, and model investment scenarios in one connected workspace.";
+  "ALCA helps advisory firms monitor firm funds, research alternatives, and maintain a documented review process.";
 
 /** Public, indexable routes — the ONLY paths that belong in the sitemap.
     Protected app areas live behind login inside the SPA and must never be added. */

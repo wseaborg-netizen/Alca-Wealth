@@ -63,9 +63,9 @@ describe("sitemap.xml", () => {
 
 describe("site metadata", () => {
   test("title/description match the approved positioning", () => {
-    expect(SITE_TITLE).toBe("ALCA Wealth | Investment Research and Portfolio Modeling for Advisors");
-    expect(SITE_DESCRIPTION).toMatch(/financial advisors/);
-    expect(SITE_DESCRIPTION).toMatch(/de-identified portfolios/);
+    expect(SITE_TITLE).toBe("ALCA Wealth | Fund Oversight and Review for Advisory Firms");
+    expect(SITE_DESCRIPTION).toMatch(/advisory firms/);
+    expect(SITE_DESCRIPTION).toMatch(/documented review process/);
   });
 
   test("site URL is a valid absolute origin with no trailing slash", () => {

@@ -296,6 +296,10 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
   return (
     <div style={{ minHeight: "100vh", background: T.bg, display: "flex", flexDirection: "column" }}>
 
+      {/* Signed-out visitors get the self-contained public homepage (its own nav +
+          footer). The authenticated app chrome (TopNav: search / alerts / account)
+          is only for signed-in sessions. */}
+      {authMode !== "none" && (
       <TopNav
         sections={sections}
         utilitySection={utilitySection}
@@ -303,19 +307,20 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
         onBrand={() => switchTab("home")}
         onAbout={scrollToAbout}
         onSearch={() => goIdeas("find")}
-        onSettings={() => { if (authMode === "none") { window.location.href = "/login"; return; } setSettingsOpen(true); }}
+        onSettings={() => setSettingsOpen(true)}
         authMode={authMode}
         authUser={authUser}
         authWorkspace={authWorkspace}
         accountName={accountName}
         unreadCount={unreadAlerts}
-        onAlerts={() => { if (authMode === "none") { window.location.href = "/login"; return; } switchTab("alerts"); }}
+        onAlerts={() => switchTab("alerts")}
         onLogout={onLogout}
         canBack={canBack}
         canForward={canForward}
         goBack={goBack}
         goForward={goForward}
       />
+      )}
 
       {/* Content - lazy-mounted, hidden when inactive (state persists).
           Home and the command center run full-bleed dark; every other tab gets
@@ -359,6 +364,7 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
 
         <div style={{ display: tab === "home" ? "block" : "none" }}>
           <HomeTab
+            authMode={authMode}
             onEnterPlatform={() => switchTab("dashboard")}
             onOpenResearch={() => switchTab("research")}
             onOpenPortfolio={() => switchTab("workspace")}
@@ -366,10 +372,14 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
             onExplore={scrollToAbout}
           />
         </div>
+        {/* Advisor Overview is authenticated-only — never mounted for signed-out
+            visitors (keeps the public homepage free of private API calls). */}
+        {authMode !== "none" && (
         <div style={{ display: tab === "dashboard" ? "block" : "none" }}>
           <DashboardTab onNavigate={dashNavigate} userEmail={authUser ?? null} onAnalyze={goAnalyze}
             onOpenReview={goOpenReview} onOpenFirmFunds={() => switchTab("firmfunds")} onOpenDiscover={() => switchTab("research")} />
         </div>
+        )}
         {/* Firm Funds — primary destination shell (real data model added later) */}
         {mounted.has("firmfunds") && (
           <div style={{ display: tab === "firmfunds" ? "block" : "none" }}>

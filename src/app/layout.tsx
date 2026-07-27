@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    images: [{ url: "/og/alca-og.png", width: 1200, height: 630, alt: "ALCA Wealth — Research. Construct. Model." }],
+    images: [{ url: "/og/alca-og.png", width: 1200, height: 630, alt: "ALCA Wealth — Research. Review. Monitor." }],
   },
   twitter: {
     card: "summary_large_image",
@@ -33,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
         {/* Structured data — software-focused only; no advice or regulatory claims. */}
