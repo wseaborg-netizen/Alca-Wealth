@@ -54,7 +54,7 @@ const NAV_ITEMS: { label: string; href: string; external?: boolean }[] = [
 
 // ── Container ─────────────────────────────────────────────────────────────────
 function Container({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
-  return <div style={{ width: "100%", maxWidth: 1360, margin: "0 auto", boxSizing: "border-box", ...style }}>{children}</div>;
+  return <div style={{ width: "100%", maxWidth: 1440, margin: "0 auto", boxSizing: "border-box", ...style }}>{children}</div>;
 }
 
 // ── Brand mark ────────────────────────────────────────────────────────────────
