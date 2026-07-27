@@ -78,9 +78,13 @@ describe("locked period vocabulary", () => {
     const firm = read("src/components/FirmFundsTab.tsx");
     expect(firm).toContain('["1D", "5D", "1M", "6M", "YTD", "1Y", "3Y", "5Y", "Max"]');
     expect(firm).not.toMatch(/"3M"|"10Y"/);
-    const desk = read("src/components/DashboardTab.tsx");
-    expect(desk).not.toContain('"1W"');
-    expect(desk).toContain('"5D"');
+    // The market/desk quote exposes 5D, never the old 1W.
+    const quote = read("src/lib/market-data/marketQuote.ts");
+    expect(quote).toContain("change5d");
+    expect(quote).not.toContain("change1w");
+    const overview = read("src/app/api/advisor-overview/route.ts");
+    expect(overview).toContain("change5d");
+    expect(overview).not.toContain("change1w");
   });
 });
 

@@ -35,8 +35,10 @@ function WFBadge({ status }: { status: Workflow }) {
     fontWeight: 600, ...ui, color: c, background: `${c}18`, border: `1px solid ${c}44` }}>{WORKFLOW_LABEL[status]}</span>;
 }
 
-export default function ReviewsTab({ context, onAnalyze, onCompareCandidates }: {
+export default function ReviewsTab({ context, initialReviewId, onInitialReviewConsumed, onAnalyze, onCompareCandidates }: {
   context?: { firmFundId: string; ticker: string } | null;
+  initialReviewId?: string | null;   // Home deep-link → open this review's detail (read-only navigation)
+  onInitialReviewConsumed?: () => void;
   onAnalyze?: (ticker: string) => void;
   onCompareCandidates?: (tickers: string[]) => void;
 } = {}) {
@@ -91,6 +93,17 @@ export default function ReviewsTab({ context, onAnalyze, onCompareCandidates }: 
     setView("create");
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [context]);
+
+  // Home deep-link → open an existing review's detail. Pure navigation: opening a
+  // detail never mutates the review (ReviewDetail loads read-only until an action).
+  useEffect(() => {
+    if (!initialReviewId) return;
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setDetailId(initialReviewId);
+    setView("detail");
+    /* eslint-enable react-hooks/set-state-in-effect */
+    onInitialReviewConsumed?.();
+  }, [initialReviewId, onInitialReviewConsumed]);
 
   const submitCreate = async () => {
     if (!form.reason.trim()) { setFormError("A reason is required to start a review."); return; }

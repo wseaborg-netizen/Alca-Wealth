@@ -8,6 +8,9 @@ import { greetingName } from "@/lib/profile";
 import { secUserAgentConfigured } from "@/lib/monitoring";
 import { getMarketQuote } from "@/lib/market-data/marketQuote";
 import { kindForVehicle } from "@/lib/firmPerformance";
+import { reviewsList, firmFundsList, lastCompletedReviews } from "@/lib/firmReviews";
+import { getMergedUniverse } from "@/lib/universeServer";
+import { buildHomeWorkflow, type Identity } from "@/lib/homeWorkflow";
 import { cacheGet, cacheSet } from "@/lib/cache";
 
 // Real per-fund quote (1D/5D/1M/YTD) via the canonical price engine, cached 15m
@@ -82,6 +85,22 @@ export async function GET() {
     })));
     const [coreFunds, watchlistFunds] = await Promise.all([enrich(commonItems), enrich(watchItems)]);
 
+    // ── Home operating-dashboard: review workflow (firm-scoped, real records) ──
+    // Counts/queue/upcoming derive purely from stored reviews + firm_funds; a
+    // failure here degrades Home to Unavailable, never a fabricated count.
+    let reviewWorkflow = null;
+    try {
+      const [reviews, firmFunds, universe, lastReviews] = await Promise.all([
+        reviewsList(ctx.sb, ctx.firm.id),
+        firmFundsList(ctx.sb, ctx.firm.id),
+        getMergedUniverse(ctx.sb),
+        lastCompletedReviews(ctx.sb, ctx.firm.id),
+      ]);
+      const identityByTicker = new Map<string, Identity>(universe.map((u) => [u.ticker, { name: u.name, vehicle: u.vehicle }]));
+      const today = new Date().toISOString().slice(0, 10);
+      reviewWorkflow = buildHomeWorkflow(reviews, firmFunds, identityByTicker, lastReviews, today);
+    } catch { reviewWorkflow = null; }
+
     const expansionSummary = {
       static: UNIVERSE.length, dynamic: dynCount, merged: UNIVERSE.length + dynCount,
       pendingRequests: reqCounts?.pending ?? 0,
@@ -120,7 +139,7 @@ export async function GET() {
 
     return NextResponse.json({
       ok: true, userSummary, attentionItems, savedListSummary, recentActivity,
-      coreFunds, watchlistFunds,
+      coreFunds, watchlistFunds, reviewWorkflow,
       expansionSummary, healthSummary: healthHint, marketPulse: null, workspaceSummary,
       alertCounts: aCounts, generatedAt: new Date().toISOString(),
     }, { headers: { "Cache-Control": "no-store" } });

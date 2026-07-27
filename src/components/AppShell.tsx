@@ -108,6 +108,7 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
   // Phase 2D contextual-workspace navigation glue.
   const [analysisFromFirm, setAnalysisFromFirm] = useState(false);
   const [reviewCtx, setReviewCtx]           = useState<{ firmFundId: string; ticker: string } | null>(null);
+  const [openReviewId, setOpenReviewId]     = useState<string | null>(null);  // Home → open a specific review detail
   const [firmFundsAddTicker, setFirmFundsAddTicker] = useState<string | null>(null);
 
   // ── Theme (persisted per device; "system" follows the OS preference) ──
@@ -208,6 +209,8 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
   // Contextual-workspace actions (Phase 2D).
   const goBackToFirmFunds = () => switchTab("firmfunds");
   const goStartReview = (firmFundId: string, t: string) => { setReviewCtx({ firmFundId, ticker: t.toUpperCase() }); switchTab("reviews"); };
+  // Home → open an EXISTING review detail (navigation only — never creates a record).
+  const goOpenReview = (reviewId: string) => { setOpenReviewId(reviewId); switchTab("reviews"); };
   const goAddToFirmFunds = (t: string) => { setFirmFundsAddTicker(t.toUpperCase()); switchTab("firmfunds"); };
   // Review → Discover Comparison (reuses the existing compare tray + tab).
   const goCompareMany = (tickers: string[]) => { setCompareTickers(Array.from(new Set(tickers.map((t) => t.toUpperCase()))).slice(0, 6)); switchTab("comparison"); };
@@ -364,7 +367,8 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
           />
         </div>
         <div style={{ display: tab === "dashboard" ? "block" : "none" }}>
-          <DashboardTab onNavigate={dashNavigate} userEmail={authUser ?? null} onAnalyze={goAnalyze} />
+          <DashboardTab onNavigate={dashNavigate} userEmail={authUser ?? null} onAnalyze={goAnalyze}
+            onOpenReview={goOpenReview} onOpenFirmFunds={() => switchTab("firmfunds")} onOpenDiscover={() => switchTab("research")} />
         </div>
         {/* Firm Funds — primary destination shell (real data model added later) */}
         {mounted.has("firmfunds") && (
@@ -376,7 +380,8 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
         {/* Reviews — primary destination shell (real workflow added later) */}
         {mounted.has("reviews") && (
           <div style={{ display: tab === "reviews" ? "block" : "none" }}>
-            <ReviewsTab context={reviewCtx} onAnalyze={goAnalyze} onCompareCandidates={goCompareMany} />
+            <ReviewsTab context={reviewCtx} initialReviewId={openReviewId} onInitialReviewConsumed={() => setOpenReviewId(null)}
+              onAnalyze={goAnalyze} onCompareCandidates={goCompareMany} />
           </div>
         )}
         {mounted.has("research") && (

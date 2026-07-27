@@ -127,18 +127,18 @@ describe("Advisor Hub + top-right wiring", () => {
     expect(nav).toContain("accountName");
     expect(nav).not.toMatch(/\{authUser\}\s*Workspace|\$\{authUser\}\s*Workspace/);
   });
-  test("Advisor Overview command center: Daily Desk, personal alerts, hubs (real routes)", () => {
+  test("Home operating dashboard: review-workflow sections + real route (Phase 2F)", () => {
     const d = read("src/components/DashboardTab.tsx");
     expect(d).toContain("Welcome back,");
-    expect(d).toContain("Daily Desk");
-    expect(d).toContain("My Updates / Alerts");
     expect(d).toContain("/api/advisor-overview");
-    // four workspace hubs matching the mockup
-    for (const hub of ["Research Hub", "Portfolio Hub", "Model Hub", "Planning & Tools Hub"]) expect(d).toContain(hub);
-    for (const cta of ["Go to Research", "Go to Portfolio", "Go to Model", "Go to Tools"]) expect(d).toContain(cta);
-    expect(d).toContain("Tax Efficiency Analyzer");
-    // removed from this page (APIs remain, cards gone)
-    expect(d).not.toContain("Market Pulse");
+    // The Home restructure leads with the review workflow, market context secondary.
+    for (const section of ["Attention", "Review work queue", "Upcoming firm-fund reviews", "Firm Funds", "Discover", "Market context"]) expect(d).toContain(section);
+    // Real firm-scoped workflow data (no synthetic desk/hub clutter dominating Home).
+    expect(d).toContain("reviewWorkflow");
+    expect(d).not.toContain("Daily Desk");
+    expect(d).not.toContain("Planning & Tools Hub");
+    // Market context is labeled price movement, never total return.
+    expect(d).toContain("not total return");
   });
   test("Alerts page is mounted under Tools and reachable", () => {
     const shell = read("src/components/AppShell.tsx");

@@ -133,8 +133,9 @@ export default function AnalysisTab({
   // vocabulary (1Y/3Y/5Y here); the 10Y and Overall scoring toggles have no
   // corresponding visible price-return figure and show it as Unavailable.
   const priceBasisLabel = record?.vehicle === "Mutual Fund" || record?.vehicle === "MF" ? "NAV Change" : "Price Change";
+  const priceChangeApplicable = period === "1Y" || period === "3Y" || period === "5Y";
   const priceChangeStat = (): number | null =>
-    period === "1Y" || period === "3Y" || period === "5Y" ? (k?.priceChange?.[period] ?? null) : null;
+    priceChangeApplicable ? (k?.priceChange?.[period as "1Y" | "3Y" | "5Y"] ?? null) : null;
   const rank = record?.categoryRanks && period !== "Overall" ? record.categoryRanks[period] ?? null : null;
 
   // ── Unified Advisor Review Score: computed client-side from shipped peer
@@ -191,7 +192,10 @@ export default function AnalysisTab({
   }, [intel, scoring, period, context]);
 
   const metrics = k && record ? [
-    { label: `${pl} ${priceBasisLabel}`, value: pct(priceChangeStat()), good: priceChangeStat() != null ? priceChangeStat()! > 0 : null },
+    // Price change is shown only for periods that can produce the locked metric
+    // (1Y/3Y/5Y). 10Y and Overall are scoring-only periods with no visible price
+    // return, so no "Unavailable" price-change control is rendered for them.
+    ...(priceChangeApplicable ? [{ label: `${pl} ${priceBasisLabel}`, value: pct(priceChangeStat()), good: priceChangeStat() != null ? priceChangeStat()! > 0 : null }] : []),
     { label: `Sharpe ${pl}`, value: num(statFor("sharpe")), good: statFor("sharpe") != null ? statFor("sharpe")! >= 1 : null },
     { label: `Sortino ${pl}`, value: num(statFor("sortino")), good: statFor("sortino") != null ? statFor("sortino")! >= 1 : null },
     { label: `Alpha ${pl} vs ${record.benchmark}`, value: pct(statFor("alpha")), good: statFor("alpha") != null ? statFor("alpha")! > 0 : null },
