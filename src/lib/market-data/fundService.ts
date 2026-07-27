@@ -95,6 +95,7 @@ const EMPTY_KPI: KpiResult = {
   battingAvg3y: null, ttmYield: null, divGrowth3y: null,
   rolling3y: [], stressTests: [],
   cumReturn: { "1Y": null, "3Y": null, "5Y": null, "10Y": null },
+  priceChange: { "1Y": null, "3Y": null, "5Y": null, "10Y": null },
   periods: { "1Y": { ...EMPTY_PERIOD }, "3Y": { ...EMPTY_PERIOD }, "5Y": { ...EMPTY_PERIOD }, "10Y": { ...EMPTY_PERIOD } },
 };
 
@@ -172,8 +173,11 @@ async function getFundData(
     const dividends = series.data.distributions.distributions.map((d) => ({ date: d.exDate, amount: d.amount }));
     const currentPrice = fundPrices.at(-1)?.price ?? 0;
 
-    // UNCHANGED KPI engine — only the data source changed (Tiingo adjusted history).
-    const kpi = computeKpis(fundPrices, benchItems, dividends, currentPrice);
+    // PRIMARY price-change metric uses RAW close + split factor (dividends excluded).
+    const rawDaily = series.data.history.bars.map((b) => ({ date: b.date, close: b.close, splitFactor: b.splitFactor }));
+
+    // Total-return/risk engine unchanged (adjusted history); priceChange added from raw closes.
+    const kpi = computeKpis(fundPrices, benchItems, dividends, currentPrice, rawDaily);
 
     const record: FundRecord = { ...baseRecord(norm, vehicle, category, benchmark), kpi, fetchedAt: Date.now() };
     await cacheSet(key, record, HISTORY_TTL);

@@ -32,14 +32,14 @@ interface Row {
   nextReviewDate: string | null; lastCompletedReview: string | null;
   models: { connected: boolean }; alerts: { connected: boolean };
 }
-interface PerfPoint { recentReturn: number | null; annualizedReturn: number | null; annualizable: boolean; spark: number[] | null }
-type MultiMode = "gain" | "annualized";
+// Primary metric = PRICE CHANGE (Nasdaq-style, dividends excluded). ETFs use
+// split-adjusted raw market price; mutual funds use raw NAV change.
+interface PerfPoint { priceChange: number | null; spark: number[] | null }
 const PERF_PERIODS = ["1D", "1M", "3M", "YTD", "1Y", "3Y", "5Y", "10Y"] as const;
 type PerfPeriod = (typeof PERF_PERIODS)[number];
 const DEFAULT_PERF_PERIOD: PerfPeriod = "1M";
-const IS_ANNUALIZED = (p: PerfPeriod) => p === "3Y" || p === "5Y" || p === "10Y";
 type PerfByPeriod = Record<PerfPeriod, PerfPoint>;
-interface PerfResult { periods: PerfByPeriod; asOf: string | null; basis: "etf_adjusted" | "mf_nav" }
+interface PerfResult { periods: PerfByPeriod; asOf: string | null; basis: "market_price" | "nav" }
 
 type SortKey = "ticker" | "recent" | "last" | "next";
 
@@ -160,8 +160,6 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
   const [perf, setPerf] = useState<Record<string, PerfResult | null>>({});
   const [perfLoaded, setPerfLoaded] = useState(false);
   const [period, setPeriod] = useState<PerfPeriod>(DEFAULT_PERF_PERIOD);
-  const [multiMode, setMultiMode] = useState<MultiMode>("gain"); // 3Y/5Y/10Y: Total Gain vs Annualized
-  const showAnn = IS_ANNUALIZED(period) && multiMode === "annualized";
   const [loadError, setLoadError] = useState<string | null>(null);
   const [signedOut, setSignedOut] = useState(false);
 
@@ -234,8 +232,7 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
     out = [...out].sort((a, b) => {
       if (sortKey === "ticker") return a.ticker.localeCompare(b.ticker) * dir;
       if (sortKey === "recent") {
-        const pick = (t: string) => { const pp = perf[t]?.periods?.[period]; return showAnn ? pp?.annualizedReturn : pp?.recentReturn; };
-        const av = pick(a.ticker), bv = pick(b.ticker);
+        const av = perf[a.ticker]?.periods?.[period]?.priceChange, bv = perf[b.ticker]?.periods?.[period]?.priceChange;
         if (av == null && bv == null) return 0; if (av == null) return 1; if (bv == null) return -1; // Unavailable sinks
         return (av - bv) * dir;
       }
@@ -245,7 +242,7 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
       return ad.localeCompare(bd) * dir;
     });
     return out;
-  }, [rows, search, statusFilter, sortKey, sortDir, perf, period, showAnn]);
+  }, [rows, search, statusFilter, sortKey, sortDir, perf, period]);
 
   const submitAdd = async (f: FormState) => {
     setDialogBusy(true); setDialogError(null);
@@ -341,19 +338,6 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
         <option value="last:desc">Last review (newest)</option>
         <option value="next:asc">Next review (soonest)</option>
       </select>
-      {IS_ANNUALIZED(period) && (
-        <div role="group" aria-label="Multi-year return basis"
-          style={{ display: "inline-flex", border: `1px solid ${T.line2}`, borderRadius: 9, overflow: "hidden" }}>
-          {(["gain", "annualized"] as MultiMode[]).map((m) => (
-            <button key={m} onClick={() => setMultiMode(m)} aria-pressed={multiMode === m}
-              style={{ padding: "8px 11px", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, ...ui,
-                background: multiMode === m ? T.blue : "transparent", color: multiMode === m ? "#fff" : T.dim,
-                borderLeft: m === "gain" ? "none" : `1px solid ${T.line2}` }}>
-              {m === "gain" ? "Total Gain" : "Annualized"}
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 
@@ -376,10 +360,10 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
   const recentCell = (r: Row) => {
     const p = perfAt(r);
     if (!perfLoaded && !perf[r.ticker]) return <span style={{ color: T.muted, ...ui, fontSize: 12 }}>…</span>;
-    const raw = showAnn ? p?.annualizedReturn : p?.recentReturn;  // primary=cumulative; toggle→annualized
+    const raw = p?.priceChange;  // PRIMARY = price change (dividends excluded)
     const v = fmtPct(raw);
     if (v == null) return <span style={{ color: T.muted, ...ui, fontSize: 12 }}>Unavailable</span>;
-    return <span style={{ color: (raw! >= 0 ? "#047857" : "#B42318"), fontWeight: 600, fontSize: 13, ...ui }}>{v}{showAnn ? <span style={{ color: T.muted, fontWeight: 500 }}>/yr</span> : null}</span>;
+    return <span style={{ color: (raw! >= 0 ? "#047857" : "#B42318"), fontWeight: 600, fontSize: 13, ...ui }}>{v}</span>;
   };
 
   return (
@@ -447,7 +431,7 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
           <table style={{ width: "100%", borderCollapse: "collapse", ...ui, fontSize: 13 }}>
             <thead>
               <tr style={{ textAlign: "left", color: T.muted, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                {["Ticker", "Name", period, IS_ANNUALIZED(period) ? (showAnn ? `${period} Annualized` : `${period} Total Gain`) : `${period} Return`, "Status", "Role", "Last review", "Next review", "Models", "Alerts", ""].map((h, i) => (
+                {["Ticker", "Name", period, `${period} Price Change`, "Status", "Role", "Last review", "Next review", "Models", "Alerts", ""].map((h, i) => (
                   <th key={i} style={{ padding: "12px 14px", borderBottom: `1px solid ${T.line}`, fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
@@ -486,10 +470,7 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
 
       {rows && rows.length > 0 && view.length > 0 && asOf && (
         <div style={{ fontSize: 11, color: T.muted, ...ui, lineHeight: 1.6 }}>
-          Total return through {asOf}. ETF rows use adjusted-close total return; mutual funds use NAV total return.
-          {IS_ANNUALIZED(period)
-            ? ` ${period} shows cumulative total gain over the full period by default; switch to Annualized (/yr) for the average annual return. Sparkline covers the same ${period} range.`
-            : " Cumulative total return over the period."}
+          Price change through {asOf} — cumulative over the full {period}, dividends excluded (not total return). ETF rows are Market Price Change (split-adjusted raw price); mutual-fund rows are NAV Change. Sparkline uses the same {period} price series.
         </div>
       )}
 

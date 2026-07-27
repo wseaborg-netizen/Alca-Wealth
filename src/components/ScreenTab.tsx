@@ -133,7 +133,7 @@ interface FundResult {
   percentiles: { cost: number; riskAdj: number; downside: number; alpha: number; consistency: number; yield: number };
   kpi: {
     return1y: number | null; return3y: number | null; return5y: number | null;
-    cumReturn?: Record<string, number | null>;   // cumulative total-gain % per period
+    priceChange?: Record<string, number | null>;   // primary display: price change % per period
     sharpe3y: number | null; sortino3y: number | null; calmar3y: number | null;
     infoRatio3y: number | null; alpha3y: number | null; beta3y: number | null;
     upsideCapture3y: number | null; downsideCapture3y: number | null;
@@ -583,8 +583,8 @@ export default function ScreenTab({ onAddToCompare, onAnalyze, onFindSimilar }: 
                   <KPI label="Down cap" value={fmt(f.kpi.downsideCapture3y, 1)} good={f.kpi.downsideCapture3y != null ? f.kpi.downsideCapture3y < 100 : null} />
                   <KPI label="Max DD 5y" value={fmt(f.kpi.maxDrawdown5y, 1, "%")} />
                   <KPI label="Batting avg" value={fmt(f.kpi.battingAvg3y, 1, "%")} good={f.kpi.battingAvg3y != null ? f.kpi.battingAvg3y >= 50 : null} />
-                  <KPI label="1y total gain" value={fmt(f.kpi.cumReturn?.["1Y"] ?? f.kpi.return1y, 2, "%")} />
-                  <KPI label="5y total gain" value={fmt(f.kpi.cumReturn?.["5Y"] ?? null, 2, "%")} />
+                  <KPI label="1y price change" value={fmt(f.kpi.priceChange?.["1Y"] ?? null, 2, "%")} />
+                  <KPI label="5y price change" value={fmt(f.kpi.priceChange?.["5Y"] ?? null, 2, "%")} />
                 </div>
 
                 {/* Percentile bars */}
@@ -630,7 +630,7 @@ export default function ScreenTab({ onAddToCompare, onAnalyze, onFindSimilar }: 
                       <KPI label="Info ratio" value={fmt(f.kpi.infoRatio3y, 2)} good={f.kpi.infoRatio3y != null ? f.kpi.infoRatio3y > 0.3 : null} />
                       <KPI label="Std dev 3y" value={fmt(f.kpi.stdDev3y, 2, "%")} />
                       <KPI label="Div growth 3y" value={fmt(f.kpi.divGrowth3y, 1, "%")} good={f.kpi.divGrowth3y != null ? f.kpi.divGrowth3y > 0 : null} />
-                      <KPI label="3y total gain" value={fmt(f.kpi.cumReturn?.["3Y"] ?? null, 2, "%")} />
+                      <KPI label="3y price change" value={fmt(f.kpi.priceChange?.["3Y"] ?? null, 2, "%")} />
                       <KPI label="AUM" value={f.aumFormatted} />
                       <KPI label="Fund age" value={f.fundAge != null ? fmt(f.fundAge, 1, " yrs") : "-"} good={f.fundAge != null ? f.fundAge >= 5 : null} />
                     </div>

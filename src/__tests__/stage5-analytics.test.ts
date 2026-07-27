@@ -14,7 +14,7 @@ const err = (category: ProviderErrorCategory) => ({ ok: false as const, error: {
 const notStub = async () => { throw new Error("not stubbed"); };
 
 /** A bar with an ADJUSTED close (and matching raw close). */
-const abar = (date: string, adj: number, close: number = adj): PriceBar => ({ date, close, adjClose: adj, open: null, high: null, low: null, volume: null });
+const abar = (date: string, adj: number, close: number = adj): PriceBar => ({ date, close, adjClose: adj, splitFactor: 1, open: null, high: null, low: null, volume: null });
 
 /** N+1 daily adjusted bars ending today with a fixed daily drift (steady uptrend). */
 function trendBars(days: number, start: number, driftPerDay: number): PriceBar[] {

@@ -227,6 +227,7 @@ export async function POST(req: NextRequest) {
         kpi: {
           sharpe3y: a.kpi.sharpe3y, return3y: a.kpi.return3y, alpha3y: a.kpi.alpha3y,
           ttmYield: a.kpi.ttmYield, maxDrawdown3y: a.kpi.maxDrawdown3y,
+          priceChange3y: a.kpi.priceChange["3Y"],
         },
         reason: `Best all-around fit - strong on ${strengths[0]} and ${strengths[1]}` +
           (betterThanCur ? `, and grades out ahead of ${cur.ticker} overall.` : `.`),
@@ -238,7 +239,7 @@ export async function POST(req: NextRequest) {
       ticker: cur.ticker, name: cur.name, category: cur.category, vehicle: cur.vehicle,
       expenseRatio: cur.expenseRatio, matchScore: curFit,
       kpi: {
-        sharpe3y: cur.kpi.sharpe3y, maxDrawdown3y: cur.kpi.maxDrawdown3y,
+        sharpe3y: cur.kpi.sharpe3y, maxDrawdown3y: cur.kpi.maxDrawdown3y, priceChange3y: cur.kpi.priceChange["3Y"],
         ttmYield: cur.kpi.ttmYield, alpha3y: cur.kpi.alpha3y, return3y: cur.kpi.return3y,
       },
     },

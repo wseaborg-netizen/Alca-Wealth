@@ -29,7 +29,7 @@ interface FundData {
   expenseRatio: number | null; aumFormatted: string; fundAge: number | null; peerCount?: number;
   kpi: {
     return1y: number | null; return3y: number | null; return5y: number | null;
-    cumReturn?: Record<string, number | null>;   // cumulative total-gain % per period
+    priceChange?: Record<string, number | null>;   // primary display: price change % per period
     sharpe3y: number | null; sortino3y: number | null; calmar3y: number | null;
     infoRatio3y: number | null; alpha3y: number | null; beta3y: number | null;
     upsideCapture3y: number | null; downsideCapture3y: number | null;
@@ -48,11 +48,9 @@ function fmt(v: number | null, dec = 2, suffix = "") {
 }
 
 const KPI_ROWS: [string, (f: FundData) => string][] = [
-  ["1Y Total Gain",   (f) => fmt(f.kpi.cumReturn?.["1Y"] ?? f.kpi.return1y, 2, "%")],
-  ["3Y Total Gain",   (f) => fmt(f.kpi.cumReturn?.["3Y"] ?? null, 2, "%")],
-  ["3Y Annualized",   (f) => fmt(f.kpi.return3y, 2, "%")],
-  ["5Y Total Gain",   (f) => fmt(f.kpi.cumReturn?.["5Y"] ?? null, 2, "%")],
-  ["5Y Annualized",   (f) => fmt(f.kpi.return5y, 2, "%")],
+  ["1Y Price Change", (f) => fmt(f.kpi.priceChange?.["1Y"] ?? null, 2, "%")],
+  ["3Y Price Change", (f) => fmt(f.kpi.priceChange?.["3Y"] ?? null, 2, "%")],
+  ["5Y Price Change", (f) => fmt(f.kpi.priceChange?.["5Y"] ?? null, 2, "%")],
   ["Sharpe 3Y",       (f) => fmt(f.kpi.sharpe3y, 2)],
   ["Sortino 3Y",      (f) => fmt(f.kpi.sortino3y, 2)],
   ["Calmar 3Y",       (f) => fmt(f.kpi.calmar3y, 2)],

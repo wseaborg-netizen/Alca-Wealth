@@ -32,14 +32,14 @@ interface FFFactor {
 interface TopPick {
   ticker: string; name: string; category: string; vehicle: string;
   expenseRatio: number | null; matchScore: number; sameCategory: boolean;
-  kpi: { sharpe3y: number | null; return3y: number | null; alpha3y: number | null; ttmYield: number | null; maxDrawdown3y: number | null };
+  kpi: { sharpe3y: number | null; return3y: number | null; alpha3y: number | null; ttmYield: number | null; maxDrawdown3y: number | null; priceChange3y?: number | null };
   reason: string;
 }
 interface FFResult {
   current: {
     ticker: string; name: string; category: string; vehicle: string;
     expenseRatio: number | null; matchScore?: number;
-    kpi: { sharpe3y: number | null; maxDrawdown3y: number | null; ttmYield: number | null; alpha3y: number | null; return3y: number | null };
+    kpi: { sharpe3y: number | null; maxDrawdown3y: number | null; ttmYield: number | null; alpha3y: number | null; return3y: number | null; priceChange3y?: number | null };
   };
   topPicks: TopPick[];
   factors: FFFactor[];
@@ -88,7 +88,7 @@ function TopPickCard({ p, rank, onCompare, onAnalyze }: {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
         {([
           ["Expense", p.expenseRatio != null ? `${p.expenseRatio.toFixed(2)}%` : "-"],
-          ["3Y CAGR", p.kpi.return3y != null ? `${p.kpi.return3y.toFixed(1)}%` : "-"],
+          ["3Y Price Chg", p.kpi.priceChange3y != null ? `${p.kpi.priceChange3y.toFixed(1)}%` : "-"],
           ["Sharpe", p.kpi.sharpe3y != null ? p.kpi.sharpe3y.toFixed(2) : "-"],
           ["Alpha", p.kpi.alpha3y != null ? `${p.kpi.alpha3y.toFixed(1)}%` : "-"],
           ["Yield", p.kpi.ttmYield != null ? `${p.kpi.ttmYield.toFixed(1)}%` : "-"],
@@ -436,7 +436,7 @@ function ByFactorsMode({ onAddToCompare, onAnalyze }: {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginTop: 12 }}>
                 {[
                   ["Expense", f.expenseRatio != null ? `${f.expenseRatio.toFixed(2)}%` : "-"],
-                  ["3Y CAGR", fmtPct(f.kpi.return3y)],
+                  ["3Y Price Change", fmtPct(f.kpi.priceChange3y ?? null)],
                   ["Sharpe", fmtNum(f.kpi.sharpe3y)],
                   ["Alpha", fmtPct(f.kpi.alpha3y)],
                   ["Yield", fmtPct(f.kpi.ttmYield)],
@@ -672,7 +672,7 @@ export function ProfileMode({ onAddToCompare, onAnalyze, presetClient, presetVeh
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginTop: 12 }}>
                 {[
                   ["Expense", f.expenseRatio != null ? `${f.expenseRatio.toFixed(2)}%` : "-"],
-                  ["3Y CAGR", fmtPct(f.kpi.return3y)],
+                  ["3Y Price Change", fmtPct(f.kpi.priceChange3y ?? null)],
                   ["Sharpe", fmtNum(f.kpi.sharpe3y)],
                   ["Alpha", fmtPct(f.kpi.alpha3y)],
                   ["Yield", fmtPct(f.kpi.ttmYield)],

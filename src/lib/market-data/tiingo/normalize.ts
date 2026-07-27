@@ -65,6 +65,7 @@ function toBar(r: TiingoPriceRaw): PriceBar {
     date: isoDate(r.date) ?? "",
     close: num(r.close),
     adjClose: num(r.adjClose),
+    splitFactor: num(r.splitFactor) ?? 1,
     open: num(r.open),
     high: num(r.high),
     low: num(r.low),

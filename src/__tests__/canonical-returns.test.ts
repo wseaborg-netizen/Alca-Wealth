@@ -9,7 +9,6 @@ import * as path from "path";
 import {
   canonicalPeriodReturns, PERF_PERIODS, ANNUALIZED_PERIODS, PERIOD_LABEL, DEFAULT_PERF_PERIOD,
 } from "@/lib/perf/canonicalReturns";
-import { periodsFromBars } from "@/lib/firmPerformance";
 import { computeKpis } from "@/lib/kpi";
 
 function weekdays(fromISO: string, toISO: string, holidays: string[] = []): string[] {
@@ -125,21 +124,11 @@ describe("boundaries + availability", () => {
   });
 });
 
-describe("one engine across consumers", () => {
+describe("total-return engine feeds scoring (unchanged) — price display is separate", () => {
   const raw = obs("2015-05-01", END, 100, 240);
-  const asBars = raw.map((o) => ({ date: o.date, adjClose: o.value }));
   const asDaily = raw.map((o) => ({ date: o.date, price: o.value }));
 
-  test("Firm Funds adapter: recentReturn = cumulative, annualizedReturn = annualized (same canonical)", () => {
-    const canon = canonicalPeriodReturns(raw).periods;
-    const ff = periodsFromBars(asBars).periods;
-    for (const p of PERF_PERIODS) {
-      expect(ff[p].recentReturn).toBe(canon[p].cumulativeReturn);   // PRIMARY = cumulative
-      expect(ff[p].annualizedReturn).toBe(canon[p].annualizedReturn);
-      expect(ff[p].annualizable).toBe(canon[p].annualizable);
-    }
-  });
-  test("KPI pipeline: display cumulative + annualized from canonical; score-consumed uses annualized (multi-year)", () => {
+  test("KPI scoring: total-return cumulative + annualized from the canonical total-return engine", () => {
     const canon = canonicalPeriodReturns(raw).periods;
     const kpi = computeKpis(asDaily, asDaily, [], asDaily[asDaily.length - 1].price);
     for (const p of ["1Y", "3Y", "5Y", "10Y"] as const) {

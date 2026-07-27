@@ -248,7 +248,7 @@ export default function WatchlistTab({ onAddToCompare, onAnalyze, onDiscover, au
           gridTemplateColumns: "2fr 80px 88px 72px 68px 68px 220px 36px",
           gap: 0, padding: "9px 16px",
           background: T.panel2, borderBottom: `1px solid ${T.line}` }}>
-          {["Fund", "Trend", "1Y Return", "Sharpe 3Y", "ER", "TTM Yield", "Factor Chips", ""].map((h) => (
+          {["Fund", "Trend", "1Y Price Chg", "Sharpe 3Y", "ER", "TTM Yield", "Factor Chips", ""].map((h) => (
             <div key={h} style={{ fontSize: 9.5, fontWeight: 600, color: T.muted, textTransform: "uppercase",
               letterSpacing: "0.11em", ...ui, paddingRight: 8 }}>{h}</div>
           ))}
@@ -308,10 +308,10 @@ export default function WatchlistTab({ onAddToCompare, onAnalyze, onDiscover, au
                 <MiniSparkline data={sparkData} color={T.data} />
               </div>
 
-              {/* 1Y Return */}
+              {/* 1Y Price Change (Nasdaq-style, dividends excluded) */}
               <div style={{ paddingRight: 8 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: col(kpi.return1y), ...mono }}>
-                  {fmtPct(kpi.return1y)}
+                <div style={{ fontSize: 13, fontWeight: 600, color: col(kpi.priceChange?.["1Y"] ?? null), ...mono }}>
+                  {fmtPct(kpi.priceChange?.["1Y"] ?? null)}
                 </div>
                 <div style={{ fontSize: 10, color: T.muted, marginTop: 1, ...ui }}>1-year</div>
               </div>

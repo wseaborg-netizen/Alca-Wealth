@@ -18,7 +18,7 @@ const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8");
 
 // ── Fake provider plumbing ────────────────────────────────────────────────────
 const PROV = { source: "tiingo" as const, fetchedAt: "2026-07-25T00:00:00Z" };
-const bar = (date: string, adjClose: number): PriceBar => ({ date, close: adjClose, adjClose, open: null, high: null, low: null, volume: null });
+const bar = (date: string, adjClose: number): PriceBar => ({ date, close: adjClose, adjClose, splitFactor: 1, open: null, high: null, low: null, volume: null });
 /** N+1 daily bars ending today, spanning ~N days (so KPI periods are non-null). */
 function recentBars(days: number): PriceBar[] {
   const out: PriceBar[] = [];

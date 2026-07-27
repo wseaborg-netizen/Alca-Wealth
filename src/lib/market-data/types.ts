@@ -76,8 +76,9 @@ export interface SecurityMetadata {
 /** A single observation. `close` / `adjClose` carry price (ETF) or NAV (mutual fund). */
 export interface PriceBar {
   readonly date: string;            // "YYYY-MM-DD"
-  readonly close: number | null;    // raw close / NAV
-  readonly adjClose: number | null; // split + distribution adjusted close / NAV
+  readonly close: number | null;    // raw close / NAV (dividends NOT reinvested)
+  readonly adjClose: number | null; // split + distribution adjusted close / NAV (total return)
+  readonly splitFactor: number;     // split ratio on this bar (1 when no split); for split-only price adjustment
   readonly open: number | null;
   readonly high: number | null;
   readonly low: number | null;

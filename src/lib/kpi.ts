@@ -62,7 +62,8 @@ export interface KpiResult {
 
   // Per-period stat sets driving the Analysis period toggle
   periods: Record<Period, PeriodStats>;
-  cumReturn: Record<Period, number | null>;   // cumulative total-gain % per period (primary display)
+  cumReturn: Record<Period, number | null>;    // cumulative TOTAL-return % per period (scoring/analytics; not the primary display)
+  priceChange: Record<Period, number | null>;  // PRIMARY display %: Nasdaq-style price change (dividends excluded)
 }
 
 // All return/risk formulas live in the central methodology module — this file
@@ -73,6 +74,7 @@ import {
 } from "./metrics/performance";
 import { PERIODS, PERIOD_YEARS, type Period } from "./metrics/periods";
 import { canonicalPeriodReturns } from "./perf/canonicalReturns";
+import { canonicalPricePerformance } from "./perf/canonicalPricePerformance";
 export { RISK_FREE_ANNUAL };
 
 /** One period's full stat set — every value independently span/obs-guarded.
@@ -154,6 +156,9 @@ export function computeKpis(
   benchDaily: DailyPrice[],
   dividends: DividendRecord[] = [],
   currentPrice = 0,
+  // Raw (split-adjusted, dividend-UNADJUSTED) closes for the PRIMARY price-change
+  // metric. adjClose stays for scoring/risk only. When omitted, priceChange is null.
+  rawDaily: { date: string; close: number | null; splitFactor?: number }[] = [],
 ): KpiResult {
   const empty: KpiResult = {
     return1y: null, return3y: null, return5y: null,
@@ -165,6 +170,7 @@ export function computeKpis(
     rolling3y: [], stressTests: [],
     periods: { "1Y": { ...EMPTY_PERIOD }, "3Y": { ...EMPTY_PERIOD }, "5Y": { ...EMPTY_PERIOD }, "10Y": { ...EMPTY_PERIOD } },
     cumReturn: { "1Y": null, "3Y": null, "5Y": null, "10Y": null },
+    priceChange: { "1Y": null, "3Y": null, "5Y": null, "10Y": null },
   };
 
   if (!fundDaily.length) return empty;
@@ -202,6 +208,18 @@ export function computeKpis(
   result.return1y = result.periods["1Y"].return;
   result.return3y = result.periods["3Y"].return;
   result.return5y = result.periods["5Y"].return;
+
+  // ── PRIMARY display metric: PRICE CHANGE (Nasdaq-style, dividends excluded) ──
+  if (rawDaily.length) {
+    const px = canonicalPricePerformance(
+      rawDaily.filter((r) => r.close != null).map((r) => ({ date: r.date, rawClose: r.close as number, splitFactor: r.splitFactor })),
+      "market_price",
+    );
+    for (const p of PERIODS) {
+      const c = px.periods[p]?.priceChange;
+      result.priceChange[p] = c != null ? c * 100 : null;
+    }
+  }
 
   // ── Drawdown (3y and 5y) from the daily adjusted series ─────────────────────
   for (const [field, years] of [["maxDrawdown5y", 5], ["maxDrawdown3y", 3]] as [keyof KpiResult, number][]) {
