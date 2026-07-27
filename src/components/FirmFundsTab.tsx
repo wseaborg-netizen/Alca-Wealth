@@ -35,7 +35,7 @@ interface Row {
 // Primary metric = PRICE CHANGE (Nasdaq-style, dividends excluded). ETFs use
 // split-adjusted raw market price; mutual funds use raw NAV change.
 interface PerfPoint { priceChange: number | null; spark: number[] | null }
-const PERF_PERIODS = ["1D", "1M", "3M", "YTD", "1Y", "3Y", "5Y", "10Y"] as const;
+const PERF_PERIODS = ["1D", "5D", "1M", "6M", "YTD", "1Y", "3Y", "5Y", "Max"] as const;
 type PerfPeriod = (typeof PERF_PERIODS)[number];
 const DEFAULT_PERF_PERIOD: PerfPeriod = "1M";
 type PerfByPeriod = Record<PerfPeriod, PerfPoint>;

@@ -129,9 +129,12 @@ export default function AnalysisTab({
   const pl = period === "Overall" ? "Overall*" : period; // * = blended
   // PRIMARY performance = PRICE CHANGE (Nasdaq-style, dividends excluded). ETFs
   // are Market Price Change; mutual funds are NAV Change. Cumulative over the
-  // whole period (no annualization). Overall (a scoring blend) shows no price change.
+  // whole period (no annualization). Price change uses the canonical visible
+  // vocabulary (1Y/3Y/5Y here); the 10Y and Overall scoring toggles have no
+  // corresponding visible price-return figure and show it as Unavailable.
   const priceBasisLabel = record?.vehicle === "Mutual Fund" || record?.vehicle === "MF" ? "NAV Change" : "Price Change";
-  const priceChangeStat = (): number | null => (period === "Overall" ? null : (k?.priceChange?.[period] ?? null));
+  const priceChangeStat = (): number | null =>
+    period === "1Y" || period === "3Y" || period === "5Y" ? (k?.priceChange?.[period] ?? null) : null;
   const rank = record?.categoryRanks && period !== "Overall" ? record.categoryRanks[period] ?? null : null;
 
   // ── Unified Advisor Review Score: computed client-side from shipped peer

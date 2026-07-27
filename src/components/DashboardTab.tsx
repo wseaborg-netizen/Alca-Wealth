@@ -13,10 +13,10 @@ export type DashTab = "find" | "analysis" | "comparison" | "recommendation" | "d
 // ── Types (all from existing endpoints) ──────────────────────────────────────
 interface MarketItem {
   ticker: string; label: string; group: string; price: number | null;
-  change1d: number | null; change1w: number | null; change1m: number | null; changeYtd: number | null; spark6m?: number[];
+  change1d: number | null; change5d: number | null; change1m: number | null; changeYtd: number | null; spark6m?: number[];
 }
 interface MarketData { items: MarketItem[]; fetchedAt: number }
-interface Quote { change1d: number; change1w: number; change1m: number; changeYtd: number }
+interface Quote { change1d: number; change5d: number; change1m: number; changeYtd: number }
 interface DeskFund { ticker: string; name: string | null; category: string | null; quote: Quote | null; alertCount: number }
 interface Overview {
   ok: boolean;
@@ -220,7 +220,7 @@ function CoreTable({ funds, onAnalyze }: { funds: DeskFund[]; onAnalyze?: (t: st
   if (funds.length === 0) return <Empty text="No funds in Commonly Used Funds yet. Save funds to see them here." />;
   return (
     <table style={{ borderCollapse: "collapse", width: "100%" }}>
-      <thead><tr>{["Fund", "1D", "1W", "1M", "YTD"].map((h, i) => (
+      <thead><tr>{["Fund", "1D", "5D", "1M", "YTD"].map((h, i) => (
         <th key={h} style={{ ...smallCap, textAlign: i === 0 ? "left" : "right", padding: "0 0 8px", }}>{h}</th>
       ))}</tr></thead>
       <tbody>
@@ -229,7 +229,7 @@ function CoreTable({ funds, onAnalyze }: { funds: DeskFund[]; onAnalyze?: (t: st
             <td style={{ padding: "9px 0" }}>
               <button onClick={() => onAnalyze?.(f.ticker)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", ...mono, fontSize: 12.5, fontWeight: 700, color: T.blue }}>{f.ticker}</button>
             </td>
-            {[f.quote?.change1d, f.quote?.change1w, f.quote?.change1m, f.quote?.changeYtd].map((v, i) => (
+            {[f.quote?.change1d, f.quote?.change5d, f.quote?.change1m, f.quote?.changeYtd].map((v, i) => (
               <td key={i} style={{ padding: "9px 0", textAlign: "right", fontSize: 12, fontWeight: 600, color: pctCol(v), ...mono }}>{fmtPct(v)}</td>
             ))}
           </tr>

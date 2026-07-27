@@ -63,7 +63,9 @@ export interface KpiResult {
   // Per-period stat sets driving the Analysis period toggle
   periods: Record<Period, PeriodStats>;
   cumReturn: Record<Period, number | null>;    // cumulative TOTAL-return % per period (scoring/analytics; not the primary display)
-  priceChange: Record<Period, number | null>;  // PRIMARY display %: Nasdaq-style price change (dividends excluded)
+  // PRIMARY display %: Nasdaq-style price change (dividends excluded), keyed by the
+  // canonical visible price-return vocabulary (1D/5D/1M/6M/YTD/1Y/3Y/5Y/Max).
+  priceChange: Record<PricePeriod, number | null>;
   latestPrice: number | null;                   // latest completed RAW close / NAV (visible price)
 }
 
@@ -75,8 +77,12 @@ import {
 } from "./metrics/performance";
 import { PERIODS, PERIOD_YEARS, type Period } from "./metrics/periods";
 import { canonicalPeriodReturns } from "./perf/canonicalReturns";
-import { canonicalPricePerformance } from "./perf/canonicalPricePerformance";
+import { canonicalPricePerformance, PRICE_PERIODS, type PricePeriod } from "./perf/canonicalPricePerformance";
 export { RISK_FREE_ANNUAL };
+
+/** All-null price-change map over the canonical visible price-return vocabulary. */
+export const emptyPriceChange = (): Record<PricePeriod, number | null> =>
+  Object.fromEntries(PRICE_PERIODS.map((p) => [p, null])) as Record<PricePeriod, number | null>;
 
 /** One period's full stat set — every value independently span/obs-guarded.
     Frequency: 1Y risk stats use DAILY returns (√252 — 12 monthly points can't
@@ -171,7 +177,7 @@ export function computeKpis(
     rolling3y: [], stressTests: [],
     periods: { "1Y": { ...EMPTY_PERIOD }, "3Y": { ...EMPTY_PERIOD }, "5Y": { ...EMPTY_PERIOD }, "10Y": { ...EMPTY_PERIOD } },
     cumReturn: { "1Y": null, "3Y": null, "5Y": null, "10Y": null },
-    priceChange: { "1Y": null, "3Y": null, "5Y": null, "10Y": null },
+    priceChange: emptyPriceChange(),
     latestPrice: null,
   };
 
@@ -217,7 +223,7 @@ export function computeKpis(
       rawDaily.filter((r) => r.close != null).map((r) => ({ date: r.date, rawClose: r.close as number, splitFactor: r.splitFactor })),
       "market_price",
     );
-    for (const p of PERIODS) {
+    for (const p of PRICE_PERIODS) {
       const c = px.periods[p]?.priceChange;
       result.priceChange[p] = c != null ? c * 100 : null;
     }

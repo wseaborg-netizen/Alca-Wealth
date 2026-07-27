@@ -1,6 +1,7 @@
 /**
  * Market dashboard API — live quotes + sparklines for key ETFs.
- * Provider: canonical Tiingo (adjusted daily history → change windows).
+ * Provider: canonical price engine (raw close, split-adjusted, dividends excluded)
+ * via getMarketQuote — the SAME date-selection every price-return surface uses.
  *
  * Tiingo has NO native `^`-index history, so the S&P 500 / Dow / Nasdaq rows use
  * clearly-labeled ETF PROXIES (SPY / DIA / QQQ). Each proxy row carries `proxy`
@@ -41,7 +42,7 @@ const WATCHLIST: Row[] = [
 const SPARK_TICKERS = new Set(["SPY", "DIA", "QQQ"]);
 
 export async function GET() {
-  const cacheKey = "market:dashboard:v4"; // v4: Tiingo provider + labeled ETF proxies
+  const cacheKey = "market:dashboard:v5"; // v5: canonical price engine (5D/6M periods, no fixed-session lookback)
   const cached = await cacheGet<unknown>(cacheKey);
   if (cached) return NextResponse.json(cached);
 
@@ -49,7 +50,7 @@ export async function GET() {
     WATCHLIST.map(async (item) => {
       const q = await getMarketQuote(item.ticker, SPARK_TICKERS.has(item.ticker));
       // A missing/errored quote → explicit nulls (the UI shows "—"), never fabricated.
-      return { ...item, ...(q ?? { price: null, change1d: null, change1w: null, change1m: null, changeYtd: null }) };
+      return { ...item, ...(q ?? { price: null, change1d: null, change5d: null, change1m: null, changeYtd: null }) };
     }),
   );
 

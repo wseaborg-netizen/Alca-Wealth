@@ -7,17 +7,23 @@ import { UNIVERSE } from "@/lib/universe";
 import { greetingName } from "@/lib/profile";
 import { secUserAgentConfigured } from "@/lib/monitoring";
 import { getMarketQuote } from "@/lib/market-data/marketQuote";
+import { kindForVehicle } from "@/lib/firmPerformance";
 import { cacheGet, cacheSet } from "@/lib/cache";
 
-// Real per-fund quote (1D/1W/1M/YTD) via the Tiingo quote service, cached 15m
+// Real per-fund quote (1D/5D/1M/YTD) via the canonical price engine, cached 15m
 // per ticker so the overview never re-hammers the API. Null when uncovered.
+// Instrument type comes from the canonical universe (mutual funds → NAV), never
+// forced to price. Cache key is versioned (q2 = canonical 5D/1M, vehicle-aware)
+// so a pre-change (21-session / ETF-forced) value can never serve.
 const QUOTE_TTL = 15 * 60;
-async function deskQuote(ticker: string): Promise<{ change1d: number; change1w: number; change1m: number; changeYtd: number } | null> {
-  const key = `ovq:${ticker}`;
-  const cached = await cacheGet<{ change1d: number; change1w: number; change1m: number; changeYtd: number } | "none">(key);
+interface DeskQuote { change1d: number; change5d: number; change1m: number; changeYtd: number }
+async function deskQuote(ticker: string, vehicle: string | null): Promise<DeskQuote | null> {
+  const kind = kindForVehicle(vehicle);
+  const key = `ovq:q2:${ticker}:${kind}`;
+  const cached = await cacheGet<DeskQuote | "none">(key);
   if (cached) return cached === "none" ? null : cached;
-  const q = await getMarketQuote(ticker).catch(() => null);
-  const val = q ? { change1d: q.change1d, change1w: q.change1w, change1m: q.change1m, changeYtd: q.changeYtd } : null;
+  const q = await getMarketQuote(ticker, { kind }).catch(() => null);
+  const val: DeskQuote | null = q ? { change1d: q.change1d, change5d: q.change5d, change1m: q.change1m, changeYtd: q.changeYtd } : null;
   await cacheSet(key, val ?? "none", QUOTE_TTL);
   return val;
 }
@@ -67,9 +73,12 @@ export async function GET() {
     const watchItems = byType("watchlist").flatMap((l) => l.items).slice(0, 8);
     const alertCountBy = new Map<string, number>();
     for (const a of alerts ?? []) if (a.ticker) alertCountBy.set(a.ticker, (alertCountBy.get(a.ticker) ?? 0) + 1);
+    // Resolve each fund's vehicle from the canonical universe so mutual funds are
+    // quoted on NAV (never forced through ETF price history). Unknown → ETF price.
+    const vehicleByTicker = new Map(UNIVERSE.map((u) => [u.ticker, u.vehicle]));
     const enrich = async (items: typeof commonItems) => Promise.all(items.map(async (it) => ({
       ticker: it.ticker, name: it.fund_name, category: it.category,
-      quote: await deskQuote(it.ticker), alertCount: alertCountBy.get(it.ticker) ?? 0,
+      quote: await deskQuote(it.ticker, vehicleByTicker.get(it.ticker) ?? null), alertCount: alertCountBy.get(it.ticker) ?? 0,
     })));
     const [coreFunds, watchlistFunds] = await Promise.all([enrich(commonItems), enrich(watchItems)]);
 

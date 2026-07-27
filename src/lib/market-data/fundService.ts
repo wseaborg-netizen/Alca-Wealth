@@ -21,7 +21,7 @@
  *    error records are NOT cached, so a later request can retry.
  */
 import { cacheGet, cacheSet, coalesce } from "@/lib/cache";
-import { computeKpis, EMPTY_PERIOD, type KpiResult } from "@/lib/kpi";
+import { computeKpis, EMPTY_PERIOD, emptyPriceChange, type KpiResult } from "@/lib/kpi";
 import { NAME_BY_TICKER } from "@/lib/universe";
 import { createTiingoProvider } from "@/lib/market-data";
 import type { TokenContext, PriceSeriesKind, MarketDataProvider } from "@/lib/market-data";
@@ -95,7 +95,7 @@ const EMPTY_KPI: KpiResult = {
   battingAvg3y: null, ttmYield: null, divGrowth3y: null,
   rolling3y: [], stressTests: [],
   cumReturn: { "1Y": null, "3Y": null, "5Y": null, "10Y": null },
-  priceChange: { "1Y": null, "3Y": null, "5Y": null, "10Y": null },
+  priceChange: emptyPriceChange(),
   latestPrice: null,
   periods: { "1Y": { ...EMPTY_PERIOD }, "3Y": { ...EMPTY_PERIOD }, "5Y": { ...EMPTY_PERIOD }, "10Y": { ...EMPTY_PERIOD } },
 };

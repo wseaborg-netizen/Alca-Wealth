@@ -26,8 +26,8 @@ const valAt = (b: { date: string; rawClose: number }[], iso: string) => { for (l
 const END = "2026-07-24";
 
 describe("price engine — primary metric is PRICE CHANGE", () => {
-  test("eight periods; default 1M; every period cumulative (no annualization field)", () => {
-    expect([...PRICE_PERIODS]).toEqual(["1D", "1M", "3M", "YTD", "1Y", "3Y", "5Y", "10Y"]);
+  test("nine periods; default 1M; every period cumulative (no annualization field)", () => {
+    expect([...PRICE_PERIODS]).toEqual(["1D", "5D", "1M", "6M", "YTD", "1Y", "3Y", "5Y", "Max"]);
     expect(DEFAULT_PRICE_PERIOD).toBe("1M");
     const { periods } = canonicalPricePerformance(raw("2015-05-01", END), "market_price");
     for (const p of PRICE_PERIODS) expect(periods[p]).not.toHaveProperty("annualizedReturn");
@@ -37,10 +37,13 @@ describe("price engine — primary metric is PRICE CHANGE", () => {
     const b = raw("2015-05-01", END, 100, 260);
     const { periods, asOf, seriesBasis } = canonicalPricePerformance(b, "market_price");
     expect(asOf).toBe(END); expect(seriesBasis).toBe("market_price");
-    for (const [p, cut] of [["1M", "2026-06-24"], ["YTD", "2025-12-31"], ["1Y", "2025-07-24"], ["5Y", "2021-07-24"], ["10Y", "2016-07-24"]] as const) {
+    for (const [p, cut] of [["1M", "2026-06-24"], ["6M", "2026-01-24"], ["YTD", "2025-12-31"], ["1Y", "2025-07-24"], ["5Y", "2021-07-24"]] as const) {
       const s = valAt(b, cut)!;
       expect(periods[p].priceChange!).toBeCloseTo((b[b.length - 1].rawClose - s) / s, 10);
     }
+    // Max = earliest available observation through the latest completed observation.
+    expect(periods["Max"].startDate).toBe(b[0].date);
+    expect(periods["Max"].priceChange!).toBeCloseTo((b[b.length - 1].rawClose - b[0].rawClose) / b[0].rawClose, 10);
     expect(periods["1D"].priceChange!).toBeCloseTo((b[b.length - 1].rawClose - b[b.length - 2].rawClose) / b[b.length - 2].rawClose, 10);
     // 5Y is NOT annualized — it equals the full-period cumulative change
     expect(periods["5Y"].priceChange!).toBeGreaterThan(periods["1Y"].priceChange!);
@@ -91,14 +94,14 @@ describe("Firm Funds adapter (raw close + splitFactor → priceChange)", () => {
     expect(asOf).toBe(END);
     expect(periods["5Y"].priceChange).not.toBeNull();
     expect(periods["5Y"]).not.toHaveProperty("annualizedReturn"); // no annualized in the display shape
-    expect([...FIRM_PERF_PERIODS]).toEqual(["1D", "1M", "3M", "YTD", "1Y", "3Y", "5Y", "10Y"]);
+    expect([...FIRM_PERF_PERIODS]).toEqual(["1D", "5D", "1M", "6M", "YTD", "1Y", "3Y", "5Y", "Max"]);
     expect(DEFAULT_FIRM_PERF_PERIOD).toBe("1M");
     expect(kindForVehicle("Mutual Fund")).toBe("nav");
     expect(kindForVehicle("ETF")).toBe("price");
   });
   test("cache key carries the price methodology version; bounded failure isolated", async () => {
     const src = read("src/lib/firmPerformance.ts");
-    expect(src).toContain('CACHE_VERSION = "v4price"');
+    expect(src).toContain('CACHE_VERSION = "v5price"');
     expect(src).toContain("b.close");
     expect(src).not.toMatch(/b\.adjClose/);
     const fetchPerf = async (t: string): Promise<PerfResult | null> => {
@@ -138,10 +141,13 @@ describe("site-wide: one Price Change everywhere; total return never in the prim
       expect(ui).not.toContain("cumReturn");
     }
   });
-  test("market cards / Advisor Overview quote use RAW close (price change), not adjClose", () => {
+  test("market cards / Advisor Overview quote route through the ONE canonical engine (no separate window math)", () => {
     const mq = read("src/lib/market-data/marketQuote.ts");
-    expect(mq).toContain("price: b.close");
-    expect(mq).not.toContain("price: b.adjClose");
+    expect(mq).toContain("canonicalPricePerformance");   // reuses the shared engine
+    expect(mq).toContain("rawClose: b.close");            // raw close in (dividends excluded)
+    expect(mq).not.toContain("b.adjClose");               // never total return
+    expect(mq).not.toMatch(/at\(21\)|at\(5\)/);           // no fixed-session lookback
+    expect(mq).toContain("change5d");                     // 5D replaced the old 1W
   });
   test("Portfolio views show price change (not total-return CAGR); Model projection base stays internal analytics", () => {
     const pf = read("src/components/PortfoliosTab.tsx");

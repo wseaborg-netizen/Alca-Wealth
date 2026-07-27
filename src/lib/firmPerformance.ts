@@ -11,7 +11,7 @@ import { cacheGet, cacheSet, coalesce } from "@/lib/cache";
 import { createTiingoProvider } from "@/lib/market-data";
 import type { TokenContext, MarketDataProvider, PriceSeriesKind } from "@/lib/market-data";
 import {
-  canonicalPricePerformance, PRICE_PERIODS, DEFAULT_PRICE_PERIOD, MAX_PRICE_LOOKBACK_YEARS,
+  canonicalPricePerformance, PRICE_PERIODS, DEFAULT_PRICE_PERIOD,
   type PricePeriod, type SeriesBasis,
 } from "@/lib/perf/canonicalPricePerformance";
 
@@ -22,10 +22,14 @@ export function __setProviderForTests(p: MarketDataProvider | null): void { _pro
 const INTERNAL: TokenContext = { kind: "internal" };
 const SCOPE = "internal";
 const TTL = 15 * 60;
-const HISTORY_BUFFER_DAYS = 45;
-// Cache identity: methodology version (price v4), range, series basis (kind).
-const CACHE_VERSION = "v4price";
-const RANGE_TAG = `r${MAX_PRICE_LOOKBACK_YEARS}y`;
+// Full history so the "Max" period reaches the ticker's earliest observation. One
+// fetch per ticker covers 1D–Max; shorter periods derive from the same series.
+const MAX_HISTORY_START = "1970-01-01";
+// Cache identity: methodology version (price v5 = 9-period set incl. 5D/6M/Max,
+// 3M/10Y removed, canonical date-selection), range, series basis (kind). Bumping
+// v4→v5 guarantees no pre-change (21-session / 3M / 10Y) value can serve.
+const CACHE_VERSION = "v5price";
+const RANGE_TAG = "rmax";
 
 export const FIRM_PERF_PERIODS = PRICE_PERIODS;
 export type { PricePeriod };
@@ -42,13 +46,6 @@ export function kindForVehicle(vehicle: string | null | undefined): PriceSeriesK
 }
 const basisForKind = (kind: PriceSeriesKind): PerfBasis => (kind === "nav" ? "nav" : "market_price");
 
-const iso = (d: Date) => d.toISOString().slice(0, 10);
-function bufferedStartISO(): string {
-  const d = new Date();
-  d.setUTCFullYear(d.getUTCFullYear() - MAX_PRICE_LOOKBACK_YEARS);
-  d.setUTCDate(d.getUTCDate() - HISTORY_BUFFER_DAYS);
-  return iso(d);
-}
 
 /** Adapt raw bars (close + splitFactor) → the Firm-Funds price-change shape. */
 export function periodsFromBars(bars: { date: string; close: number | null; splitFactor?: number }[], basis: PerfBasis = "market_price"): { periods: PerfByPeriod; asOf: string | null } {
@@ -70,7 +67,7 @@ export async function fetchPeriodPerformance(ticker: string, vehicle: string | n
   return coalesce(key, async () => {
     const again = await cacheGet<PerfResult>(key);
     if (again) return again;
-    const r = await tiingo().getPriceHistory(ticker, INTERNAL, { kind, startDate: bufferedStartISO() });
+    const r = await tiingo().getPriceHistory(ticker, INTERNAL, { kind, startDate: MAX_HISTORY_START });
     if (!r.ok) return null;
     const { periods, asOf } = periodsFromBars(r.data.bars.map((b) => ({ date: b.date, close: b.close, splitFactor: b.splitFactor })), basis);
     const result: PerfResult = { periods, asOf, basis };
