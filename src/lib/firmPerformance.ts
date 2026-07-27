@@ -37,7 +37,9 @@ export type { PerfPeriod };
 export const DEFAULT_FIRM_PERF_PERIOD = DEFAULT_PERF_PERIOD;
 export const ANNUALIZED = ANNUALIZED_PERIODS;
 
-export interface PerfPoint { recentReturn: number | null; spark: number[] | null; annualized: boolean }
+// recentReturn = PRIMARY cumulative total return; annualizedReturn = secondary
+// (3Y/5Y/10Y only). Both from the same canonical result + observation range.
+export interface PerfPoint { recentReturn: number | null; annualizedReturn: number | null; annualizable: boolean; spark: number[] | null }
 export type PerfByPeriod = Record<PerfPeriod, PerfPoint>;
 export type PerfBasis = "etf_adjusted" | "mf_nav";
 export interface PerfResult { periods: PerfByPeriod; asOf: string | null; basis: PerfBasis }
@@ -64,7 +66,7 @@ export function periodsFromBars(bars: { date: string; adjClose: number | null }[
   const periods = {} as PerfByPeriod;
   for (const p of PERF_PERIODS) {
     const cr = canon[p];
-    periods[p] = { recentReturn: cr.return, spark: cr.spark, annualized: ANNUALIZED_PERIODS[p] };
+    periods[p] = { recentReturn: cr.cumulativeReturn, annualizedReturn: cr.annualizedReturn, annualizable: cr.annualizable, spark: cr.spark };
   }
   return { periods, asOf };
 }

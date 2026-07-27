@@ -37,11 +37,18 @@ export const MAX_LOOKBACK_YEARS = 10;
 
 export interface CanonicalReturn {
   period: PerfPeriod;
-  return: number | null;          // FRACTION, full precision (null = unavailable)
+  /** PRIMARY user-facing figure — cumulative total return (end/start − 1) over the
+   *  whole selected period, for ALL periods. FRACTION, full precision. */
+  cumulativeReturn: number | null;
+  /** SECONDARY — geometric annualized total return; only for 3Y/5Y/10Y (else null).
+   *  Computed directly from the same start/end values, never by compounding a
+   *  rounded cumulative figure. FRACTION, full precision. */
+  annualizedReturn: number | null;
+  /** True for 3Y/5Y/10Y (an annualized figure is meaningful/shown). */
+  annualizable: boolean;
   startDate: string | null;
   endDate: string | null;
-  cumulative: boolean;            // false ⇒ annualized
-  spark: number[] | null;        // same source range as the return
+  spark: number[] | null;        // same source range as the returns
   unavailableReason: string | null;
 }
 export interface CanonicalResult { periods: Record<PerfPeriod, CanonicalReturn>; asOf: string | null }
@@ -74,12 +81,13 @@ export function canonicalPeriodReturns(observations: DatedObs[]): CanonicalResul
   const asOf = n ? asc[n - 1].date : null;
   const periods = {} as Record<PerfPeriod, CanonicalReturn>;
   const blank = (p: PerfPeriod, reason: string): CanonicalReturn =>
-    ({ period: p, return: null, startDate: null, endDate: asOf, cumulative: !ANNUALIZED_PERIODS[p], spark: null, unavailableReason: reason });
+    ({ period: p, cumulativeReturn: null, annualizedReturn: null, annualizable: ANNUALIZED_PERIODS[p], startDate: null, endDate: asOf, spark: null, unavailableReason: reason });
 
   if (n < 2) { for (const p of PERF_PERIODS) periods[p] = blank(p, "insufficient history"); return { periods, asOf }; }
 
   const last = asc[n - 1];
   const indexAtOrBefore = (cut: string): number => { for (let i = n - 1; i >= 0; i--) if (asc[i].date <= cut) return i; return -1; };
+  const finite = (x: number | null) => (x != null && Number.isFinite(x) ? x : null);
 
   for (const p of PERF_PERIODS) {
     let startIdx: number;
@@ -89,19 +97,21 @@ export function canonicalPeriodReturns(observations: DatedObs[]): CanonicalResul
 
     if (startIdx < 0 || startIdx >= n - 1) { periods[p] = blank(p, "history does not reach the period cutoff"); continue; }
     const s = asc[startIdx];
-    const annualized = ANNUALIZED_PERIODS[p];
-    let ret: number | null;
-    if (annualized) {
+    const annualizable = ANNUALIZED_PERIODS[p];
+    // BOTH figures come from the SAME start/end adjusted values — cumulative is
+    // computed directly (never by compounding a rounded annualized number).
+    const cumulativeReturn = s.v > 0 ? (last.v - s.v) / s.v : null;
+    let annualizedReturn: number | null = null;
+    if (annualizable) {
       const years = (Date.parse(last.date) - Date.parse(s.date)) / (365.25 * 864e5);
-      ret = years > 0 ? Math.pow(last.v / s.v, 1 / years) - 1 : null;          // geometric annualized
-    } else {
-      ret = s.v > 0 ? (last.v - s.v) / s.v : null;                             // cumulative
+      annualizedReturn = years > 0 ? Math.pow(last.v / s.v, 1 / years) - 1 : null; // geometric annualized
     }
     const sparkVals = asc.slice(startIdx).map((b) => b.v);
     periods[p] = {
-      period: p,
-      return: ret != null && Number.isFinite(ret) ? ret : null,               // full precision
-      startDate: s.date, endDate: last.date, cumulative: !annualized,
+      period: p, annualizable,
+      cumulativeReturn: finite(cumulativeReturn),                             // full precision
+      annualizedReturn: finite(annualizedReturn),
+      startDate: s.date, endDate: last.date,
       spark: sparkVals.length > 8 ? sparkVals : null,
       unavailableReason: null,
     };

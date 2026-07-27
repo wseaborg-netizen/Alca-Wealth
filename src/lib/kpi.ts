@@ -62,6 +62,7 @@ export interface KpiResult {
 
   // Per-period stat sets driving the Analysis period toggle
   periods: Record<Period, PeriodStats>;
+  cumReturn: Record<Period, number | null>;   // cumulative total-gain % per period (primary display)
 }
 
 // All return/risk formulas live in the central methodology module — this file
@@ -79,7 +80,9 @@ export { RISK_FREE_ANNUAL };
     support statistics); 3Y/5Y/10Y use month-end returns (√12, the documented
     Morningstar-convention choice). Returns/drawdown always daily + day-count. */
 export interface PeriodStats {
-  return: number | null;       // annualized %, day-count CAGR
+  return: number | null;            // score-consumed %: annualized for 3Y/5Y/10Y, cumulative for 1Y
+  cumulativeReturn: number | null;  // PRIMARY display %: total gain over the whole period
+  annualizedReturn: number | null;  // secondary display %: geometric annualized (3Y/5Y/10Y only)
   volatility: number | null;   // annualized %
   sharpe: number | null;
   sortino: number | null;
@@ -89,7 +92,8 @@ export interface PeriodStats {
 }
 
 export const EMPTY_PERIOD: PeriodStats = {
-  return: null, volatility: null, sharpe: null, sortino: null,
+  return: null, cumulativeReturn: null, annualizedReturn: null,
+  volatility: null, sharpe: null, sortino: null,
   beta: null, alpha: null, maxDrawdown: null,
 };
 
@@ -160,6 +164,7 @@ export function computeKpis(
     battingAvg3y: null, ttmYield: null, divGrowth3y: null,
     rolling3y: [], stressTests: [],
     periods: { "1Y": { ...EMPTY_PERIOD }, "3Y": { ...EMPTY_PERIOD }, "5Y": { ...EMPTY_PERIOD }, "10Y": { ...EMPTY_PERIOD } },
+    cumReturn: { "1Y": null, "3Y": null, "5Y": null, "10Y": null },
   };
 
   if (!fundDaily.length) return empty;
@@ -184,9 +189,16 @@ export function computeKpis(
   //    for 3Y/5Y/10Y, cumulative for 1Y; full precision (stored as %).
   const canon = canonicalPeriodReturns(fundDaily.map((d) => ({ date: d.date, value: d.price })));
   for (const p of PERIODS) {
-    const cr = canon.periods[p]?.return;
-    result.periods[p].return = cr != null ? cr * 100 : null;
+    const cr = canon.periods[p];
+    const cum = cr.cumulativeReturn != null ? cr.cumulativeReturn * 100 : null;   // PRIMARY display (total gain)
+    const ann = cr.annualizedReturn != null ? cr.annualizedReturn * 100 : null;   // secondary (annualized)
+    result.periods[p].cumulativeReturn = cum;
+    result.periods[p].annualizedReturn = ann;
+    // Score-consumed return: annualized for 3Y/5Y/10Y, cumulative for 1Y (same canonical result).
+    result.periods[p].return = cr.annualizable ? ann : cum;
+    result.cumReturn[p] = cum;
   }
+  // Top-level fields keep their historical meaning (return3y/5y = annualized/CAGR).
   result.return1y = result.periods["1Y"].return;
   result.return3y = result.periods["3Y"].return;
   result.return5y = result.periods["5Y"].return;

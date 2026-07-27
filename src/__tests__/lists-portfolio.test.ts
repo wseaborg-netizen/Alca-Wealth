@@ -49,9 +49,10 @@ const mkKpi = (ret: number, sharpe: number, dd: number, vol: number): KpiResult 
   maxDrawdown3y: null, sharpe3y: null, sortino3y: null, calmar3y: null, infoRatio3y: null,
   beta3y: null, alpha3y: null, upsideCapture3y: null, downsideCapture3y: null,
   battingAvg3y: 50, ttmYield: 2, divGrowth3y: null, rolling3y: [], stressTests: [],
+  cumReturn: { "1Y": null, "3Y": ret, "5Y": null, "10Y": null },
   periods: {
     "1Y": { ...EMPTY_PERIOD }, "5Y": { ...EMPTY_PERIOD }, "10Y": { ...EMPTY_PERIOD },
-    "3Y": { return: ret, sharpe, maxDrawdown: dd, volatility: vol, sortino: null, beta: null, alpha: null },
+    "3Y": { return: ret, cumulativeReturn: ret, annualizedReturn: ret, sharpe, maxDrawdown: dd, volatility: vol, sortino: null, beta: null, alpha: null },
   },
 });
 const rec = (ticker: string, ret: number, sharpe: number, dd: number, vol: number, er: number) => ({

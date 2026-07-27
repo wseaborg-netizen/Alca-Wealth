@@ -94,6 +94,7 @@ const EMPTY_KPI: KpiResult = {
   upsideCapture3y: null, downsideCapture3y: null,
   battingAvg3y: null, ttmYield: null, divGrowth3y: null,
   rolling3y: [], stressTests: [],
+  cumReturn: { "1Y": null, "3Y": null, "5Y": null, "10Y": null },
   periods: { "1Y": { ...EMPTY_PERIOD }, "3Y": { ...EMPTY_PERIOD }, "5Y": { ...EMPTY_PERIOD }, "10Y": { ...EMPTY_PERIOD } },
 };
 

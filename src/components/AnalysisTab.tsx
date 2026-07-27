@@ -82,6 +82,7 @@ export default function AnalysisTab({
   // Global analysis period + scoring context — drive the score, metrics,
   // rank, breakdown, and similar-funds list together.
   const [period, setPeriod] = useState<PeriodOrOverall>("3Y");
+  const [retMode, setRetMode] = useState<"gain" | "annualized">("gain"); // multi-year: Total Gain vs Annualized
   const [context, setContext] = useState<ScoreContext>("overall");
 
   const run = async (raw: string) => {
@@ -127,6 +128,18 @@ export default function AnalysisTab({
     return blended?.value ?? null;
   };
   const pl = period === "Overall" ? "Overall*" : period; // * = blended
+  // PRIMARY performance = cumulative total gain; 3Y/5Y/10Y can toggle to annualized (/yr).
+  const isMultiYear = period === "3Y" || period === "5Y" || period === "10Y";
+  const showAnnRet = isMultiYear && retMode === "annualized";
+  const returnStat = (): number | null => {
+    if (period === "Overall") return statFor("return"); // documented Overall blend
+    const ps = k?.periods?.[period];
+    if (!ps) return null;
+    if (!isMultiYear) return ps.cumulativeReturn;       // 1Y cumulative total gain
+    return showAnnRet ? ps.annualizedReturn : ps.cumulativeReturn;
+  };
+  const returnLabel = period === "Overall" ? "Return"
+    : isMultiYear ? (showAnnRet ? "Annualized" : "Total Gain") : "Return";
   const rank = record?.categoryRanks && period !== "Overall" ? record.categoryRanks[period] ?? null : null;
 
   // ── Unified Advisor Review Score: computed client-side from shipped peer
@@ -183,7 +196,7 @@ export default function AnalysisTab({
   }, [intel, scoring, period, context]);
 
   const metrics = k && record ? [
-    { label: `${pl} Return${period === "3Y" || period === "5Y" || period === "10Y" ? " (Annualized)" : ""}`, value: pct(statFor("return")), good: statFor("return") != null ? statFor("return")! > 0 : null },
+    { label: `${pl} ${returnLabel}${showAnnRet ? " /yr" : ""}`, value: pct(returnStat()), good: returnStat() != null ? returnStat()! > 0 : null },
     { label: `Sharpe ${pl}`, value: num(statFor("sharpe")), good: statFor("sharpe") != null ? statFor("sharpe")! >= 1 : null },
     { label: `Sortino ${pl}`, value: num(statFor("sortino")), good: statFor("sortino") != null ? statFor("sortino")! >= 1 : null },
     { label: `Alpha ${pl} vs ${record.benchmark}`, value: pct(statFor("alpha")), good: statFor("alpha") != null ? statFor("alpha")! > 0 : null },
@@ -303,6 +316,18 @@ export default function AnalysisTab({
                           fontSize: 11.5, fontWeight: 600, ...ui }}>{p}</button>
                     ))}
                   </div>
+                  {isMultiYear && (
+                    <div role="group" aria-label="Multi-year return basis"
+                      style={{ display: "inline-flex", gap: 2, background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 9, padding: 3 }}>
+                      {(["gain", "annualized"] as const).map((m) => (
+                        <button key={m} aria-pressed={retMode === m} onClick={() => setRetMode(m)}
+                          style={{ padding: "6px 10px", borderRadius: 7, border: "none", cursor: retMode === m ? "default" : "pointer",
+                            background: retMode === m ? T.blue : "transparent", color: retMode === m ? "#fff" : T.dim, fontSize: 11.5, fontWeight: 600, ...ui }}>
+                          {m === "gain" ? "Total Gain" : "Annualized"}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   <select value={context} onChange={(e) => setContext(e.target.value as ScoreContext)}
                     aria-label="Scoring context"
                     style={{ padding: "7px 10px", borderRadius: 8, border: `1px solid ${T.line}`,

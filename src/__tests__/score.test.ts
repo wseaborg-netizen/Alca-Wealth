@@ -14,7 +14,7 @@ import {
 import type { PeriodStats } from "@/lib/kpi";
 
 const stats = (over: Partial<PeriodStats>): PeriodStats => ({
-  return: null, volatility: null, sharpe: null, sortino: null,
+  return: null, cumulativeReturn: null, annualizedReturn: null, volatility: null, sharpe: null, sortino: null,
   beta: null, alpha: null, maxDrawdown: null, ...over,
 });
 const inputs = (s: Partial<PeriodStats>, er: number | null = 0.2, extra: Partial<ScoreInputs> = {}): ScoreInputs => ({
