@@ -31,7 +31,8 @@ export type ReviewDecision = (typeof REVIEW_DECISIONS)[number];
 export type FirmReviewErrorCode =
   | "invalid_ticker" | "invalid_status" | "invalid_decision"
   | "decision_required" | "date_order" | "not_found" | "duplicate"
-  | "not_in_universe" | "db_error";
+  | "not_in_universe" | "replace_needs_candidate" | "reason_required"
+  | "review_closed" | "not_in_firm" | "db_error";
 
 export class FirmReviewError extends Error {
   code: FirmReviewErrorCode;
@@ -315,8 +316,25 @@ export async function candidateAdd(sb: Supa, reviewId: string, input: {
     notes: input.notes ?? null, selected: input.selected ?? false,
     comparison_snapshot: input.comparisonSnapshot ?? null,
   }).select(CANDIDATE_COLS).single();
-  if (error) fail("db_error", error);
+  if (error) {
+    // unique (review_id, normalized_ticker) → explicit duplicate error
+    if ((error as { code?: string }).code === "23505") {
+      throw new FirmReviewError("duplicate", `${normalized_ticker} is already a candidate on this review.`);
+    }
+    fail("db_error", error);
+  }
   return data as unknown as ReviewCandidateRow;
+}
+
+/** Select exactly one candidate (unsets the others first so the partial unique
+ *  index is never violated). Pass null to clear the selection. */
+export async function candidateSelect(sb: Supa, reviewId: string, id: string | null): Promise<void> {
+  const un = await sb.from("review_candidates").update({ selected: false }).eq("review_id", reviewId);
+  if (un.error) fail("db_error", un.error);
+  if (id) {
+    const s = await sb.from("review_candidates").update({ selected: true }).eq("review_id", reviewId).eq("id", id);
+    if (s.error) fail("db_error", s.error);
+  }
 }
 
 export async function candidateRemove(sb: Supa, reviewId: string, id: string): Promise<void> {
@@ -344,4 +362,75 @@ export async function evidenceAdd(sb: Supa, firmId: string, reviewId: string, us
 export async function evidenceRemove(sb: Supa, reviewId: string, id: string): Promise<void> {
   const { error } = await sb.from("review_evidence").delete().eq("review_id", reviewId).eq("id", id);
   if (error) fail("db_error", error);
+}
+
+// ── Workflow transitions + guards ─────────────────────────────────────────────
+
+async function reviewStatusOf(sb: Supa, firmId: string, id: string): Promise<ReviewStatus> {
+  const { data, error } = await sb.from("fund_reviews").select("status").eq("firm_id", firmId).eq("id", id).limit(1);
+  if (error) fail("db_error", error);
+  const row = (data ?? [])[0] as { status: ReviewStatus } | undefined;
+  if (!row) throw new FirmReviewError("not_found", "Review not found.");
+  return row.status;
+}
+
+/** Guard: completed/cancelled reviews are read-only (no further mutation). */
+export async function assertReviewMutable(sb: Supa, firmId: string, id: string): Promise<void> {
+  const s = await reviewStatusOf(sb, firmId, id);
+  if (s === "completed" || s === "cancelled") {
+    throw new FirmReviewError("review_closed", "This review is closed and read-only.");
+  }
+}
+
+/** Complete a review. Enforces: not already closed; replace ⇒ exactly one
+ *  selected candidate; other decisions do not require one; date ordering. The DB
+ *  constraints remain the final authority. */
+export async function reviewComplete(sb: Supa, firmId: string, id: string, input: {
+  decision: ReviewDecision; rationale?: string | null;
+  completedDate?: string | null; effectiveDate?: string | null; nextReviewDate?: string | null;
+}): Promise<FundReviewRow> {
+  const decision = assertReviewDecision(input.decision);
+  const detail = await reviewGet(sb, firmId, id);
+  if (!detail) throw new FirmReviewError("not_found", "Review not found.");
+  if (detail.review.status === "completed" || detail.review.status === "cancelled") {
+    throw new FirmReviewError("review_closed", "This review is already closed.");
+  }
+  const completedDate = input.completedDate ?? new Date().toISOString().slice(0, 10);
+  assertReviewDateOrder(completedDate, input.nextReviewDate ?? null);
+
+  const selectedCount = detail.candidates.filter((c) => c.selected).length;
+  if (decision === "replace" && selectedCount !== 1) {
+    throw new FirmReviewError("replace_needs_candidate", "A replace decision requires exactly one selected candidate.");
+  }
+
+  const { data, error } = await sb.from("fund_reviews").update({
+    status: "completed", decision,
+    rationale: input.rationale ?? detail.review.rationale ?? null,
+    completed_date: completedDate,
+    effective_date: input.effectiveDate ?? null,
+    next_review_date: input.nextReviewDate ?? null,
+  }).eq("firm_id", firmId).eq("id", id).select(REVIEW_COLS).single();
+  if (error) fail("db_error", error);
+  return data as unknown as FundReviewRow;
+}
+
+/** Cancel a review (no decision required). History is preserved; never deleted. */
+export async function reviewCancel(sb: Supa, firmId: string, id: string): Promise<FundReviewRow> {
+  const s = await reviewStatusOf(sb, firmId, id);
+  if (s === "completed" || s === "cancelled") {
+    throw new FirmReviewError("review_closed", "This review is already closed.");
+  }
+  const { data, error } = await sb.from("fund_reviews").update({ status: "cancelled" })
+    .eq("firm_id", firmId).eq("id", id).select(REVIEW_COLS).single();
+  if (error) fail("db_error", error);
+  return data as unknown as FundReviewRow;
+}
+
+/** Members of the current firm — eligible reviewers. Only user ids + roles are
+ *  returned (other members' profile rows are not readable under RLS); the caller
+ *  labels the current user. Never exposes another firm's users. */
+export async function firmReviewersList(sb: Supa, firmId: string): Promise<{ userId: string; role: string }[]> {
+  const { data, error } = await sb.from("firm_members").select("user_id, role").eq("firm_id", firmId);
+  if (error) fail("db_error", error);
+  return (data ?? []).map((r) => ({ userId: (r as { user_id: string }).user_id, role: (r as { role: string }).role }));
 }

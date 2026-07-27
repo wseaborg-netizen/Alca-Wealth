@@ -32,7 +32,11 @@ interface Row {
   nextReviewDate: string | null; lastCompletedReview: string | null;
   models: { connected: boolean }; alerts: { connected: boolean };
 }
-interface Perf { recentReturn: number | null; spark: number[] | null }
+interface PerfPoint { recentReturn: number | null; spark: number[] | null }
+const PERF_PERIODS = ["1D", "1M", "3M", "YTD", "1Y", "3Y"] as const;
+type PerfPeriod = (typeof PERF_PERIODS)[number];
+const DEFAULT_PERF_PERIOD: PerfPeriod = "1M";
+type PerfByPeriod = Record<PerfPeriod, PerfPoint>;
 
 type SortKey = "ticker" | "recent" | "last" | "next";
 
@@ -150,8 +154,9 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
 }) {
   const isMobile = useMediaQuery("(max-width: 820px)");
   const [rows, setRows] = useState<Row[] | null>(null);
-  const [perf, setPerf] = useState<Record<string, Perf>>({});
+  const [perf, setPerf] = useState<Record<string, PerfByPeriod | null>>({});
   const [perfLoaded, setPerfLoaded] = useState(false);
+  const [period, setPeriod] = useState<PerfPeriod>(DEFAULT_PERF_PERIOD);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [signedOut, setSignedOut] = useState(false);
 
@@ -209,7 +214,7 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
       method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ tickers }),
     }).then((r) => (r.ok ? r.json() : { performance: {} }))
-      .then((d) => { if (alive) { setPerf((d.performance ?? {}) as Record<string, Perf>); setPerfLoaded(true); } })
+      .then((d) => { if (alive) { setPerf((d.performance ?? {}) as Record<string, PerfByPeriod | null>); setPerfLoaded(true); } })
       .catch(() => { if (alive) setPerfLoaded(true); }); // enrichment failure → Unavailable, list stands
     return () => { alive = false; };
   }, [rows]);
@@ -224,7 +229,7 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
     out = [...out].sort((a, b) => {
       if (sortKey === "ticker") return a.ticker.localeCompare(b.ticker) * dir;
       if (sortKey === "recent") {
-        const av = perf[a.ticker]?.recentReturn, bv = perf[b.ticker]?.recentReturn;
+        const av = perf[a.ticker]?.[period]?.recentReturn, bv = perf[b.ticker]?.[period]?.recentReturn;
         if (av == null && bv == null) return 0; if (av == null) return 1; if (bv == null) return -1; // Unavailable sinks
         return (av - bv) * dir;
       }
@@ -234,7 +239,7 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
       return ad.localeCompare(bd) * dir;
     });
     return out;
-  }, [rows, search, statusFilter, sortKey, sortDir, perf]);
+  }, [rows, search, statusFilter, sortKey, sortDir, perf, period]);
 
   const submitAdd = async (f: FormState) => {
     setDialogBusy(true); setDialogError(null);
@@ -296,12 +301,25 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
     );
   }
 
+  const periodSelector = (
+    <div role="group" aria-label="Performance period"
+      style={{ display: "inline-flex", border: `1px solid ${T.line2}`, borderRadius: 9, overflow: "hidden" }}>
+      {PERF_PERIODS.map((p) => (
+        <button key={p} onClick={() => setPeriod(p)} aria-pressed={period === p}
+          style={{ padding: "8px 11px", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, ...ui,
+            background: period === p ? T.blue : "transparent", color: period === p ? "#fff" : T.dim,
+            borderLeft: p === "1D" ? "none" : `1px solid ${T.line2}` }}>{p}</button>
+      ))}
+    </div>
+  );
+
   const controls = (
     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
       <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search ticker or name…"
         aria-label="Search inventory"
         style={{ flex: "1 1 220px", minWidth: 180, padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.line2}`,
           background: T.panel, color: T.text, fontSize: 13, ...ui }} />
+      {periodSelector}
       <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as "all" | Status)} aria-label="Filter by status"
         style={{ padding: "9px 12px", borderRadius: 9, border: `1px solid ${T.line2}`, background: T.panel, color: T.text, fontSize: 13, ...ui }}>
         <option value="all">All statuses</option>
@@ -327,14 +345,16 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
       aria-label={`Open analysis for ${r.ticker}`}>{r.ticker}</button>
   );
 
+  // Both the sparkline and the recent return use the SAME selected period.
+  const perfAt = (r: Row): PerfPoint | undefined => perf[r.ticker]?.[period];
   const perfCell = (r: Row) => {
-    const p = perf[r.ticker];
-    if (!perfLoaded && !p) return <span style={{ color: T.muted, ...ui, fontSize: 11.5 }}>Loading…</span>;
+    const p = perfAt(r);
+    if (!perfLoaded && !perf[r.ticker]) return <span style={{ color: T.muted, ...ui, fontSize: 11.5 }}>Loading…</span>;
     return <Sparkline data={p?.spark ?? null} />;
   };
   const recentCell = (r: Row) => {
-    const p = perf[r.ticker];
-    if (!perfLoaded && !p) return <span style={{ color: T.muted, ...ui, fontSize: 12 }}>…</span>;
+    const p = perfAt(r);
+    if (!perfLoaded && !perf[r.ticker]) return <span style={{ color: T.muted, ...ui, fontSize: 12 }}>…</span>;
     const v = fmtPct(p?.recentReturn);
     if (v == null) return <span style={{ color: T.muted, ...ui, fontSize: 12 }}>Unavailable</span>;
     return <span style={{ color: (p!.recentReturn! >= 0 ? "#047857" : "#B42318"), fontWeight: 600, fontSize: 13, ...ui }}>{v}</span>;
@@ -381,7 +401,7 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
                 <StatusBadge status={r.status} />
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
-                <Sparkline data={perf[r.ticker]?.spark ?? null} />
+                <Sparkline data={perfAt(r)?.spark ?? null} />
                 <div>{recentCell(r)}</div>
               </div>
               <dl style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "4px 10px", margin: "12px 0 0", fontSize: 12 }}>
@@ -405,7 +425,7 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
           <table style={{ width: "100%", borderCollapse: "collapse", ...ui, fontSize: 13 }}>
             <thead>
               <tr style={{ textAlign: "left", color: T.muted, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                {["Ticker", "Name", "6M", "Recent", "Status", "Role", "Last review", "Next review", "Models", "Alerts", ""].map((h, i) => (
+                {["Ticker", "Name", period, `${period} Return`, "Status", "Role", "Last review", "Next review", "Models", "Alerts", ""].map((h, i) => (
                   <th key={i} style={{ padding: "12px 14px", borderBottom: `1px solid ${T.line}`, fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>

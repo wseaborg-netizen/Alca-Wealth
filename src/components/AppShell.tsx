@@ -209,6 +209,8 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
   const goBackToFirmFunds = () => switchTab("firmfunds");
   const goStartReview = (firmFundId: string, t: string) => { setReviewCtx({ firmFundId, ticker: t.toUpperCase() }); switchTab("reviews"); };
   const goAddToFirmFunds = (t: string) => { setFirmFundsAddTicker(t.toUpperCase()); switchTab("firmfunds"); };
+  // Review → Discover Comparison (reuses the existing compare tray + tab).
+  const goCompareMany = (tickers: string[]) => { setCompareTickers(Array.from(new Set(tickers.map((t) => t.toUpperCase()))).slice(0, 6)); switchTab("comparison"); };
   // Add to the comparison tray WITHOUT navigating away - build a list from anywhere.
   const addToCompare = (t: string) => {
     const up = t.toUpperCase();
@@ -373,7 +375,9 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
         )}
         {/* Reviews — primary destination shell (real workflow added later) */}
         {mounted.has("reviews") && (
-          <div style={{ display: tab === "reviews" ? "block" : "none" }}><ReviewsTab context={reviewCtx} /></div>
+          <div style={{ display: tab === "reviews" ? "block" : "none" }}>
+            <ReviewsTab context={reviewCtx} onAnalyze={goAnalyze} onCompareCandidates={goCompareMany} />
+          </div>
         )}
         {mounted.has("research") && (
           <div style={{ display: tab === "research" ? "block" : "none" }}><ResearchHubTab go={hubGo} onAnalyze={goAnalyze} /></div>

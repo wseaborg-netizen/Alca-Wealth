@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireFirmContext } from "@/lib/db";
 import { firmFundsList } from "@/lib/firmReviews";
-import { boundedPerformance } from "@/lib/firmInventory";
-import { getMarketQuote } from "@/lib/market-data/marketQuote";
+import { getMergedUniverse } from "@/lib/universeServer";
+import { boundedPeriodPerformance, fetchPeriodPerformance } from "@/lib/firmPerformance";
 
 /**
- * Bounded performance enrichment for the firm's OWN inventory only. The client
- * posts the tickers it is displaying; the server intersects them with the firm's
- * actual firm_funds holdings (so this can't be used to drive arbitrary provider
- * calls), then fetches each via the cached, normalized market-quote service.
+ * Bounded ALL-PERIOD performance enrichment for the firm's OWN inventory only.
+ * The client posts the tickers it is displaying; the server intersects them with
+ * the firm's actual firm_funds holdings (so this can't drive arbitrary provider
+ * calls), resolves each fund's vehicle from the universe (ETF → adjusted, mutual
+ * fund → NAV), and fetches all six period windows from one cached history call.
  *
  * Per-ticker failures are isolated → that row is Unavailable, the batch still
- * succeeds. Only the normalized { recentReturn, spark } reaches the client — no
- * raw provider shape and no credential are ever returned.
+ * succeeds. Only normalized { recentReturn, spark } per period reaches the client
+ * — no raw provider shape and no credential are ever returned. The client selects
+ * which period to display, so switching periods needs no re-fetch.
  */
 export async function POST(req: NextRequest) {
   const ctx = await requireFirmContext();
@@ -23,9 +25,11 @@ export async function POST(req: NextRequest) {
   if (!requested.length) return NextResponse.json({ performance: {} });
 
   try {
-    const funds = await firmFundsList(ctx.sb, ctx.firm.id);
+    const [funds, universe] = await Promise.all([firmFundsList(ctx.sb, ctx.firm.id), getMergedUniverse(ctx.sb)]);
     const firmTickers = new Set(funds.map((f) => f.normalized_ticker));
-    const performance = await boundedPerformance(requested, firmTickers, (t) => getMarketQuote(t, true));
+    const vehicleByTicker = new Map(universe.map((u) => [u.ticker, u.vehicle]));
+    const vehicleOf = (t: string) => vehicleByTicker.get(t) ?? null;
+    const performance = await boundedPeriodPerformance(requested, firmTickers, vehicleOf, fetchPeriodPerformance);
     return NextResponse.json({ performance }, { headers: { "Cache-Control": "no-store" } });
   } catch {
     // Enrichment must never break the inventory; the client falls back to Unavailable.

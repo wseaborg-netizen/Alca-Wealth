@@ -114,13 +114,15 @@ describe("public marketing routing unchanged", () => {
 
 // ── New shells introduce no synthetic data ────────────────────────────────────
 
-describe("Reviews shell + Firm Funds inventory", () => {
-  test("Reviews remains an honest not-yet-configured shell (no synthetic data)", () => {
+describe("Reviews workflow + Firm Funds inventory", () => {
+  // Phase 2E replaced the Reviews empty shell with the real firm-scoped workflow;
+  // it fetches from the API and keeps an honest empty state, no synthetic cases.
+  test("Reviews is the real workflow with an honest empty state and no synthetic data", () => {
     const src = read("src/components/ReviewsTab.tsx");
-    expect(src).toMatch(/No reviews yet|not configured/i);
+    expect(src).toMatch(/No reviews yet/i);
     expect(src).not.toMatch(/Math\.random/);
-    expect(src).not.toMatch(/from\s+["']@\/lib\/(universe|market-data|kpi|fundService)/);
-    expect(src).not.toMatch(/useMergedUniverse|fetch\(/);
+    expect(src).not.toMatch(/mockReviews|sampleReviews|demoReviews/i);
+    expect(src).not.toMatch(/from\s+["']@\/lib\/(universe|market-data|kpi|fundService)/); // no client provider import
   });
 
   // Phase 2C replaced the Firm Funds empty shell with the real inventory; it now

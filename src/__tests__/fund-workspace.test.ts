@@ -142,7 +142,10 @@ describe("contextual navigation", () => {
   test("Start Review creates no DB record (navigation only) and Reviews just receives context", () => {
     expect(shell).toMatch(/goStartReview[\s\S]*?setReviewCtx[\s\S]*?switchTab\("reviews"\)/);
     expect(shell).not.toMatch(/goStartReview[\s\S]{0,160}fetch\(/);   // no write in the Start Review path
-    expect(reviews).not.toMatch(/fetch\(|\.insert\(|reviewCreate/);   // no write on the receiving side
+    // On the receiving side, the Start-Review context only opens the create form —
+    // it never creates a review (creation happens on explicit form submit).
+    expect(reviews).toMatch(/if \(!context\) return;[\s\S]*?setView\("create"\)/);
+    expect(reviews).not.toMatch(/reviewCreate/);
   });
   test("the contextual workspace is NOT a primary navigation item", () => {
     const labels = PRIMARY_NAV.map((n) => n.label);

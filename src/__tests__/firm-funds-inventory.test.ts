@@ -174,7 +174,7 @@ describe("firm-funds API routes", () => {
     expect(route).toMatch(/duplicate[\s\S]*409|409[\s\S]*duplicate/);
   });
   test("performance route is bounded to the firm's holdings and returns no raw provider shape/token", () => {
-    expect(perfRoute).toContain("boundedPerformance");
+    expect(perfRoute).toContain("boundedPeriodPerformance");
     expect(perfRoute).toContain("firmFundsList");
     expect(perfRoute).not.toMatch(/TIINGO|token/i);
   });
