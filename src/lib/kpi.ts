@@ -64,6 +64,7 @@ export interface KpiResult {
   periods: Record<Period, PeriodStats>;
   cumReturn: Record<Period, number | null>;    // cumulative TOTAL-return % per period (scoring/analytics; not the primary display)
   priceChange: Record<Period, number | null>;  // PRIMARY display %: Nasdaq-style price change (dividends excluded)
+  latestPrice: number | null;                   // latest completed RAW close / NAV (visible price)
 }
 
 // All return/risk formulas live in the central methodology module — this file
@@ -171,6 +172,7 @@ export function computeKpis(
     periods: { "1Y": { ...EMPTY_PERIOD }, "3Y": { ...EMPTY_PERIOD }, "5Y": { ...EMPTY_PERIOD }, "10Y": { ...EMPTY_PERIOD } },
     cumReturn: { "1Y": null, "3Y": null, "5Y": null, "10Y": null },
     priceChange: { "1Y": null, "3Y": null, "5Y": null, "10Y": null },
+    latestPrice: null,
   };
 
   if (!fundDaily.length) return empty;
@@ -219,6 +221,7 @@ export function computeKpis(
       const c = px.periods[p]?.priceChange;
       result.priceChange[p] = c != null ? c * 100 : null;
     }
+    result.latestPrice = px.latestPrice;   // latest completed RAW close (visible price)
   }
 
   // ── Drawdown (3y and 5y) from the daily adjusted series ─────────────────────

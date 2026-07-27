@@ -72,7 +72,7 @@ function windowsFromSeries(asc: number[], dates: string[], includeSpark: boolean
  * never a token.
  */
 export async function getMarketQuote(symbol: string, includeSpark = false): Promise<MarketQuote | null> {
-  const key = `td:quote:${SCOPE}:${symbol}:${includeSpark ? "s" : "n"}`;
+  const key = `td:quote:px:${SCOPE}:${symbol}:${includeSpark ? "s" : "n"}`; // px = raw-close price change
   const cached = await cacheGet<MarketQuote>(key);
   if (cached) return cached;
 
@@ -83,9 +83,10 @@ export async function getMarketQuote(symbol: string, includeSpark = false): Prom
     const r = await tiingo().getPriceHistory(symbol, INTERNAL, { kind: "price", startDate: yearsAgoISO(1) });
     if (!r.ok) return null; // provider error → explicit null, NOT cached (retryable)
 
-    // Adjusted close only — never mix in raw close (would distort change windows).
+    // RAW close only — the visible price + change windows are Nasdaq-style PRICE
+    // change (dividends excluded), consistent with the site-wide price metric.
     const asc = r.data.bars
-      .map((b) => ({ date: b.date, price: b.adjClose }))
+      .map((b) => ({ date: b.date, price: b.close }))
       .filter((p): p is { date: string; price: number } => p.price != null && p.price > 0);
     const q = windowsFromSeries(asc.map((p) => p.price), asc.map((p) => p.date), includeSpark);
     if (!q) return null; // insufficient history → null, NOT cached

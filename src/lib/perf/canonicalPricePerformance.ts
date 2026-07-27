@@ -30,12 +30,18 @@ export interface PricePerf {
   priceChange: number | null;      // FRACTION, full precision (cumulative price change)
   startDate: string | null;
   endDate: string | null;
-  startRawClose: number | null;    // raw close/NAV at the start bar (reporting)
-  endRawClose: number | null;      // raw close/NAV at the end bar (reporting)
+  startPrice: number | null;       // raw close/NAV at the start observation
+  endPrice: number | null;         // raw close/NAV at the end observation (= latestPrice)
   spark: number[] | null;          // split-adjusted price series over the same range
   unavailableReason: string | null;
 }
-export interface PricePerfResult { periods: Record<PricePeriod, PricePerf>; asOf: string | null; seriesBasis: SeriesBasis }
+export interface PricePerfResult {
+  periods: Record<PricePeriod, PricePerf>;
+  asOf: string | null;             // latest completed EOD observation date
+  asOfDate: string | null;         // alias of asOf (explicit field name)
+  latestPrice: number | null;      // latest completed RAW close / NAV
+  seriesBasis: SeriesBasis;
+}
 
 export interface RawObs { date: string; rawClose: number; splitFactor?: number }
 
@@ -57,11 +63,12 @@ export function canonicalPricePerformance(observations: RawObs[], seriesBasis: S
     .map((o) => ({ date: o.date, raw: o.rawClose, sf: o.splitFactor ?? 1 }));
   const n = asc.length;
   const asOf = n ? asc[n - 1].date : null;
+  const latestPrice = n ? asc[n - 1].raw : null;
   const periods = {} as Record<PricePeriod, PricePerf>;
   const blank = (p: PricePeriod, reason: string): PricePerf =>
-    ({ period: p, priceChange: null, startDate: null, endDate: asOf, startRawClose: null, endRawClose: n ? asc[n - 1].raw : null, spark: null, unavailableReason: reason });
+    ({ period: p, priceChange: null, startDate: null, endDate: asOf, startPrice: null, endPrice: latestPrice, spark: null, unavailableReason: reason });
 
-  if (n < 2) { for (const p of PRICE_PERIODS) periods[p] = blank(p, "insufficient history"); return { periods, asOf, seriesBasis }; }
+  if (n < 2) { for (const p of PRICE_PERIODS) periods[p] = blank(p, "insufficient history"); return { periods, asOf, asOfDate: asOf, latestPrice, seriesBasis }; }
 
   // Split-adjusted (dividend-unadjusted) price: divide historical prices by the
   // product of split factors that occur AFTER each bar. No split ⇒ adj = raw, so
@@ -89,10 +96,10 @@ export function canonicalPricePerformance(observations: RawObs[], seriesBasis: S
       period: p,
       priceChange: pc != null && Number.isFinite(pc) ? pc : null,   // full precision, cumulative
       startDate: asc[startIdx].date, endDate: last.date,
-      startRawClose: asc[startIdx].raw, endRawClose: last.raw,
+      startPrice: asc[startIdx].raw, endPrice: last.raw,
       spark: sparkVals.length > 8 ? sparkVals : null,
       unavailableReason: null,
     };
   }
-  return { periods, asOf, seriesBasis };
+  return { periods, asOf, asOfDate: asOf, latestPrice, seriesBasis };
 }

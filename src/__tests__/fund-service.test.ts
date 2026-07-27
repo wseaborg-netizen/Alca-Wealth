@@ -117,7 +117,7 @@ describe("cache, coalescing, credential scope", () => {
 
   test("cache key carries a credential SCOPE id and never a token", () => {
     const src = read("src/lib/market-data/fundService.ts");
-    expect(src).toMatch(/td:fund:\$\{SCOPE\}/);
+    expect(src).toMatch(/td:fund:px2:\$\{SCOPE\}/);
     expect(src).toMatch(/SCOPE\s*=\s*"internal"/);
     expect(src).not.toMatch(/\$\{token\}|cacheKey.*token/i);
   });

@@ -51,6 +51,7 @@ const mkKpi = (ret: number, sharpe: number, dd: number, vol: number): KpiResult 
   battingAvg3y: 50, ttmYield: 2, divGrowth3y: null, rolling3y: [], stressTests: [],
   cumReturn: { "1Y": null, "3Y": ret, "5Y": null, "10Y": null },
   priceChange: { "1Y": null, "3Y": ret, "5Y": null, "10Y": null },
+  latestPrice: null,
   periods: {
     "1Y": { ...EMPTY_PERIOD }, "5Y": { ...EMPTY_PERIOD }, "10Y": { ...EMPTY_PERIOD },
     "3Y": { return: ret, cumulativeReturn: ret, annualizedReturn: ret, sharpe, maxDrawdown: dd, volatility: vol, sortino: null, beta: null, alpha: null },

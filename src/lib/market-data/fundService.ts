@@ -96,6 +96,7 @@ const EMPTY_KPI: KpiResult = {
   rolling3y: [], stressTests: [],
   cumReturn: { "1Y": null, "3Y": null, "5Y": null, "10Y": null },
   priceChange: { "1Y": null, "3Y": null, "5Y": null, "10Y": null },
+  latestPrice: null,
   periods: { "1Y": { ...EMPTY_PERIOD }, "3Y": { ...EMPTY_PERIOD }, "5Y": { ...EMPTY_PERIOD }, "10Y": { ...EMPTY_PERIOD } },
 };
 
@@ -145,7 +146,7 @@ async function getFundData(
 ): Promise<FundRecord> {
   const norm = ticker.toUpperCase();
   const kind = kindForVehicle(vehicle);
-  const key = `td:fund:${SCOPE}:${norm}:${range}:${kind}`;
+  const key = `td:fund:px2:${SCOPE}:${norm}:${range}:${kind}`; // px2 = raw price-change + 10y buffer
   const cached = await cacheGet<FundRecord>(key);
   if (cached) return cached;
 
@@ -153,7 +154,11 @@ async function getFundData(
     const again = await cacheGet<FundRecord>(key);
     if (again) return again;
 
-    const startDate = yearsAgoISO(range === "3y" ? 3 : 10);
+    // Buffer the long-range fetch by ~2 months so a bar exists on/before the exact
+    // N-years-ago calendar cutoff (otherwise the longest period reads Unavailable).
+    const startDate = range === "3y"
+      ? yearsAgoISO(3)
+      : (() => { const d = new Date(); d.setFullYear(d.getFullYear() - 10); d.setDate(d.getDate() - 60); return d.toISOString().slice(0, 10); })();
     const [series, benchItems] = await Promise.all([
       tiingo().getPriceSeries(norm, INTERNAL, { kind, startDate }),
       getBenchmarkHistory(benchmark),

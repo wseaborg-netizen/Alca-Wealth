@@ -138,4 +138,21 @@ describe("site-wide: one Price Change everywhere; total return never in the prim
       expect(ui).not.toContain("cumReturn");
     }
   });
+  test("market cards / Advisor Overview quote use RAW close (price change), not adjClose", () => {
+    const mq = read("src/lib/market-data/marketQuote.ts");
+    expect(mq).toContain("price: b.close");
+    expect(mq).not.toContain("price: b.adjClose");
+  });
+  test("Portfolio views show price change (not total-return CAGR); Model projection base stays internal analytics", () => {
+    const pf = read("src/components/PortfoliosTab.tsx");
+    expect(pf).toContain("Price Change");
+    expect(pf).toContain("priceChange1y");
+    expect(pf).not.toContain("3-Year CAGR");
+    expect(read("src/lib/portfolioCalc.ts")).toContain("wavgPrice");
+  });
+  test("explicit price fields exist (latestPrice / startPrice / endPrice / asOfDate)", () => {
+    const eng = read("src/lib/perf/canonicalPricePerformance.ts");
+    for (const f of ["latestPrice", "startPrice", "endPrice", "asOfDate"]) expect(eng).toContain(f);
+    expect(read("src/lib/kpi.ts")).toContain("result.latestPrice = px.latestPrice");
+  });
 });

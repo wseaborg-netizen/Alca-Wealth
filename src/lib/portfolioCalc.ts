@@ -13,9 +13,12 @@ export interface Holding {
 }
 
 export interface BlendedKpis {
-  return1y: number | null;
+  return1y: number | null;   // weighted TOTAL return (internal analytics; not the primary display)
   return3y: number | null;
   return5y: number | null;
+  priceChange1y: number | null;  // weighted PRICE change (primary display)
+  priceChange3y: number | null;
+  priceChange5y: number | null;
   stdDev3y: number | null;
   sharpe3y: number | null;
   sortino3y: number | null;
@@ -53,11 +56,21 @@ function wavg(holdings: Holding[], key: keyof KpiResult): number | null {
   return valid.reduce((s, h) => s + (h.fund.kpi[key] as number) * h.weight / totalW, 0);
 }
 
+/** Weighted average of a fund's price change for a period (primary display metric). */
+function wavgPrice(holdings: Holding[], period: "1Y" | "3Y" | "5Y"): number | null {
+  const valid = holdings.filter((h) => h.fund.kpi.priceChange[period] != null);
+  if (!valid.length) return null;
+  const totalW = valid.reduce((s, h) => s + h.weight, 0);
+  if (totalW === 0) return null;
+  return valid.reduce((s, h) => s + (h.fund.kpi.priceChange[period] as number) * h.weight / totalW, 0);
+}
+
 export function blendKpis(holdings: Holding[]): BlendedKpis {
   const totalWeight = holdings.reduce((s, h) => s + h.weight, 0);
   if (!holdings.length || totalWeight === 0) {
     return {
       return1y: null, return3y: null, return5y: null,
+      priceChange1y: null, priceChange3y: null, priceChange5y: null,
       stdDev3y: null, sharpe3y: null, sortino3y: null,
       maxDrawdown3y: null, calmar3y: null,
       beta3y: null, alpha3y: null,
@@ -77,6 +90,9 @@ export function blendKpis(holdings: Holding[]): BlendedKpis {
     return1y: wavg(holdings, "return1y"),
     return3y: wavg(holdings, "return3y"),
     return5y: wavg(holdings, "return5y"),
+    priceChange1y: wavgPrice(holdings, "1Y"),
+    priceChange3y: wavgPrice(holdings, "3Y"),
+    priceChange5y: wavgPrice(holdings, "5Y"),
     stdDev3y: wavg(holdings, "stdDev3y"),
     sharpe3y: wavg(holdings, "sharpe3y"),
     sortino3y: wavg(holdings, "sortino3y"),

@@ -441,9 +441,9 @@ export default function PortfoliosTab({ onAnalyze, onFindSimilar, onRunInModel }
 
   const cmpRows: Array<[string, number | null, number | null, boolean, (v: number | null) => string]> =
     cur && prop ? [
-      ["1-Year Return", cur.kpi.return1y, prop.kpi.return1y, true, (v) => pctv(v)],
-      ["3-Year CAGR", cur.kpi.return3y, prop.kpi.return3y, true, (v) => pctv(v)],
-      ["5-Year CAGR", cur.kpi.return5y, prop.kpi.return5y, true, (v) => pctv(v)],
+      ["1-Year Price Change", cur.kpi.priceChange1y, prop.kpi.priceChange1y, true, (v) => pctv(v)],
+      ["3-Year Price Change", cur.kpi.priceChange3y, prop.kpi.priceChange3y, true, (v) => pctv(v)],
+      ["5-Year Price Change", cur.kpi.priceChange5y, prop.kpi.priceChange5y, true, (v) => pctv(v)],
       ["Sharpe (3y)", cur.kpi.sharpe3y, prop.kpi.sharpe3y, true, num2],
       ["Max Drawdown (3y)", cur.kpi.maxDrawdown3y, prop.kpi.maxDrawdown3y, true, (v) => pctv(v)],
       ["TTM Yield", cur.kpi.ttmYield, prop.kpi.ttmYield, true, (v) => pctv(v, 2)],
@@ -708,7 +708,7 @@ export default function PortfoliosTab({ onAnalyze, onFindSimilar, onRunInModel }
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(148px, 1fr))", gap: 12, marginTop: 20 }}>
                     {([
                       ["Risk Level", `${riskLabel(draft.risk)}`, "Bucketed from the advisor-selected risk tolerance."],
-                      ["Hist. Annualized Return (3y)", metricsLoading ? "…" : pctv(metrics?.return3y ?? null), "Weighted 3-year historical return of the selected funds. Past performance does not guarantee future results."],
+                      ["Hist. Price Change (3y)", metricsLoading ? "…" : pctv(metrics?.priceChange3y ?? null), "Weighted 3-year price change of the selected funds (dividends excluded). Past performance does not guarantee future results."],
                       ["Hist. Max Drawdown (3y)", metricsLoading ? "…" : pctv(metrics?.maxDrawdown3y ?? null), "Weighted 3-year historical peak-to-trough decline of the selected funds — a historical fact, not a forecast."],
                       ["Weighted Expense Ratio", metricsLoading ? "…" : pctv(metrics?.expenseRatio ?? null, 2), "Holdings-weighted average of the funds' published expense ratios."],
                       ["Tax Efficiency", blendedTax == null ? (metricsLoading ? "…" : "—") : `${blendedTax}/100`, "ALCA-derived score (0-100) from each holding's tax character (qualified dividends, turnover proxy, municipal exposure) and its account placement."],
@@ -889,7 +889,7 @@ export default function PortfoliosTab({ onAnalyze, onFindSimilar, onRunInModel }
                   {metricsLoading && <div style={{ fontSize: 12, color: T.muted, ...ui, marginTop: 12 }}>Loading live metrics...</div>}
                   {!metricsLoading && metrics && (
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginTop: 12 }}>
-                      {([["1-Yr Return", pctv(metrics.return1y)], ["3-Yr CAGR", pctv(metrics.return3y)], ["Sharpe (3y)", num2(metrics.sharpe3y)], ["Max Drawdown", pctv(metrics.maxDrawdown3y)],
+                      {([["1-Yr Price Chg", pctv(metrics.priceChange1y)], ["3-Yr Price Chg", pctv(metrics.priceChange3y)], ["Sharpe (3y)", num2(metrics.sharpe3y)], ["Max Drawdown", pctv(metrics.maxDrawdown3y)],
                         ["TTM Yield", pctv(metrics.ttmYield, 2)], ["Blended Expense", pctv(metrics.expenseRatio, 2)], ["Beta (3y)", num2(metrics.beta3y)], ["Alpha (3y)", pctv(metrics.alpha3y, 2)]] as [string, string][]).map(([l, v]) => (
                         <div key={l} style={{ background: T.panel3, border: `1px solid ${T.line}`, borderRadius: 8, padding: "10px 12px" }}>
                           <div style={{ fontSize: 9.5, color: T.muted, ...ui, textTransform: "uppercase", letterSpacing: "0.06em" }}>{l}</div>
