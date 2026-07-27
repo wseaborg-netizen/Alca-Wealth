@@ -22,11 +22,13 @@ describe("signed-out routing + auth invariants (unchanged)", () => {
     expect(resolveInitialTab("preview")).toBe("dashboard");
     expect(isAuthed("none")).toBe(false);
   });
-  test("public homepage renders; the authenticated TopNav is suppressed for signed-out visitors", () => {
+  test("public homepage renders; the authenticated TopNav never shows on the marketing home tab", () => {
     expect(shell).toContain("<HomeTab");
-    expect(shell).toMatch(/authMode !== "none" && \(\s*<TopNav/);
+    expect(shell).toMatch(/tab !== "home" && \(\s*<TopNav/);
     // Advisor Overview (private, fetches firm data) is not mounted for anonymous.
     expect(shell).toMatch(/authMode !== "none" && \([\s\S]*?<DashboardTab/);
+    // HomeTab renders its own dark public header (no search / bell / workspace).
+    expect(home).toContain("function PublicNav()");
   });
 });
 
@@ -34,6 +36,16 @@ describe("navigation CTA hierarchy", () => {
   test("header exposes Sign In and Request a Demo", () => {
     expect(home).toContain("Sign In");
     expect(home).toContain("Request a Demo");
+  });
+  test("public header nav items match the reference (incl. Tools)", () => {
+    for (const label of ["Home", "Firm Funds", "Discover", "Reviews", "About ALCA", "Tools"]) {
+      expect(home).toContain(`label: "${label}"`);
+    }
+  });
+  test("no signed-in app-header controls on the public homepage", () => {
+    for (const banned of ["Search funds", "unreadCount", "Personal Workspace", "authWorkspace", "accountName", "onAlerts"]) {
+      expect(home).not.toContain(banned);
+    }
   });
   test("Request a Demo appears to the RIGHT of Sign In (source order)", () => {
     expect(home.indexOf("Sign In")).toBeLessThan(home.indexOf("Request a Demo"));
@@ -60,6 +72,9 @@ describe("hero", () => {
   });
   test("supporting copy is the approved sentence", () => {
     expect(home).toContain("ALCA helps advisory teams monitor funds, evaluate alternatives, and maintain a documented review process.");
+  });
+  test("the 'Clarity across your investment workflow.' line is removed", () => {
+    expect(home).not.toContain("Clarity across your investment workflow.");
   });
   test("hero button pair is Sign In then Request a Demo", () => {
     const hero = home.slice(home.indexOf("function Hero()"));

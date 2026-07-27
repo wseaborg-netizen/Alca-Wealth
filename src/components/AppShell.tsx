@@ -296,10 +296,11 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
   return (
     <div style={{ minHeight: "100vh", background: T.bg, display: "flex", flexDirection: "column" }}>
 
-      {/* Signed-out visitors get the self-contained public homepage (its own nav +
-          footer). The authenticated app chrome (TopNav: search / alerts / account)
-          is only for signed-in sessions. */}
-      {authMode !== "none" && (
+      {/* The public marketing homepage (home tab) uses its own dark public header
+          from HomeTab. The authenticated app chrome (TopNav: search / alerts /
+          account) renders on every real app tab, never on the marketing page.
+          TopNav itself is unchanged. */}
+      {tab !== "home" && (
       <TopNav
         sections={sections}
         utilitySection={utilitySection}
@@ -363,14 +364,7 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
         )}
 
         <div style={{ display: tab === "home" ? "block" : "none" }}>
-          <HomeTab
-            authMode={authMode}
-            onEnterPlatform={() => switchTab("dashboard")}
-            onOpenResearch={() => switchTab("research")}
-            onOpenPortfolio={() => switchTab("workspace")}
-            onOpenModel={() => switchTab("model")}
-            onExplore={scrollToAbout}
-          />
+          <HomeTab />
         </div>
         {/* Advisor Overview is authenticated-only — never mounted for signed-out
             visitors (keeps the public homepage free of private API calls). */}

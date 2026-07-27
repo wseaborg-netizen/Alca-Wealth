@@ -50,6 +50,7 @@ const NAV_ITEMS: { label: string; href: string; external?: boolean }[] = [
   { label: "Discover", href: "#discover" },
   { label: "Reviews", href: "#reviews" },
   { label: "About ALCA", href: LINK.about, external: true },
+  { label: "Tools", href: "#capabilities" },
 ];
 
 // ── Container ─────────────────────────────────────────────────────────────────
@@ -293,20 +294,19 @@ function Hero() {
     <section id="top" style={{ position: "relative", overflow: "hidden", background: `linear-gradient(160deg, ${C.navy} 0%, ${C.deep} 62%, #0A2246 100%)`, color: C.onNavy }}>
       {/* subtle technical linework + sparse points (decorative, static) */}
       <svg aria-hidden style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }} preserveAspectRatio="xMidYMid slice" viewBox="0 0 1440 720">
-        <g fill="none" stroke="rgba(120,170,255,0.14)" strokeWidth="1">
-          <path d="M-100 560 Q 500 380 1560 600" />
-          <path d="M-100 640 Q 620 430 1560 660" />
-          <path d="M900 -80 Q 1180 260 980 760" />
+        {/* subtle edge linework only (right side) + sparse points */}
+        <g fill="none" stroke="rgba(120,170,255,0.12)" strokeWidth="1">
+          <path d="M980 -80 Q 1240 300 1060 800" />
         </g>
-        <g fill="rgba(150,200,255,0.5)">
-          {[[220, 180], [1180, 140], [1320, 420], [140, 470], [1010, 560], [760, 120]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r={i % 2 ? 1.6 : 1} />)}
+        <g fill="rgba(150,200,255,0.45)">
+          {[[1180, 140], [1320, 420], [1010, 560], [760, 120]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r={i % 2 ? 1.6 : 1} />)}
         </g>
       </svg>
       <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none",
         background: "radial-gradient(55% 60% at 82% 46%, rgba(22,199,232,0.14), transparent 70%)" }} />
 
-      <Container style={{ position: "relative", padding: isMobile ? "56px 20px 84px" : "clamp(72px,9vh,120px) 40px clamp(96px,12vh,150px)",
-        display: "grid", gridTemplateColumns: isMobile ? "1fr" : "40% 60%", gap: isMobile ? 44 : 40, alignItems: "center" }}>
+      <Container style={{ position: "relative", padding: isMobile ? "44px 20px 52px" : "clamp(44px,5vh,72px) 40px clamp(36px,4.5vh,56px)",
+        display: "grid", gridTemplateColumns: isMobile ? "1fr" : "40% 60%", gap: isMobile ? 40 : 40, alignItems: "center" }}>
 
         {/* copy */}
         <Reveal y={14}>
@@ -321,20 +321,17 @@ function Hero() {
             <p style={{ margin: "24px 0 0", fontSize: isMobile ? 16 : 18, lineHeight: 1.6, color: C.onNavyDim, maxWidth: 440, ...ui }}>
               ALCA helps advisory teams monitor funds, evaluate alternatives, and maintain a documented review process.
             </p>
-            <p style={{ margin: "12px 0 0", display: "inline-flex", alignItems: "center", gap: 10, fontSize: 13.5, color: "rgba(224,233,247,0.55)", ...ui }}>
-              <span aria-hidden style={{ width: 22, height: 1.5, background: C.cyan, display: "inline-block" }} />
-              Clarity across your investment workflow.
-            </p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 34 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 30 }}>
               <Btn href={LINK.login} variant="royal">Sign In</Btn>
               <Btn href={LINK.demo} variant="outlineDark">Request a Demo <span aria-hidden>→</span></Btn>
             </div>
           </div>
         </Reveal>
 
-        {/* product preview */}
+        {/* product preview — enlarged and nudged up to match the reference */}
         <Reveal y={20} delay={90} style={{ minWidth: 0 }}>
-          <div style={{ margin: isMobile ? "0 auto" : "0 -4% 0 8%", maxWidth: isMobile ? 440 : "none" }}>
+          <div style={{ margin: isMobile ? "0 auto" : "0 -8% 0 6%", maxWidth: isMobile ? 440 : "none",
+            transform: isMobile ? "none" : "translateY(-10px) scale(1.17)", transformOrigin: "left center" }}>
             <ProductPreview />
           </div>
         </Reveal>
@@ -351,7 +348,7 @@ function WorkflowSection() {
     { id: "reviews", n: "03", icon: "reviews", title: "Reviews", body: "Document the evidence, alternatives, rationale, and final decision for each fund review." },
   ];
   return (
-    <section style={{ position: "relative", background: C.white, borderRadius: "28px 28px 0 0", marginTop: -28, paddingTop: isMobile ? 56 : 96 }}>
+    <section style={{ position: "relative", background: C.white, borderRadius: "28px 28px 0 0", marginTop: -32, paddingTop: isMobile ? 44 : 60 }}>
       <Container style={{ padding: isMobile ? "0 20px 64px" : "0 40px 112px" }}>
         <Reveal>
           <div style={{ textAlign: "center", maxWidth: 720, margin: "0 auto" }}>
@@ -402,7 +399,7 @@ function CapabilitiesSection() {
     { icon: "lock", title: "Controlled Access", body: "Keep firm workflows within authenticated, firm-scoped workspaces." },
   ];
   return (
-    <section style={{ background: C.light, borderTop: `1px solid ${C.border}` }}>
+    <section id="capabilities" style={{ background: C.light, borderTop: `1px solid ${C.border}`, scrollMarginTop: 80 }}>
       <Container style={{ padding: isMobile ? "56px 20px" : "104px 40px" }}>
         <Reveal>
           <div style={{ textAlign: "center", maxWidth: 720, margin: "0 auto" }}>
@@ -491,23 +488,10 @@ function Footer() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-interface HomeProps {
-  authMode?: "full" | "preview" | "none" | null;
-  // Legacy navigation callbacks (kept for AppShell compatibility; the public
-  // redesign navigates via real hrefs so these are optional and unused).
-  onEnterPlatform?: () => void;
-  onOpenResearch?: () => void;
-  onOpenPortfolio?: () => void;
-  onOpenModel?: () => void;
-  onExplore?: () => void;
-}
-
-export default function HomeTab({ authMode }: HomeProps) {
-  // Public chrome (nav + footer) renders for signed-out visitors. When an
-  // authenticated viewer opens this marketing page from inside the app, the
-  // app's own TopNav is already present, so we omit the public nav/footer.
-  const publicChrome = authMode === "none" || authMode == null;
-
+export default function HomeTab() {
+  // The public marketing page always uses its own dark public header + footer
+  // (never the authenticated app's white TopNav — AppShell hides that on the
+  // home tab). This is presentation only; no app/auth logic here.
   return (
     // Full-bleed out of AppShell's padded <main>.
     <div style={{ margin: "0 -32px", background: C.light }}>
@@ -517,12 +501,12 @@ export default function HomeTab({ authMode }: HomeProps) {
         @media (prefers-reduced-motion: reduce) { .alca-cta:hover { transform: none; } }
       `}</style>
 
-      {publicChrome && <PublicNav />}
+      <PublicNav />
       <Hero />
       <WorkflowSection />
       <CapabilitiesSection />
       <FinalCTA />
-      {publicChrome && <Footer />}
+      <Footer />
     </div>
   );
 }
