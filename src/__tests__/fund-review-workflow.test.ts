@@ -20,10 +20,6 @@ import {
   reviewComplete, reviewCancel, assertReviewMutable, candidateAdd, candidateSelect,
 } from "@/lib/firmReviews";
 import { createReviewValidated, addReviewCandidateValidated } from "@/lib/firmInventory";
-import {
-  periodsFromBars, kindForVehicle, boundedPeriodPerformance,
-  FIRM_PERF_PERIODS, DEFAULT_FIRM_PERF_PERIOD, type PerfByPeriod,
-} from "@/lib/firmPerformance";
 
 const ROOT = path.resolve(__dirname, "../..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8");
@@ -183,62 +179,4 @@ describe("reviews UI", () => {
   });
 });
 
-// ── Firm Funds performance periods (pure math) ────────────────────────────────
-
-function synthBars(days: number, start = 100) {
-  const out: { date: string; adjClose: number }[] = [];
-  const base = new Date("2026-07-26");
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(base); d.setDate(base.getDate() - i);
-    out.push({ date: d.toISOString().slice(0, 10), adjClose: start + (days - i) * 0.1 });
-  }
-  return out;
-}
-
-describe("Firm Funds performance periods", () => {
-  test("exactly six periods, default 1M", () => {
-    expect([...FIRM_PERF_PERIODS]).toEqual(["1D", "1M", "3M", "YTD", "1Y", "3Y"]);
-    expect(DEFAULT_FIRM_PERF_PERIOD).toBe("1M");
-    expect(read("src/components/FirmFundsTab.tsx")).toContain('DEFAULT_PERF_PERIOD: PerfPeriod = "1M"');
-  });
-  test("all six period mappings compute over sufficient history", () => {
-    const p = periodsFromBars(synthBars(800));
-    for (const k of FIRM_PERF_PERIODS) expect(p[k].recentReturn).not.toBeNull();
-    expect(p["3M"].spark).not.toBeNull();          // sparkline present for a multi-week window
-  });
-  test("insufficient history is Unavailable (null), never 0%", () => {
-    const p = periodsFromBars(synthBars(30));       // ~1 month only
-    expect(p["1M"].recentReturn).not.toBeNull();
-    expect(p["1Y"]).toEqual({ recentReturn: null, spark: null });
-    expect(p["3Y"]).toEqual({ recentReturn: null, spark: null });
-  });
-  test("recent return and sparkline use the same window; ETF vs mutual-fund kind", () => {
-    const p = periodsFromBars(synthBars(400));
-    // 1D window is too short for a sparkline but still has a return → independent
-    expect(p["1D"].recentReturn).not.toBeNull();
-    expect(p["1D"].spark).toBeNull();
-    expect(kindForVehicle("Mutual Fund")).toBe("nav");
-    expect(kindForVehicle("ETF")).toBe("price");
-    expect(kindForVehicle(null)).toBe("price");
-  });
-  test("bounded to firm holdings; a partial provider failure does not fail the batch", async () => {
-    const fetchPerf = async (t: string): Promise<PerfByPeriod | null> => {
-      if (t === "BAD") throw new Error("provider down");
-      return periodsFromBars(synthBars(400));
-    };
-    const out = await boundedPeriodPerformance(["VTI", "BAD", "SPY"], new Set(["VTI", "BAD"]), () => "ETF", fetchPerf);
-    expect(Object.keys(out).sort()).toEqual(["BAD", "VTI"]);   // SPY excluded (not in firm)
-    expect(out.BAD).toBeNull();                                 // isolated failure → Unavailable
-    expect(out.VTI).not.toBeNull();
-  });
-  test("return + sparkline read the same selected period in the UI", () => {
-    const ui = read("src/components/FirmFundsTab.tsx");
-    expect(ui).toContain("const perfAt = (r: Row): PerfPoint | undefined => perf[r.ticker]?.[period]");
-    expect(ui).not.toContain("market-data/tiingo");
-    expect(ui).not.toContain("getMarketQuote");
-  });
-  test("period state persists across navigation (Firm Funds stays mounted)", () => {
-    // AppShell toggles display rather than unmounting, so component state (period) survives.
-    expect(read("src/components/AppShell.tsx")).toMatch(/display: tab === "firmfunds" \? "block" : "none"/);
-  });
-});
+// Firm Funds performance periods are covered in firm-performance.test.ts.

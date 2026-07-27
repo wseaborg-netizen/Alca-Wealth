@@ -37,6 +37,7 @@ const PERF_PERIODS = ["1D", "1M", "3M", "YTD", "1Y", "3Y"] as const;
 type PerfPeriod = (typeof PERF_PERIODS)[number];
 const DEFAULT_PERF_PERIOD: PerfPeriod = "1M";
 type PerfByPeriod = Record<PerfPeriod, PerfPoint>;
+interface PerfResult { periods: PerfByPeriod; asOf: string | null; basis: "etf_adjusted" | "mf_nav" }
 
 type SortKey = "ticker" | "recent" | "last" | "next";
 
@@ -154,7 +155,7 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
 }) {
   const isMobile = useMediaQuery("(max-width: 820px)");
   const [rows, setRows] = useState<Row[] | null>(null);
-  const [perf, setPerf] = useState<Record<string, PerfByPeriod | null>>({});
+  const [perf, setPerf] = useState<Record<string, PerfResult | null>>({});
   const [perfLoaded, setPerfLoaded] = useState(false);
   const [period, setPeriod] = useState<PerfPeriod>(DEFAULT_PERF_PERIOD);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -214,7 +215,7 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
       method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ tickers }),
     }).then((r) => (r.ok ? r.json() : { performance: {} }))
-      .then((d) => { if (alive) { setPerf((d.performance ?? {}) as Record<string, PerfByPeriod | null>); setPerfLoaded(true); } })
+      .then((d) => { if (alive) { setPerf((d.performance ?? {}) as Record<string, PerfResult | null>); setPerfLoaded(true); } })
       .catch(() => { if (alive) setPerfLoaded(true); }); // enrichment failure → Unavailable, list stands
     return () => { alive = false; };
   }, [rows]);
@@ -229,7 +230,7 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
     out = [...out].sort((a, b) => {
       if (sortKey === "ticker") return a.ticker.localeCompare(b.ticker) * dir;
       if (sortKey === "recent") {
-        const av = perf[a.ticker]?.[period]?.recentReturn, bv = perf[b.ticker]?.[period]?.recentReturn;
+        const av = perf[a.ticker]?.periods?.[period]?.recentReturn, bv = perf[b.ticker]?.periods?.[period]?.recentReturn;
         if (av == null && bv == null) return 0; if (av == null) return 1; if (bv == null) return -1; // Unavailable sinks
         return (av - bv) * dir;
       }
@@ -345,8 +346,10 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
       aria-label={`Open analysis for ${r.ticker}`}>{r.ticker}</button>
   );
 
-  // Both the sparkline and the recent return use the SAME selected period.
-  const perfAt = (r: Row): PerfPoint | undefined => perf[r.ticker]?.[period];
+  // Both the sparkline and the recent return use the SAME selected period + source series.
+  const perfAt = (r: Row): PerfPoint | undefined => perf[r.ticker]?.periods?.[period];
+  // Latest EOD date across loaded rows (all funds share ~the same last EOD).
+  const asOf = (() => { for (const t of Object.keys(perf)) { const a = perf[t]?.asOf; if (a) return a; } return null; })();
   const perfCell = (r: Row) => {
     const p = perfAt(r);
     if (!perfLoaded && !perf[r.ticker]) return <span style={{ color: T.muted, ...ui, fontSize: 11.5 }}>Loading…</span>;
@@ -425,7 +428,7 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
           <table style={{ width: "100%", borderCollapse: "collapse", ...ui, fontSize: 13 }}>
             <thead>
               <tr style={{ textAlign: "left", color: T.muted, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                {["Ticker", "Name", period, `${period} Return`, "Status", "Role", "Last review", "Next review", "Models", "Alerts", ""].map((h, i) => (
+                {["Ticker", "Name", period, period === "3Y" ? "3Y Annualized" : `${period} Return`, "Status", "Role", "Last review", "Next review", "Models", "Alerts", ""].map((h, i) => (
                   <th key={i} style={{ padding: "12px 14px", borderBottom: `1px solid ${T.line}`, fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
@@ -459,6 +462,13 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {rows && rows.length > 0 && view.length > 0 && asOf && (
+        <div style={{ fontSize: 11, color: T.muted, ...ui, lineHeight: 1.6 }}>
+          Total return through {asOf}. ETF rows use adjusted-close total return; mutual funds use NAV total return.
+          {period === "3Y" ? " 3Y is annualized." : " 1D–1Y are cumulative."}
         </div>
       )}
 
