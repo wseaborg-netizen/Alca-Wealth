@@ -36,10 +36,10 @@ const valAt = (b: { date: string; adjClose: number }[], iso: string) => { for (l
 const END = "2026-07-24"; // a Friday
 
 describe("period windows", () => {
-  test("exactly six periods; default 1M; only 3Y annualized", () => {
-    expect([...FIRM_PERF_PERIODS]).toEqual(["1D", "1M", "3M", "YTD", "1Y", "3Y"]);
+  test("exactly eight periods; default 1M; 3Y/5Y/10Y annualized", () => {
+    expect([...FIRM_PERF_PERIODS]).toEqual(["1D", "1M", "3M", "YTD", "1Y", "3Y", "5Y", "10Y"]);
     expect(DEFAULT_FIRM_PERF_PERIOD).toBe("1M");
-    expect(ANNUALIZED["3Y"]).toBe(true);
+    for (const p of ["3Y", "5Y", "10Y"] as const) expect(ANNUALIZED[p]).toBe(true);
     for (const p of ["1D", "1M", "3M", "YTD", "1Y"] as const) expect(ANNUALIZED[p]).toBe(false);
   });
 
@@ -127,19 +127,22 @@ describe("basis, cache range, and labels", () => {
     expect(kindForVehicle("MF")).toBe("nav");
     expect(kindForVehicle(null)).toBe("price");
   });
-  test("cache key carries a versioned range tag (short history can't contaminate long periods)", () => {
+  test("cache key carries version + range coverage (short history can't contaminate long periods)", () => {
     const src = read("src/lib/firmPerformance.ts");
-    expect(src).toContain('RANGE_TAG = "v2-r3y"');
-    expect(src).toContain("`ffperf:${RANGE_TAG}:${SCOPE}:${ticker}:${kind}`");
-    expect(src).toMatch(/setUTCFullYear\(d\.getUTCFullYear\(\) - 3\)[\s\S]*?setUTCDate\(d\.getUTCDate\(\) - HISTORY_BUFFER_DAYS\)/); // buffered fetch
+    expect(src).toContain('CACHE_VERSION = "v3"');
+    expect(src).toContain("RANGE_TAG = `r${MAX_LOOKBACK_YEARS}y`");
+    expect(src).toContain("`ffperf:${CACHE_VERSION}:${RANGE_TAG}:${SCOPE}:${ticker}:${kind}`");
+    // buffered fetch covers the longest lookback (10Y) so every cutoff has a bar
+    expect(src).toMatch(/setUTCFullYear\(d\.getUTCFullYear\(\) - MAX_LOOKBACK_YEARS\)[\s\S]*?setUTCDate\(d\.getUTCDate\(\) - HISTORY_BUFFER_DAYS\)/);
   });
   test("basis is derived from the series kind", () => {
     const src = read("src/lib/firmPerformance.ts");
     expect(src).toContain('basis: kind === "nav" ? "mf_nav" : "etf_adjusted"');
   });
-  test("UI labels 3Y Annualized + an honest as-of and basis note", () => {
+  test("UI labels annualized periods + an honest as-of and basis note", () => {
     const ui = read("src/components/FirmFundsTab.tsx");
-    expect(ui).toContain("3Y Annualized");
+    expect(ui).toMatch(/\$\{period\} Annualized/);
+    expect(ui).toContain("IS_ANNUALIZED");
     expect(ui).toContain("Total return through");
     expect(ui).toMatch(/adjusted-close total return[\s\S]*?NAV total return/);
     expect(ui).toContain("perf[r.ticker]?.periods?.[period]"); // return + sparkline read the same period

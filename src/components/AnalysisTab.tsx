@@ -183,7 +183,7 @@ export default function AnalysisTab({
   }, [intel, scoring, period, context]);
 
   const metrics = k && record ? [
-    { label: `${pl} Return`, value: pct(statFor("return")), good: statFor("return") != null ? statFor("return")! > 0 : null },
+    { label: `${pl} Return${period === "3Y" || period === "5Y" || period === "10Y" ? " (Annualized)" : ""}`, value: pct(statFor("return")), good: statFor("return") != null ? statFor("return")! > 0 : null },
     { label: `Sharpe ${pl}`, value: num(statFor("sharpe")), good: statFor("sharpe") != null ? statFor("sharpe")! >= 1 : null },
     { label: `Sortino ${pl}`, value: num(statFor("sortino")), good: statFor("sortino") != null ? statFor("sortino")! >= 1 : null },
     { label: `Alpha ${pl} vs ${record.benchmark}`, value: pct(statFor("alpha")), good: statFor("alpha") != null ? statFor("alpha")! > 0 : null },

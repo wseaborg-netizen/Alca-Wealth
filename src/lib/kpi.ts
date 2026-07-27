@@ -67,10 +67,11 @@ export interface KpiResult {
 // All return/risk formulas live in the central methodology module — this file
 // only orchestrates windows, alignment, and provider quirks.
 import {
-  RISK_FREE_ANNUAL, annualizedReturn, annualizedVolatility, maxDrawdown as calcMaxDrawdown,
+  RISK_FREE_ANNUAL, annualizedVolatility, maxDrawdown as calcMaxDrawdown,
   betaAlpha, sharpeRatio, sortinoRatio, sampleStdDev, alignByDate, periodicReturns,
 } from "./metrics/performance";
 import { PERIODS, PERIOD_YEARS, type Period } from "./metrics/periods";
+import { canonicalPeriodReturns } from "./perf/canonicalReturns";
 export { RISK_FREE_ANNUAL };
 
 /** One period's full stat set — every value independently span/obs-guarded.
@@ -176,15 +177,19 @@ export function computeKpis(
     (new Date(b).getTime() - new Date(a).getTime()) / (365.25 * 24 * 3600 * 1000);
   const MIN_SPAN_FRACTION = 0.9;
 
-  // ── Annualized returns: CAGR over ACTUAL elapsed days of the window ─────────
-  for (const [field, years] of [
-    ["return1y", 1], ["return3y", 3], ["return5y", 5],
-  ] as [keyof KpiResult, number][]) {
-    const window = trailingYears(fundDaily, years);
-    if (window.length < 20) continue;
-    if (spanYears(window[0].date, lastDate) < years * MIN_SPAN_FRACTION) continue;
-    (result[field] as number | null) = annualizedReturn(window);
+  // ── Trailing total returns: THE canonical engine (one source used for display,
+  //    Advisor Review Score, and peer ranking). Overwrites ONLY the return field
+  //    of each period stat — volatility/Sharpe/Sortino/beta/alpha/drawdown are
+  //    untouched. Calendar cutoff (latest obs on/before), geometric annualized
+  //    for 3Y/5Y/10Y, cumulative for 1Y; full precision (stored as %).
+  const canon = canonicalPeriodReturns(fundDaily.map((d) => ({ date: d.date, value: d.price })));
+  for (const p of PERIODS) {
+    const cr = canon.periods[p]?.return;
+    result.periods[p].return = cr != null ? cr * 100 : null;
   }
+  result.return1y = result.periods["1Y"].return;
+  result.return3y = result.periods["3Y"].return;
+  result.return5y = result.periods["5Y"].return;
 
   // ── Drawdown (3y and 5y) from the daily adjusted series ─────────────────────
   for (const [field, years] of [["maxDrawdown5y", 5], ["maxDrawdown3y", 3]] as [keyof KpiResult, number][]) {
@@ -308,7 +313,7 @@ function computePeriodStats(fundDaily: DailyPrice[], benchDaily: DailyPrice[], y
   const w = trailingYears(fundDaily, years);
   if (!windowSpanOk(w, lastDate, years)) return out;
 
-  out.return = annualizedReturn(w);
+  // out.return is set from the canonical engine in computeKpis (single source).
   out.maxDrawdown = calcMaxDrawdown(w);
 
   const bw = trailingYears(benchDaily, years);

@@ -33,9 +33,10 @@ interface Row {
   models: { connected: boolean }; alerts: { connected: boolean };
 }
 interface PerfPoint { recentReturn: number | null; spark: number[] | null }
-const PERF_PERIODS = ["1D", "1M", "3M", "YTD", "1Y", "3Y"] as const;
+const PERF_PERIODS = ["1D", "1M", "3M", "YTD", "1Y", "3Y", "5Y", "10Y"] as const;
 type PerfPeriod = (typeof PERF_PERIODS)[number];
 const DEFAULT_PERF_PERIOD: PerfPeriod = "1M";
+const IS_ANNUALIZED = (p: PerfPeriod) => p === "3Y" || p === "5Y" || p === "10Y";
 type PerfByPeriod = Record<PerfPeriod, PerfPoint>;
 interface PerfResult { periods: PerfByPeriod; asOf: string | null; basis: "etf_adjusted" | "mf_nav" }
 
@@ -428,7 +429,7 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
           <table style={{ width: "100%", borderCollapse: "collapse", ...ui, fontSize: 13 }}>
             <thead>
               <tr style={{ textAlign: "left", color: T.muted, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                {["Ticker", "Name", period, period === "3Y" ? "3Y Annualized" : `${period} Return`, "Status", "Role", "Last review", "Next review", "Models", "Alerts", ""].map((h, i) => (
+                {["Ticker", "Name", period, IS_ANNUALIZED(period) ? `${period} Annualized` : `${period} Return`, "Status", "Role", "Last review", "Next review", "Models", "Alerts", ""].map((h, i) => (
                   <th key={i} style={{ padding: "12px 14px", borderBottom: `1px solid ${T.line}`, fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
@@ -468,7 +469,7 @@ export default function FirmFundsTab({ onAnalyze, initialAddTicker, onAddTickerC
       {rows && rows.length > 0 && view.length > 0 && asOf && (
         <div style={{ fontSize: 11, color: T.muted, ...ui, lineHeight: 1.6 }}>
           Total return through {asOf}. ETF rows use adjusted-close total return; mutual funds use NAV total return.
-          {period === "3Y" ? " 3Y is annualized." : " 1D–1Y are cumulative."}
+          {IS_ANNUALIZED(period) ? ` ${period} is annualized.` : " This period is cumulative."}
         </div>
       )}
 
