@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/login", "/signup", "/about", "/contact", "/security"],
+        allow: ["/", "/login", "/signup", "/about", "/contact", "/security", "/privacy", "/terms", "/disclosures"],
         disallow: [
           "/api/",
           // Defensive: app/workspace areas (SPA tabs today, real routes later).

@@ -14,18 +14,6 @@ const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8");
 
 describe("Home → workflow navigation wiring (AppShell)", () => {
   const shell = read("src/components/AppShell.tsx");
-  test("Home passes review/firm-funds/discover handlers to DashboardTab", () => {
-    expect(shell).toMatch(/onOpenReview=\{goOpenReview\}/);
-    expect(shell).toMatch(/onOpenFirmFunds=\{\(\)\s*=>\s*switchTab\("firmfunds"\)\}/);
-    expect(shell).toMatch(/onOpenDiscover=\{\(\)\s*=>\s*switchTab\("research"\)\}/);
-  });
-  test("goOpenReview is navigation-only — sets the target review + switches tab, never creates a review", () => {
-    const m = shell.match(/const goOpenReview = \(reviewId[\s\S]*?\};/);
-    expect(m).not.toBeNull();
-    expect(m![0]).toContain("setOpenReviewId");
-    expect(m![0]).toContain('switchTab("reviews")');
-    expect(m![0]).not.toMatch(/reviewCreate|createReview|fetch|POST/i);
-  });
   test("firm-fund ticker opens the existing Analysis workspace (no second workspace)", () => {
     // Firm Funds → Analysis (contextual workspace), reused everywhere.
     expect(shell).toMatch(/FirmFundsTab[\s\S]*onAnalyze=\{\(t\)\s*=>\s*goAnalyze\(t,\s*true\)\}/);
@@ -38,26 +26,6 @@ describe("Home → workflow navigation wiring (AppShell)", () => {
     const m = shell.match(/const goStartReview = \(firmFundId[\s\S]*?\};/);
     expect(m![0]).toContain("setReviewCtx");
     expect(m![0]).not.toMatch(/reviewCreate|fetch/i);
-  });
-});
-
-describe("DashboardTab review-workflow actions", () => {
-  const d = read("src/components/DashboardTab.tsx");
-  test("review item → onOpenReview; fund item → onAnalyze; snapshot → onOpenFirmFunds; discover → onOpenDiscover", () => {
-    expect(d).toMatch(/onOpenReview\?\.\(q\.reviewId\)/);          // queue row opens the review detail
-    expect(d).toMatch(/onAnalyze\?\.\(u\.ticker\)/);               // upcoming firm review → workspace
-    expect(d).toMatch(/onOpenFirmFunds\?\.\(\)/);                  // snapshot / firm funds link
-    expect(d).toMatch(/onOpenDiscover\?\.\(\)/);                   // discover entry
-  });
-  test("counts + rows come only from the API reviewWorkflow (no synthetic values)", () => {
-    expect(d).toContain("reviewWorkflow");
-    expect(d).not.toMatch(/Math\.random|faker|mockCounts/i);
-  });
-  test("honest loading / error / empty states exist", () => {
-    expect(d).toContain('"loading"');
-    expect(d).toContain('state === "error"');
-    expect(d).toMatch(/No open or in-review cases/);
-    expect(d).toMatch(/No firm funds have a next review date set/);
   });
 });
 

@@ -209,8 +209,6 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
   // Contextual-workspace actions (Phase 2D).
   const goBackToFirmFunds = () => switchTab("firmfunds");
   const goStartReview = (firmFundId: string, t: string) => { setReviewCtx({ firmFundId, ticker: t.toUpperCase() }); switchTab("reviews"); };
-  // Home → open an EXISTING review detail (navigation only — never creates a record).
-  const goOpenReview = (reviewId: string) => { setOpenReviewId(reviewId); switchTab("reviews"); };
   const goAddToFirmFunds = (t: string) => { setFirmFundsAddTicker(t.toUpperCase()); switchTab("firmfunds"); };
   // Review → Discover Comparison (reuses the existing compare tray + tab).
   const goCompareMany = (tickers: string[]) => { setCompareTickers(Array.from(new Set(tickers.map((t) => t.toUpperCase()))).slice(0, 6)); switchTab("comparison"); };
@@ -240,15 +238,6 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
     }
   };
 
-  // Adapter for the dashboard overview quick actions.
-  const dashNavigate = (t: import("./DashboardTab").DashTab) => {
-    if (t === "discover" || t === "find") goIdeas("find");
-    else if (t === "recommendation") goIdeas("fromfund");
-    else if (t === "model-fund") goModel("fund-benchmark");
-    else if (t === "model-project") goModel("projection");
-    else if (t === "model-scenarios") goModel("scenarios");
-    else switchTab(t);
-  };
 
   // Smoothly reveal the homepage's About section (switching to Home first if needed).
   const scrollToAbout = () => {
@@ -300,7 +289,7 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
           from HomeTab. The authenticated app chrome (TopNav: search / alerts /
           account) renders on every real app tab, never on the marketing page.
           TopNav itself is unchanged. */}
-      {tab !== "home" && (
+      {tab !== "home" && tab !== "dashboard" && (
       <TopNav
         sections={sections}
         utilitySection={utilitySection}
@@ -370,8 +359,14 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
             visitors (keeps the public homepage free of private API calls). */}
         {authMode !== "none" && (
         <div style={{ display: tab === "dashboard" ? "block" : "none" }}>
-          <DashboardTab onNavigate={dashNavigate} userEmail={authUser ?? null} onAnalyze={goAnalyze}
-            onOpenReview={goOpenReview} onOpenFirmFunds={() => switchTab("firmfunds")} onOpenDiscover={() => switchTab("research")} />
+          <DashboardTab
+            go={(d) => switchTab(d as TabId)}
+            onAnalyze={goAnalyze}
+            onSearch={() => goIdeas("find")}
+            onNotifications={() => switchTab("alerts")}
+            onSettings={() => setSettingsOpen(true)}
+            userEmail={authUser ?? null}
+            accountName={accountName} />
         </div>
         )}
         {/* Firm Funds — primary destination shell (real data model added later) */}

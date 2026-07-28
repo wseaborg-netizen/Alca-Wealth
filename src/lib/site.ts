@@ -14,7 +14,7 @@ export const SITE_DESCRIPTION =
 
 /** Public, indexable routes — the ONLY paths that belong in the sitemap.
     Protected app areas live behind login inside the SPA and must never be added. */
-export const PUBLIC_ROUTES = ["/", "/login", "/signup", "/about", "/contact", "/security"] as const;
+export const PUBLIC_ROUTES = ["/", "/login", "/signup", "/about", "/contact", "/security", "/privacy", "/terms", "/disclosures"] as const;
 
 /** Structured data. Software-focused language only: ALCA is a research and
     modeling tool for advisors — it does not provide investment advice and no

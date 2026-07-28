@@ -118,7 +118,7 @@ describe("profile API + signup + personalization wiring", () => {
 
   test("Advisor Overview shows the first name with the fallback chain", () => {
     const dash = read("src/components/DashboardTab.tsx");
-    expect(dash).toContain("Welcome back,");
+    expect(dash).toContain("command center");   // time-aware greeting header
     expect(dash).toContain("greetingName");
     expect(dash).toContain("/api/profile");
   });

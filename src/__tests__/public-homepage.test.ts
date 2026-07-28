@@ -24,7 +24,7 @@ describe("signed-out routing + auth invariants (unchanged)", () => {
   });
   test("public homepage renders; the authenticated TopNav never shows on the marketing home tab", () => {
     expect(shell).toContain("<HomeTab");
-    expect(shell).toMatch(/tab !== "home" && \(\s*<TopNav/);
+    expect(shell).toMatch(/tab !== "home" && tab !== "dashboard" && \(\s*<TopNav/);
     // Advisor Overview (private, fetches firm data) is not mounted for anonymous.
     expect(shell).toMatch(/authMode !== "none" && \([\s\S]*?<DashboardTab/);
     // HomeTab renders its own dark public header (no search / bell / workspace).
