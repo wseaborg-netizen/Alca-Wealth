@@ -15,13 +15,13 @@ export const T = {
   muted:   "var(--c-muted)",
   // Accents kept as HEX - composed with alpha suffixes like `${T.blue}18`
   // and used in SVG gradient ids. CSS vars cannot do this.
-  // ALCA primary accent is one confident institutional teal, used everywhere a
-  // primary action / active state appears (buttons, nav, chips, focus).
-  blue:    "#0E7490",   // ALCA primary accent → deep teal
-  blueD:   "#0B5A70",   // hover / active (darker)
-  blueL:   "var(--c-blueL)",   // light teal tint for active bg (themed)
-  data:    "#0E7490",   // DATA accent → same teal (charts, scores)
-  dataD:   "#0B5A70",
+  // ALCA primary accent is one confident institutional royal blue, used
+  // everywhere a primary action / active state appears (buttons, nav, chips, focus).
+  blue:    "#2563EB",   // ALCA primary accent → royal blue (matches the Overview)
+  blueD:   "#1D4ED8",   // hover / active (darker)
+  blueL:   "var(--c-blueL)",   // light blue tint for active bg (themed)
+  data:    "#2563EB",   // DATA accent → same blue (charts, scores)
+  dataD:   "#1D4ED8",
   dataL:   "var(--c-dataL)",
   cyan:    "#0891B2",
   amber:   "#B45309",

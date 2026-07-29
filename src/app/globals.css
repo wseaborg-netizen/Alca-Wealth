@@ -27,21 +27,21 @@
 
 /* ── Lynx - Theme tokens (black/white brand) ── */
 :root, [data-theme="light"] {
-  /* Layered depth: app canvas (light gray) → sidebar (a step darker) → cards (white) */
-  --c-bg: #F5F5F7;
-  --c-sidebar: #EDEDF0;
+  /* Overview design system: pale blue-gray canvas → sidebar → white cards */
+  --c-bg: #F5F8FD;
+  --c-sidebar: #EAF0F9;
   --c-panel: #FFFFFF;
-  --c-panel2: #FAFAFA;
-  --c-panel3: #F4F4F5;
-  --c-line: #E8E8EC;
-  --c-line2: #D8D8DF;
-  --c-text: #0A0A0B;
-  --c-dim: #52525B;
-  --c-muted: #71717A; /* 4.5:1+ on white and --c-bg (WCAG AA for small labels) */
-  /* ALCA brand - institutional teal */
-  --c-accent: #0E7490;
-  --c-accentD: #0B5A70;
-  --c-blueL: #E7F2F5;
+  --c-panel2: #F7FAFE;
+  --c-panel3: #EEF3FB;
+  --c-line: #E6ECF5;
+  --c-line2: #DCE4F0;
+  --c-text: #0F1B33;
+  --c-dim: #475467;
+  --c-muted: #667085; /* 4.5:1+ on white and --c-bg (WCAG AA for small labels) */
+  /* ALCA brand - institutional royal blue (matches the Overview) */
+  --c-accent: #2563EB;
+  --c-accentD: #1D4ED8;
+  --c-blueL: #EAF1FE;
   /* Elevation scale - the only four shadows in the product. 0 = flush,
      1 = resting card, 2 = raised/hover, 3 = overlay (modals, dark heroes). */
   --elev-0: none;
@@ -63,9 +63,9 @@
   --c-chrome-muted: rgba(255, 255, 255, 0.42);
   --c-chrome-accent: #5EEAD4;
   --c-chrome-active-bg: rgba(94, 234, 212, 0.10);
-  --c-data: #0E7490;
-  --c-dataD: #155E75;
-  --c-dataL: #ECFEFF;
+  --c-data: #2563EB;
+  --c-dataD: #1D4ED8;
+  --c-dataL: #EAF1FE;
   --c-cyan: #0891B2;
   --c-amber: #B45309;
   --c-red: #DC2626;
@@ -88,19 +88,19 @@
   --c-text: #F4F4F5;
   --c-dim: #A1A1AA;
   --c-muted: #7E7E89; /* lifted for 4.5:1+ on dark surfaces */
-  /* ALCA brand - brighter teal in dark mode */
-  --c-accent: #2DD4BF;
-  --c-accentD: #5EEAD4;
-  --c-blueL: #0F2D2C;
+  /* ALCA brand - brighter royal blue in dark mode */
+  --c-accent: #3B82F6;
+  --c-accentD: #60A5FA;
+  --c-blueL: #14233F;
   /* Dark mode: elevation reads through surface lightness, not shadow */
   --elev-0: none;
   --elev-1: none;
   --elev-2: 0 4px 12px rgba(0, 0, 0, 0.4);
   --elev-3: 0 16px 40px rgba(0, 0, 0, 0.55);
   --c-card-shadow: var(--elev-1);
-  --c-data: #2DD4BF;
-  --c-dataD: #5EEAD4;
-  --c-dataL: #10302E;
+  --c-data: #3B82F6;
+  --c-dataD: #60A5FA;
+  --c-dataL: #14233F;
   --c-cyan: #38BDF8;
   --c-amber: #F59E0B;
   --c-red: #F87171;

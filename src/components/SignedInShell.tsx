@@ -22,9 +22,9 @@ export const C = {
   green: "#059669", red: "#DC2626", amber: "#B45309", sky: "#EAF3FC",
 };
 
-// Sidebar items → existing app tabs. "__settings" opens the settings modal.
+// Sidebar = the main destinations only (Overview / Monitor / Research / Markets
+// live in the TOP nav and are never repeated here). "__settings" opens the modal.
 const SIDEBAR: { label: string; dest: string; icon: string; badgeKey?: "attention" }[] = [
-  { label: "Overview", dest: "dashboard", icon: "grid" },
   { label: "Attention", dest: "alerts", icon: "inbox", badgeKey: "attention" },
   { label: "Firm Funds", dest: "firmfunds", icon: "funds" },
   { label: "Watchlist", dest: "watchlist", icon: "eye" },
