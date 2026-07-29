@@ -61,7 +61,7 @@ export default function ExpansionTab({ onAnalyze }: { onAnalyze?: (t: string) =>
   if (signedOut) return (
     <div style={{ maxWidth: 1360, margin: "0 auto" }}>
       <Card style={{ padding: "26px 28px" }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: T.text, ...ui }}>Sign in to use the Expansion Operations Center</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: T.text, ...ui }}>Sign in to use Expand Fund Universe</div>
         <a href="/login" style={{ display: "inline-block", marginTop: 14, padding: "10px 18px", borderRadius: 9, background: T.blue, color: "#fff", fontSize: 13, fontWeight: 600, textDecoration: "none", ...ui }}>Sign in</a>
       </Card>
     </div>
@@ -75,8 +75,8 @@ export default function ExpansionTab({ onAnalyze }: { onAnalyze?: (t: string) =>
     <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 1360, margin: "0 auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 16, flexWrap: "wrap" }}>
         <div>
-          <h1 style={{ fontSize: 25, fontWeight: 700, color: T.text, ...ui, margin: 0, letterSpacing: "-0.02em" }}>Expansion Operations</h1>
-          <p style={{ fontSize: 13, color: T.dim, ...ui, margin: "6px 0 0" }}>Import, review, verify, and manage the ALCA dynamic fund universe.</p>
+          <h1 style={{ fontSize: 25, fontWeight: 700, color: T.text, ...ui, margin: 0, letterSpacing: "-0.02em" }}>Expand Fund Universe</h1>
+          <p style={{ fontSize: 13, color: T.dim, ...ui, margin: "6px 0 0" }}>Validate new funds, add supported tickers, and bring them into Firm Funds.</p>
         </div>
         {counts && (
           <div style={{ display: "flex", gap: 18 }}>

@@ -161,7 +161,8 @@ describe("saved fund lists: migration + API + UI presence", () => {
     // The "Saved Lists" label lives in the shared nav model (sidebar Tools group);
     // the unified shell wires it to its tab and mounts the component.
     expect(read("src/components/navModel.ts")).toContain('"Saved Lists"');
-    expect(read("src/components/SignedInShell.tsx")).toContain("UTILITY_NAV");
+    // Saved Lists is a sidebar Tools item in the unified shell.
+    expect(read("src/components/SignedInShell.tsx")).toMatch(/label: "Saved Lists"/);
     expect(shell).toContain("ListsTab");
     const lists = read("src/components/ListsTab.tsx");
     expect(lists).toContain("Sign in to use Saved Lists");

@@ -170,16 +170,15 @@ describe("dynamic universe migration + route wiring", () => {
 
   test("Expansion Operations Center is reachable from the nav and mounts", () => {
     const shell = read("src/components/AppShell.tsx");
-    // The "Expansion" label lives in the shared nav model (sidebar Tools group);
-    // the unified shell wires it to its tab and mounts the component.
-    expect(read("src/components/navModel.ts")).toContain('"Expansion"');
-    expect(read("src/components/SignedInShell.tsx")).toContain("UTILITY_NAV");
+    // Expand lives in the TOP navigation (only there) and mounts the component.
+    expect(read("src/components/SignedInShell.tsx")).toMatch(/label: "Expand", dest: "expansion"/);
     expect(shell).toContain("ExpansionTab");
     const tab = read("src/components/ExpansionTab.tsx");
     expect(tab).toContain("/api/expansion/import");
     expect(tab).toContain("/api/expansion/queue");
     expect(tab).toContain("refreshMergedUniverse");             // live propagation on approve
-    expect(tab).toContain("Sign in to use the Expansion Operations Center"); // signed-out handling
+    expect(tab).toContain("Expand Fund Universe");                    // renamed title
+    expect(tab).toContain("Sign in to use Expand Fund Universe");     // signed-out handling
   });
 
   test("expansion summary route is auth-gated (401 signed out)", () => {

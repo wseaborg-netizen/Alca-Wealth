@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import { ui, mono } from "./tokens";
 import { useMediaQuery } from "./motion";
-import { UTILITY_NAV } from "./navModel";
 
 /**
  * Shared signed-in application shell — the ONE authenticated chrome.
@@ -38,14 +37,26 @@ const TOP_TABS: { label: string; dest: string }[] = [
   { label: "Overview", dest: "dashboard" },
   { label: "Monitor", dest: "firmfunds" },
   { label: "Research", dest: "research" },
-  { label: "Markets", dest: "watchlist" },
+  { label: "Expand", dest: "expansion" },   // Expansion route — TOP nav only, never in Tools
+];
+// Secondary Tools — remaining destinations (no duplicates, no Expansion).
+const TOOLS: { id: string; label: string }[] = [
+  { id: "workspace", label: "Portfolio" },
+  { id: "model", label: "Model" },
+  { id: "lists", label: "Saved Lists" },
+  { id: "correlation", label: "Correlation" },
+  { id: "peers", label: "Peer Rankings" },
 ];
 // Which sidebar label is active for a given app tab.
 const SIDE_ACTIVE: Record<string, string> = {
-  dashboard: "Overview", alerts: "Attention", firmfunds: "Firm Funds", watchlist: "Watchlist",
+  alerts: "Attention", firmfunds: "Firm Funds", watchlist: "Watchlist",
   analysis: "Analytics", reviews: "Reviews", research: "Discover", ideas: "Discover", comparison: "Discover",
 };
-const TOP_ACTIVE: Record<string, string> = { dashboard: "Overview", firmfunds: "Monitor", research: "Research", watchlist: "Markets" };
+const TOP_ACTIVE: Record<string, string> = { dashboard: "Overview", firmfunds: "Monitor", research: "Research", expansion: "Expand" };
+const TOOL_ACTIVE: Record<string, string> = {
+  workspace: "Portfolio", portfolio: "Portfolio", murderboard: "Portfolio",
+  model: "Model", lists: "Saved Lists", correlation: "Correlation", peers: "Peer Rankings",
+};
 
 function Ico({ n, c = "currentColor", s = 18 }: { n: string; c?: string; s?: number }) {
   const p: Record<string, React.ReactNode> = {
@@ -103,15 +114,18 @@ function Sidebar({ active, go, onSettings, onOverview, attention, collapsed }: {
           Lists and the other utility destinations within the shell (no lost routes). */}
       <div style={{ marginTop: 16 }}>
         {!collapsed && <div style={{ ...ui, fontSize: 10, fontWeight: 700, color: C.mute, textTransform: "uppercase", letterSpacing: "0.06em", padding: "0 12px 6px" }}>Tools</div>}
-        <nav aria-label="Tools" style={{ display: "flex", flexDirection: "column", gap: 2, maxHeight: collapsed ? "none" : 210, overflowY: "auto" }}>
-          {UTILITY_NAV.map((n) => (
-            <button key={n.id} onClick={() => go(n.id)} title={n.desc}
-              style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", padding: collapsed ? "8px" : "7px 12px",
-                justifyContent: collapsed ? "center" : "flex-start", borderRadius: 8, border: "none", cursor: "pointer",
-                background: "transparent", color: C.dim, ...ui, fontSize: 12.5, fontWeight: 500 }}>
-              {collapsed ? <span style={{ width: 6, height: 6, borderRadius: 999, background: C.mute }} /> : <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n.label}</span>}
-            </button>
-          ))}
+        <nav aria-label="Tools" style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {TOOLS.map((n) => {
+            const isActive = active === n.label;
+            return (
+              <button key={n.id} onClick={() => go(n.id)} aria-current={isActive ? "page" : undefined}
+                style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", padding: collapsed ? "8px" : "7px 12px",
+                  justifyContent: collapsed ? "center" : "flex-start", borderRadius: 8, border: "none", cursor: "pointer",
+                  background: isActive ? C.blueSoft : "transparent", color: isActive ? C.blue : C.dim, ...ui, fontSize: 12.5, fontWeight: isActive ? 600 : 500 }}>
+                {collapsed ? <span style={{ width: 6, height: 6, borderRadius: 999, background: isActive ? C.blue : C.mute }} /> : <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n.label}</span>}
+              </button>
+            );
+          })}
         </nav>
       </div>
 
@@ -199,7 +213,7 @@ export default function SignedInShell({ activeTab, go, onSearch, onNotifications
   const isTablet = useMediaQuery("(max-width: 1080px)");
   const [mobileNav, setMobileNav] = useState(false);
   const overview = () => go("dashboard");
-  const sideActive = SIDE_ACTIVE[activeTab] ?? null;
+  const sideActive = SIDE_ACTIVE[activeTab] ?? TOOL_ACTIVE[activeTab] ?? null;
   const topActive = TOP_ACTIVE[activeTab] ?? null;
   // The Overview owns a full-bleed mountain hero; other pages get a padded container.
   const padded = activeTab !== "dashboard";

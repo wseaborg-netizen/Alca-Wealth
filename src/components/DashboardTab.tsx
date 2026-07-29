@@ -12,15 +12,16 @@ import { C } from "./SignedInShell";
  * Advisor Overview — the signed-in landing dashboard CONTENT.
  *
  * The authenticated chrome (sidebar / top nav / search / notifications / profile)
- * lives in the shared SignedInShell; this component renders only the Overview
- * page: a real-image mountain hero, summary cards, Top/Worst Performers, Attention
- * & Alerts, Held Fund Intelligence, and a market/monitoring right column.
+ * lives in the shared SignedInShell; this renders only the Overview page:
+ *   1. a real-image mountain hero (greeting left, Market Pulse card top-right)
+ *   2. Top / Worst Performers
+ *   3. lower section: Firm Activity, Attention & Alerts, Held Fund Intelligence,
+ *      then remaining widgets (Watchlist Momentum, Sector Movers).
  *
  * Real firm-scoped data only, via existing endpoints (no new APIs, no schema).
- * Top/Worst rank ONLY the authenticated firm's funds by the canonical visible
- * Price Change (ETFs raw close, mutual funds raw NAV; dividends/distributions
- * excluded). Missing performance shows "Unavailable", never 0%. Unsupported
- * sections show honest empty states. The right column is market/monitoring only.
+ * Top/Worst rank ONLY the firm's funds by the canonical visible Price Change
+ * (ETFs raw close, mutual funds raw NAV; dividends/distributions excluded).
+ * Missing performance shows "Unavailable", never 0%. No fabricated numbers.
  */
 
 const PERIODS = ["1D", "5D", "1M", "6M", "YTD", "1Y", "3Y", "5Y", "Max"] as const;
@@ -37,7 +38,7 @@ interface Overview {
   ok: boolean;
   reviewWorkflow: ReviewWorkflow | null;
   alertCounts: { unread: number; total: number };
-  userSummary?: { greeting?: string | null };
+  userSummary?: { greeting?: string | null; workspace?: string | null };
 }
 interface MarketItem { ticker: string; label: string; price: number | null; change1d: number | null; spark6m?: number[]; proxy?: { of: string } }
 interface MarketData { items: MarketItem[]; fetchedAt: number }
@@ -82,14 +83,27 @@ const cap: React.CSSProperties = { fontSize: 10, fontWeight: 600, color: C.mute,
 const linkBtn: React.CSSProperties = { fontSize: 12, color: C.blue, ...ui, background: "none", border: "none", cursor: "pointer", fontWeight: 600 };
 function Muted({ text }: { text: string }) { return <div style={{ fontSize: 12.5, color: C.mute, ...ui, padding: "12px 0", lineHeight: 1.6 }}>{text}</div>; }
 
-function SummaryCard({ label, value, sub, tone, unavailable }: { label: string; value: React.ReactNode; sub?: string; tone?: string; unavailable?: boolean }) {
+// ── Compact Market Pulse (lives in the hero, upper-right) ─────────────────────
+function MarketPulse({ indices, dataTime }: { indices: { key: string; item?: MarketItem }[]; dataTime: string | null }) {
   return (
-    <div style={{ ...card, padding: "14px 16px", minWidth: 0 }}>
-      <div style={{ ...cap }}>{label}</div>
-      <div style={{ fontSize: 24, fontWeight: 700, ...mono, color: unavailable ? C.mute : (tone ?? C.ink), marginTop: 6, lineHeight: 1 }}>
-        {unavailable ? <span style={{ fontSize: 13, ...ui, fontWeight: 600 }}>Unavailable</span> : value}
+    <div style={{ ...card, boxShadow: "0 8px 24px rgba(16,24,40,0.12)", padding: "13px 14px 11px", width: 300, maxWidth: "100%", backdropFilter: "blur(2px)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: C.ink, ...ui }}>Market Pulse</span>
+        {dataTime && <span style={{ ...cap }}>as of {dataTime}</span>}
       </div>
-      {sub && !unavailable && <div style={{ fontSize: 11, color: C.mute, ...ui, marginTop: 6 }}>{sub}</div>}
+      <div style={{ marginTop: 6, display: "flex", flexDirection: "column" }}>
+        {indices.map(({ key, item }, i) => (
+          <div key={key} style={{ display: "grid", gridTemplateColumns: "1fr auto 54px", gap: 8, alignItems: "center", padding: "7px 0", borderTop: i ? `1px solid ${C.line}` : "none" }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ ...ui, fontSize: 12, fontWeight: 600, color: C.ink }}>{key}</div>
+              <div style={{ ...mono, fontSize: 12, color: C.dim }}>{item?.price != null ? fmtNum(item.price) : "—"}</div>
+            </div>
+            <span style={{ ...mono, fontSize: 11.5, fontWeight: 700, color: pctCol(item?.change1d) }}>{fmtPct(item?.change1d) ?? "—"}</span>
+            <span style={{ display: "flex", justifyContent: "flex-end" }}><Spark data={item?.spark6m ?? null} up={(item?.change1d ?? 0) >= 0} w={50} /></span>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontSize: 9.5, color: C.mute, ...ui, marginTop: 6, lineHeight: 1.4 }}>Labeled ETF proxies · quotes may be delayed.</div>
     </div>
   );
 }
@@ -149,6 +163,7 @@ export default function DashboardTab({ go, onAnalyze, userEmail }: {
 
   const [overview, setOverview] = useState<Overview | null>(null);
   const [greeting, setGreeting] = useState<string | null>(null);
+  const [workspace, setWorkspace] = useState<string | null>(null);
   const [market, setMarket] = useState<MarketData | null>(null);
   const [inv, setInv] = useState<InvRow[] | null>(null);
   const [perf, setPerf] = useState<Record<string, PerfResult | null>>({});
@@ -167,7 +182,7 @@ export default function DashboardTab({ go, onAnalyze, userEmail }: {
         setGreeting(full || p?.display_name || (d?.greeting as string) || greetingName(null, userEmail ?? null));
       }).catch(() => { if (alive) setGreeting(greetingName(null, userEmail ?? null)); });
     fetch("/api/advisor-overview", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (!alive) return; if (d?.ok) { setOverview(d as Overview); setState("ready"); } else setState("error"); })
+      .then((d) => { if (!alive) return; if (d?.ok) { setOverview(d as Overview); setWorkspace((d.userSummary?.workspace as string) ?? null); setState("ready"); } else setState("error"); })
       .catch(() => { if (alive) setState("error"); });
     fetch("/api/firm-funds", { cache: "no-store" }).then((r) => (r.ok ? r.json() : { inventory: [] }))
       .then((d) => { if (alive) setInv((d.inventory ?? []) as InvRow[]); }).catch(() => { if (alive) setInv([]); });
@@ -217,57 +232,16 @@ export default function DashboardTab({ go, onAnalyze, userEmail }: {
   const dataTime = market ? new Date(market.fetchedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) + " ET" : null;
   const reviewQueue = wf ? wf.counts.openReviews + wf.counts.inReview : 0;
 
-  const rightColumn = (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div id="market-pulse" style={{ ...card, padding: "16px 16px 12px", scrollMarginTop: 70 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <h2 style={sectionH}>Market Pulse</h2>
-          {dataTime && <span style={{ ...cap }}>as of {dataTime}</span>}
-        </div>
-        <div style={{ marginTop: 10, display: "flex", flexDirection: "column" }}>
-          {indices.map(({ key, item }, i) => (
-            <div key={key} style={{ display: "grid", gridTemplateColumns: "1fr auto 64px", gap: 8, alignItems: "center", padding: "10px 0", borderTop: i ? `1px solid ${C.line}` : "none" }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ ...ui, fontSize: 12.5, fontWeight: 600, color: C.ink }}>{key}</div>
-                <div style={{ ...mono, fontSize: 13, color: C.ink }}>{item?.price != null ? fmtNum(item.price) : "—"}</div>
-                {item?.proxy && <div style={{ fontSize: 9.5, color: C.mute, ...ui }}>ETF proxy · {item.ticker}</div>}
-              </div>
-              <span style={{ ...mono, fontSize: 12, fontWeight: 700, color: pctCol(item?.change1d) }}>{fmtPct(item?.change1d) ?? "—"}</span>
-              <span style={{ display: "flex", justifyContent: "flex-end" }}><Spark data={item?.spark6m ?? null} up={(item?.change1d ?? 0) >= 0} w={60} /></span>
-            </div>
-          ))}
-        </div>
-        <div style={{ fontSize: 10, color: C.mute, ...ui, marginTop: 8, lineHeight: 1.5 }}>Index rows use clearly-labeled ETF proxies. Quotes may be delayed.</div>
-      </div>
-
-      <div style={{ ...card, padding: "16px 16px 12px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <h2 style={sectionH}>Watchlist Momentum</h2>
-          <button onClick={() => nav("watchlist")} style={linkBtn}>View all →</button>
-        </div>
-        <div style={{ marginTop: 8 }}>
-          {perfLoading ? <Muted text="Loading…" />
-            : watchMomentum.length === 0 ? <Muted text="No funds on watch yet." />
-            : watchMomentum.map((r, i) => (
-              <button key={r.ticker} onClick={() => onAnalyze?.(r.ticker)} style={{ display: "grid", gridTemplateColumns: "1fr auto 60px", gap: 8, alignItems: "center", width: "100%", padding: "9px 0", border: "none", borderTop: i ? `1px solid ${C.line}` : "none", background: "none", cursor: "pointer", textAlign: "left" }}>
-                <span style={{ minWidth: 0 }}>
-                  <span style={{ ...mono, fontSize: 12.5, fontWeight: 700, color: C.blue }}>{r.ticker}</span>
-                  <span style={{ display: "block", ...ui, fontSize: 10.5, color: C.mute, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name ?? ""}</span>
-                </span>
-                <span style={{ ...mono, fontSize: 12, fontWeight: 700, color: pctCol(r.pc) }}>{fmtPct(r.pc) ?? "Unavailable"}</span>
-                <span style={{ display: "flex", justifyContent: "flex-end" }}><Spark data={r.spark} up={(r.pc ?? 0) >= 0} w={56} /></span>
-              </button>
-            ))}
-        </div>
-      </div>
-
-      <div style={{ ...card, padding: "16px 16px 18px" }}>
-        <h2 style={sectionH}>Sector Movers</h2>
-        <Muted text="Sector analytics unavailable." />
-      </div>
-    </div>
-  );
-
+  // ── Firm Activity: compact metrics (real firm-scoped; Unavailable where unsupported) ──
+  const activity: { label: string; node: React.ReactNode; dest?: string; tone?: string }[] = [
+    { label: "Funds on Watch", node: wf?.statusCounts.watch ?? 0, dest: "firmfunds", tone: C.ink },
+    { label: "Alerts", node: overview?.alertCounts?.unread ?? 0, dest: "alerts", tone: (overview?.alertCounts?.unread ?? 0) > 0 ? C.amber : C.ink },
+    { label: "Review Queue", node: reviewQueue, dest: "reviews", tone: reviewQueue > 0 ? C.blue : C.ink },
+    { label: "New Filings", node: "Unavailable" },
+    { label: "News Updates", node: "Unavailable" },
+    { label: "Market Status", node: status.label, tone: status.open ? C.green : C.mute },
+    { label: "Watchlist Changes", node: "Unavailable" },
+  ];
   const attnRow = (label: string, count: number, tone: string, dest: string) => (
     <button onClick={() => nav(dest)} style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", padding: "11px 0", border: "none", borderTop: `1px solid ${C.line}`, background: "none", cursor: "pointer", textAlign: "left" }}>
       <span style={{ width: 8, height: 8, borderRadius: 999, background: tone, flexShrink: 0 }} />
@@ -279,20 +253,25 @@ export default function DashboardTab({ go, onAnalyze, userEmail }: {
 
   return (
     <div>
-      {/* Mountain hero — real local image */}
-      <div style={{ position: "relative", overflow: "hidden", minHeight: isMobile ? 170 : 232, background: C.sky }}>
-        <Image src="/overview-mountain.jpg" alt="" fill priority sizes="(max-width: 720px) 100vw, (max-width: 1080px) 100vw, 80vw"
-          style={{ objectFit: "cover", objectPosition: "center 34%" }} />
-        <div aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(245,248,253,0) 0%, rgba(245,248,253,0.35) 55%, #F5F8FD 100%)" }} />
-        <div aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, rgba(245,248,253,0.94) 0%, rgba(245,248,253,0.55) 36%, rgba(245,248,253,0) 66%)" }} />
-        <div style={{ position: "relative", padding: isMobile ? "26px 18px 22px" : "34px 28px 28px", maxWidth: 1500 }}>
-          <div style={{ fontSize: 13, color: C.dim, ...ui }}>{greetingPrefix()},</div>
-          <h1 style={{ fontSize: isMobile ? 28 : 38, fontWeight: 700, color: C.ink, ...ui, margin: "4px 0 0", letterSpacing: "-0.02em" }}>{greeting ?? "Advisor"}</h1>
-          <p style={{ fontSize: 14, color: C.dim, ...ui, margin: "8px 0 0" }}>Here&apos;s your command center for what matters most.</p>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 14, background: C.panel, border: `1px solid ${C.line}`, borderRadius: 999, padding: "6px 12px", ...ui, fontSize: 12, fontWeight: 600, color: C.ink }}>
-            <span style={{ width: 7, height: 7, borderRadius: 999, background: status.open ? C.green : C.mute }} />
-            Markets {status.label}
-          </span>
+      {/* ── 1. Mountain hero: greeting left · Market Pulse right ── */}
+      <div style={{ position: "relative", overflow: "hidden", minHeight: isMobile ? 320 : 340, background: C.sky }}>
+        <Image src="/overview-mountain.jpg" alt="" fill priority sizes="(max-width: 720px) 100vw, (max-width: 1080px) 100vw, 82vw"
+          style={{ objectFit: "cover", objectPosition: "center 42%" }} />
+        {/* soft fade at the BOTTOM only — the peak stays sharp and un-washed */}
+        <div aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "38%", background: "linear-gradient(180deg, rgba(245,248,253,0) 0%, rgba(245,248,253,0.6) 58%, #F5F8FD 100%)" }} />
+        {/* light top-left wash only (far left) so the greeting stays readable */}
+        <div aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(100deg, rgba(245,248,253,0.72) 0%, rgba(245,248,253,0.16) 26%, rgba(245,248,253,0) 44%)" }} />
+        <div style={{ position: "relative", padding: isMobile ? "22px 16px 18px" : "26px 28px 22px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 18, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontSize: 13, color: C.dim, ...ui, fontWeight: 500 }}>{greetingPrefix()},</div>
+            <h1 style={{ fontSize: isMobile ? 28 : 38, fontWeight: 700, color: C.ink, ...ui, margin: "4px 0 0", letterSpacing: "-0.02em" }}>{greeting ?? "Advisor"}</h1>
+            <p style={{ fontSize: 14, color: C.dim, ...ui, margin: "8px 0 0", fontWeight: 500 }}>{workspace ?? "Here's your command center for what matters most."}</p>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 14, background: C.panel, border: `1px solid ${C.line}`, borderRadius: 999, padding: "6px 12px", ...ui, fontSize: 12, fontWeight: 600, color: C.ink }}>
+              <span style={{ width: 7, height: 7, borderRadius: 999, background: status.open ? C.green : C.mute }} />
+              Markets {status.label}
+            </span>
+          </div>
+          <MarketPulse indices={indices} dataTime={dataTime} />
         </div>
       </div>
 
@@ -301,24 +280,37 @@ export default function DashboardTab({ go, onAnalyze, userEmail }: {
           <div role="alert" style={{ ...card, border: `1px solid ${C.red}44`, background: "#FEF2F2", padding: "14px 16px", margin: "16px 0", color: C.red, ...ui, fontSize: 13 }}>Your Overview could not be loaded. Some sections may show Unavailable.</div>
         )}
 
-        {/* Summary cards */}
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(7, 1fr)", gap: 12, marginTop: 18 }}>
-          <SummaryCard label="Funds on Watch" value={wf?.statusCounts.watch ?? 0} sub="watch status" tone={C.ink} />
-          <SummaryCard label="Alerts" value={overview?.alertCounts?.unread ?? 0} sub="unread" tone={(overview?.alertCounts?.unread ?? 0) > 0 ? C.amber : C.ink} />
-          <SummaryCard label="Review Queue" value={reviewQueue} sub="open + in review" tone={reviewQueue > 0 ? C.blue : C.ink} />
-          <SummaryCard label="New Filings" value={null} unavailable />
-          <SummaryCard label="News Updates" value={null} unavailable />
-          <SummaryCard label="Market Status" value={<span style={{ fontSize: 16, ...ui, color: status.open ? C.green : C.mute }}>{status.label}</span>} sub={status.open ? "Closes 4:00 PM ET" : "US equities"} />
-          <SummaryCard label="Watchlist Changes" value={null} unavailable />
-        </div>
-
-        {/* Performers */}
-        <div style={{ display: "grid", gridTemplateColumns: isTablet ? "1fr" : "1fr 1fr", gap: 16, marginTop: 16 }}>
+        {/* ── 2. Performer tables (prominent, directly below the hero) ── */}
+        <div style={{ display: "grid", gridTemplateColumns: isTablet ? "1fr" : "1fr 1fr", gap: 16, marginTop: 18 }}>
           <PerformerPanel title="Top Performers" rows={top} loading={perfLoading} period={period} setPeriod={setPeriod} onAnalyze={(t) => onAnalyze?.(t)} />
           <PerformerPanel title="Worst Performers" rows={worst} loading={perfLoading} period={period} setPeriod={setPeriod} onAnalyze={(t) => onAnalyze?.(t)} />
         </div>
 
-        {/* Lower center + right column */}
+        {/* ── 3a. Firm Activity — one compact card (replaces the 7 large cards) ── */}
+        <div style={{ ...card, padding: "14px 18px", marginTop: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+            <h2 style={{ ...sectionH, fontSize: 14 }}>Firm Activity</h2>
+            <span style={{ ...cap }}>firm-scoped</span>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: isMobile ? "12px 20px" : "10px 30px", marginTop: 8 }}>
+            {activity.map((m) => {
+              const un = m.node === "Unavailable";
+              const inner = (
+                <>
+                  <span style={{ ...cap, display: "block" }}>{m.label}</span>
+                  <span style={{ fontSize: un ? 12 : 17, fontWeight: un ? 600 : 700, ...(un ? ui : mono), color: un ? C.mute : (m.tone ?? C.ink), marginTop: 3, display: "block" }}>{m.node}</span>
+                </>
+              );
+              return m.dest ? (
+                <button key={m.label} onClick={() => nav(m.dest!)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}>{inner}</button>
+              ) : (
+                <div key={m.label}>{inner}</div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── 3b. Attention & Alerts + Held Fund Intelligence · remaining widgets ── */}
         <div style={{ display: "grid", gridTemplateColumns: isTablet ? "1fr" : "1fr 340px", gap: 16, marginTop: 16, alignItems: "start" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
             <div style={{ ...card, padding: "18px 18px 10px" }}>
@@ -356,7 +348,34 @@ export default function DashboardTab({ go, onAnalyze, userEmail }: {
             </div>
           </div>
 
-          {rightColumn}
+          {/* ── 4. Remaining supported widgets ── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ ...card, padding: "16px 16px 12px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <h2 style={sectionH}>Watchlist Momentum</h2>
+                <button onClick={() => nav("watchlist")} style={linkBtn}>View all →</button>
+              </div>
+              <div style={{ marginTop: 8 }}>
+                {perfLoading ? <Muted text="Loading…" />
+                  : watchMomentum.length === 0 ? <Muted text="No funds on watch yet." />
+                  : watchMomentum.map((r, i) => (
+                    <button key={r.ticker} onClick={() => onAnalyze?.(r.ticker)} style={{ display: "grid", gridTemplateColumns: "1fr auto 60px", gap: 8, alignItems: "center", width: "100%", padding: "9px 0", border: "none", borderTop: i ? `1px solid ${C.line}` : "none", background: "none", cursor: "pointer", textAlign: "left" }}>
+                      <span style={{ minWidth: 0 }}>
+                        <span style={{ ...mono, fontSize: 12.5, fontWeight: 700, color: C.blue }}>{r.ticker}</span>
+                        <span style={{ display: "block", ...ui, fontSize: 10.5, color: C.mute, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name ?? ""}</span>
+                      </span>
+                      <span style={{ ...mono, fontSize: 12, fontWeight: 700, color: pctCol(r.pc) }}>{fmtPct(r.pc) ?? "Unavailable"}</span>
+                      <span style={{ display: "flex", justifyContent: "flex-end" }}><Spark data={r.spark} up={(r.pc ?? 0) >= 0} w={56} /></span>
+                    </button>
+                  ))}
+              </div>
+            </div>
+
+            <div style={{ ...card, padding: "16px 16px 18px" }}>
+              <h2 style={sectionH}>Sector Movers</h2>
+              <Muted text="Sector analytics unavailable." />
+            </div>
+          </div>
         </div>
 
         {/* Footer */}

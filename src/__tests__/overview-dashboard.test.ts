@@ -85,20 +85,24 @@ describe("honest empty states + no fabrication", () => {
   test("Sector Movers is honest when unsupported", () => {
     expect(dash).toContain("Sector analytics unavailable.");
   });
-  test("summary cards mark unsupported metrics Unavailable (no copied screenshot numbers)", () => {
-    expect(dash).toMatch(/label="New Filings" value=\{null\} unavailable/);
-    expect(dash).toMatch(/label="News Updates" value=\{null\} unavailable/);
-    expect(dash).toMatch(/label="Watchlist Changes" value=\{null\} unavailable/);
+  test("Firm Activity marks unsupported metrics Unavailable (no copied screenshot numbers)", () => {
+    // The seven large summary cards were removed; the metrics live in one compact
+    // Firm Activity card, with unsupported ones shown as Unavailable.
+    expect(dash).toContain("Firm Activity");
+    expect(dash).not.toContain("function SummaryCard");
+    for (const l of ["New Filings", "News Updates", "Watchlist Changes"]) {
+      expect(dash).toMatch(new RegExp(`label: "${l}", node: "Unavailable"`));
+    }
   });
 });
 
-describe("right column is market/monitoring only — no reviews", () => {
-  test("right column contains Market Pulse / Watchlist Momentum / Sector Movers and no review cards", () => {
-    const rc = dash.slice(dash.indexOf("const rightColumn = ("), dash.indexOf("const attnRow ="));
-    expect(rc).toContain("Market Pulse");
-    expect(rc).toContain("Watchlist Momentum");
-    expect(rc).toContain("Sector Movers");
-    expect(rc).not.toMatch(/review/i);
+describe("Market Pulse in hero; remaining widgets carry no reviews", () => {
+  test("Market Pulse card is placed in the hero; widgets are market/monitoring only", () => {
+    expect(dash).toContain("<MarketPulse");
+    expect(dash).toContain("Market Pulse");
+    const widgets = dash.slice(dash.indexOf("Watchlist Momentum</h2>"), dash.indexOf("</footer>"));
+    expect(widgets).toContain("Sector Movers");
+    expect(widgets).not.toMatch(/review/i);
   });
 });
 

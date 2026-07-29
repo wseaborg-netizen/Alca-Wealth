@@ -33,10 +33,11 @@ describe("primary navigation", () => {
     for (const label of ["Overview", "Attention", "Firm Funds", "Watchlist", "Analytics", "Reviews", "Discover", "News & Filings", "Settings"]) {
       expect(shellSrc).toContain(`label: "${label}"`);
     }
-    // Top tabs — Overview / Monitor / Research / Markets.
-    for (const label of ["Overview", "Monitor", "Research", "Markets"]) {
+    // Top tabs — Overview / Monitor / Research / Expand (Markets removed).
+    for (const label of ["Overview", "Monitor", "Research", "Expand"]) {
       expect(shellSrc).toContain(`label: "${label}"`);
     }
+    expect(shellSrc).not.toMatch(/label: "Markets"/);
     // The ALCA Wealth logo returns to the signed-in Overview (never the homepage).
     expect(shellSrc).toMatch(/const overview = \(\) => go\("dashboard"\)/);
     // AppShell wires the shell to switchTab and never uses the old TopNav.
@@ -98,9 +99,13 @@ describe("Models and Portfolios", () => {
     for (const comp of ["<PortfoliosTab", "<ModelTab", "<MurderBoardTab", "<ExpansionTab", "<ListsTab"]) {
       expect(shell).toContain(comp);
     }
-    // Secondary Tools (Portfolio / Model / Expansion / Saved Lists / …) stay
-    // reachable inside the unified shell via the sidebar Tools group.
-    expect(read("src/components/SignedInShell.tsx")).toContain("UTILITY_NAV");
+    // Secondary Tools (Portfolio / Model / Saved Lists / Correlation / Peer
+    // Rankings) stay reachable via the sidebar Tools group; Expansion is promoted
+    // to the top nav (Expand) and never duplicated in Tools.
+    const shellSrc = read("src/components/SignedInShell.tsx");
+    for (const label of ["Portfolio", "Model", "Saved Lists", "Correlation", "Peer Rankings"]) {
+      expect(shellSrc).toMatch(new RegExp(`label: "${label}"`));
+    }
   });
 });
 
