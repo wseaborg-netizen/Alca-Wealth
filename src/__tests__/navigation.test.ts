@@ -27,16 +27,20 @@ describe("primary navigation", () => {
     }
   });
 
-  test("the AppShell primary sections render exactly those four labels", () => {
-    const shell = read("src/components/AppShell.tsx");
-    // The primary `sections` array uses the four labels and routes Home → dashboard.
-    expect(shell).toMatch(/id:\s*"home",\s*label:\s*"Home",\s*onClick:\s*\(\)\s*=>\s*switchTab\("dashboard"\)/);
-    expect(shell).toMatch(/label:\s*"Firm Funds",\s*onClick:\s*\(\)\s*=>\s*switchTab\("firmfunds"\)/);
-    expect(shell).toMatch(/label:\s*"Discover",\s*onClick:\s*\(\)\s*=>\s*switchTab\("research"\)/);
-    expect(shell).toMatch(/label:\s*"Reviews",\s*onClick:\s*\(\)\s*=>\s*switchTab\("reviews"\)/);
-    // Old primary labels are no longer primary sections.
-    expect(shell).not.toMatch(/label:\s*"Advisor Overview"/);
-    expect(shell).not.toMatch(/id:\s*"portfolio-ws"/);
+  test("the unified signed-in shell renders the reference sidebar + top tabs", () => {
+    const shellSrc = read("src/components/SignedInShell.tsx");
+    // Left sidebar — the nine reference destinations.
+    for (const label of ["Overview", "Attention", "Firm Funds", "Watchlist", "Analytics", "Reviews", "Discover", "News & Filings", "Settings"]) {
+      expect(shellSrc).toContain(`label: "${label}"`);
+    }
+    // Top tabs — Overview / Monitor / Research / Markets.
+    for (const label of ["Overview", "Monitor", "Research", "Markets"]) {
+      expect(shellSrc).toContain(`label: "${label}"`);
+    }
+    // The ALCA Wealth logo returns to the signed-in Overview (never the homepage).
+    expect(shellSrc).toMatch(/const overview = \(\) => go\("dashboard"\)/);
+    // AppShell wires the shell to switchTab and never uses the old TopNav.
+    expect(read("src/components/AppShell.tsx")).toContain('go={(d) => switchTab(d as TabId)}');
   });
 });
 
@@ -91,12 +95,12 @@ describe("Models and Portfolios", () => {
 
   test("their routes/components are still mounted by the shell (not deleted)", () => {
     const shell = read("src/components/AppShell.tsx");
-    for (const comp of ["<PortfoliosTab", "<ModelTab", "<MurderBoardTab"]) {
+    for (const comp of ["<PortfoliosTab", "<ModelTab", "<MurderBoardTab", "<ExpansionTab", "<ListsTab"]) {
       expect(shell).toContain(comp);
     }
-    // Secondary Tools menu is passed to the nav as a utility (not a primary section).
-    expect(shell).toContain("utilitySection");
-    expect(read("src/components/TopNav.tsx")).toContain("utilitySection");
+    // Secondary Tools (Portfolio / Model / Expansion / Saved Lists / …) stay
+    // reachable inside the unified shell via the sidebar Tools group.
+    expect(read("src/components/SignedInShell.tsx")).toContain("UTILITY_NAV");
   });
 });
 

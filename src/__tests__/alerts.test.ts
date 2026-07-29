@@ -132,7 +132,7 @@ describe("Advisor Hub + top-right wiring", () => {
     expect(d).toContain("command center");
     expect(d).toContain("/api/advisor-overview");
     expect(d).toContain("/api/firm-funds");
-    for (const section of ["Top Performers", "Worst Performers", "Held Fund Intelligence", "Market Pulse", "Watchlist Momentum", "Attention & Alerts"]) expect(d).toContain(section);
+    for (const section of ["Top Performers", "Worst Performers", "Held Fund Intelligence", "Market Pulse", "Watchlist Momentum", "Attention &amp; Alerts"]) expect(d).toContain(section);
     // Real firm-scoped data; no fabricated numbers.
     expect(d).toContain("reviewWorkflow");
     expect(d).not.toMatch(/Math\.random|faker/i);

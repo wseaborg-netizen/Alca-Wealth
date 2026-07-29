@@ -22,11 +22,15 @@ describe("signed-out routing + auth invariants (unchanged)", () => {
     expect(resolveInitialTab("preview")).toBe("dashboard");
     expect(isAuthed("none")).toBe(false);
   });
-  test("public homepage renders; the authenticated TopNav never shows on the marketing home tab", () => {
+  test("public homepage stands apart from the unified signed-in shell", () => {
     expect(shell).toContain("<HomeTab");
-    expect(shell).toMatch(/tab !== "home" && tab !== "dashboard" && \(\s*<TopNav/);
-    // Advisor Overview (private, fetches firm data) is not mounted for anonymous.
-    expect(shell).toMatch(/authMode !== "none" && \([\s\S]*?<DashboardTab/);
+    // Signed-out visitors get HomeTab; every authenticated route is wrapped in the
+    // ONE shared signed-in shell. The old floating TopNav is gone entirely.
+    expect(shell).toMatch(/tab === "home" && <HomeTab/);
+    expect(shell).toContain("<SignedInShell");
+    expect(shell).not.toContain("<TopNav");
+    // The signed-in shell (incl. Advisor Overview) never mounts for anonymous.
+    expect(shell).toMatch(/tab !== "home" && authMode !== "none" && \(/);
     // HomeTab renders its own dark public header (no search / bell / workspace).
     expect(home).toContain("function PublicNav()");
   });

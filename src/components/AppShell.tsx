@@ -1,6 +1,5 @@
 "use client";
-import React, { useState, useRef, useEffect } from "react";
-import { T } from "./tokens";
+import React, { useState, useEffect } from "react";
 import DashboardTab from "./DashboardTab";
 import IdeasTab, { type IdeasMode } from "./IdeasTab";
 import AnalysisTab  from "./AnalysisTab";
@@ -20,8 +19,7 @@ import ExpansionTab from "./ExpansionTab";
 import AlertsTab from "./AlertsTab";
 import FirmFundsTab from "./FirmFundsTab";
 import ReviewsTab from "./ReviewsTab";
-import TopNav, { type NavSection } from "./TopNav";
-import { UTILITY_NAV } from "./navModel";
+import SignedInShell, { C } from "./SignedInShell";
 
 // ── Roadmap / idea tabs (placeholders - not built yet) ──────────────────────────
 const mk = (paths: React.ReactNode) => (
@@ -52,17 +50,6 @@ export type TabId = "home" | "dashboard" | "firmfunds" | "reviews" | "research" 
   | "portfolio" | "murderboard" | "watchlist" | "lists" | "model" | "backtest" | "correlation" | "peers" | "alerts" | "tax" | "assistant" | "expansion";
 
 // Which primary-nav item "owns" each tab (drives the active underline in TopNav).
-// Phase 2 primary nav: Home (dashboard) · Firm Funds · Discover (research family) · Reviews.
-// Everything under the secondary Tools menu owns no primary underline ("tools").
-const SECTION_OF: Partial<Record<TabId, string>> = {
-  dashboard: "home",
-  firmfunds: "firmfunds",
-  reviews: "reviews",
-  research: "discover", ideas: "discover", comparison: "discover", analysis: "discover", watchlist: "discover",
-  workspace: "tools", portfolio: "tools", murderboard: "tools", model: "tools", lists: "tools",
-  correlation: "tools", peers: "tools", backtest: "tools", tax: "tools", alerts: "tools", assistant: "tools", expansion: "tools",
-};
-
 // Research-family tabs share one internal navigation bar rendered by the shell.
 const RESEARCH_TABS = new Set<TabId>(["research", "ideas", "comparison", "analysis", "watchlist"]);
 
@@ -76,7 +63,7 @@ interface AppShellProps {
   onLogout?: () => void;
 }
 
-export default function AppShell({ authMode, authUser, authWorkspace, initialTab, onLogout }: AppShellProps = {}) {
+export default function AppShell({ authMode, authUser, initialTab, onLogout }: AppShellProps = {}) {
   const [tab, setTab]   = useState<TabId>(initialTab ?? "home");
   const [mounted, setMounted] = useState<Set<TabId>>(new Set<TabId>(["home", "dashboard", ...(initialTab ? [initialTab] : [])]));
 
@@ -137,12 +124,7 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
   };
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // ── In-app navigation history (back / forward) ──
   type NavState = { tab: TabId; ideasMode: IdeasMode };
-  const [history, setHistory] = useState<NavState[]>([{ tab: "home", ideasMode: "all" }]);
-  const hiRef = useRef(0);
-  const [hi, setHi] = useState(0);
-
   const applyState = (s: NavState) => {
     setMounted((prev) => { const set = new Set(prev); set.add(s.tab); return set; });
     setTab(s.tab);
@@ -151,9 +133,7 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
 
   // Everything except the public homepage requires a session (full or preview).
   const isProtected = (id: TabId) => id !== "home";
-  const authed = authMode === "full" || authMode === "preview";
 
-  // Navigate + record in history (truncating any forward entries)
   const navigate = (id: TabId, mode?: IdeasMode) => {
     // Logged-out visitors can browse the homepage; the app itself lives
     // behind /login. (Server-side, RLS/401s enforce this regardless of UI.)
@@ -161,30 +141,10 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
       window.location.href = "/login";
       return;
     }
-    const nextMode = mode ?? ideasMode;
-    applyState({ tab: id, ideasMode: nextMode });
-    setHistory((prev) => {
-      const base = prev.slice(0, hiRef.current + 1);
-      const last = base[base.length - 1];
-      if (last && last.tab === id && last.ideasMode === nextMode) return prev; // dedupe
-      const next = [...base, { tab: id, ideasMode: nextMode }];
-      hiRef.current = next.length - 1;
-      setHi(hiRef.current);
-      return next;
-    });
+    applyState({ tab: id, ideasMode: mode ?? ideasMode });
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "auto" });
   };
   const switchTab = (id: TabId) => navigate(id);
-  const goBack = () => {
-    if (hiRef.current <= 0) return;
-    hiRef.current -= 1; setHi(hiRef.current); applyState(history[hiRef.current]);
-  };
-  const goForward = () => {
-    if (hiRef.current >= history.length - 1) return;
-    hiRef.current += 1; setHi(hiRef.current); applyState(history[hiRef.current]);
-  };
-  const canBack = hi > 0;
-  const canForward = hi < history.length - 1;
 
   // If the session resolves to logged-out while on a protected tab (e.g. after
   // sign-out elsewhere), bounce to the login page.
@@ -239,86 +199,28 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
   };
 
 
-  // Smoothly reveal the homepage's About section (switching to Home first if needed).
-  const scrollToAbout = () => {
-    const doScroll = () => document.getElementById("alca-about")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    if (tab !== "home") { switchTab("home"); setTimeout(doScroll, 90); }
-    else doScroll();
-  };
-
-  // ── Phase 2 primary navigation — exactly four destinations ──
-  //    Home (market dashboard) · Firm Funds · Discover (consolidated discovery
-  //    tools) · Reviews. Models and Portfolios are preserved but demoted to the
-  //    secondary Tools menu below (not primary navigation).
-  const sections: NavSection[] = [
-    { id: "home", label: "Home", onClick: () => switchTab("dashboard") },
-    { id: "firmfunds", label: "Firm Funds", onClick: () => switchTab("firmfunds") },
-    { id: "discover", label: "Discover", onClick: () => switchTab("research") },
-    { id: "reviews", label: "Reviews", onClick: () => switchTab("reviews") },
-  ];
-
-  // Secondary "Tools" utility menu — preserves Portfolio, Model, and the existing
-  // utility destinations without exposing them as primary nav. Sourced from the
-  // shared nav model so tests can assert the split.
-  const utilityGo: Record<string, () => void> = {
-    workspace: () => switchTab("workspace"),
-    model: () => goModel("overview"),
-    expansion: () => switchTab("expansion"),
-    lists: () => switchTab("lists"),
-    correlation: () => switchTab("correlation"),
-    peers: () => switchTab("peers"),
-    backtest: () => switchTab("backtest"),
-    tax: () => switchTab("tax"),
-    alerts: () => switchTab("alerts"),
-    assistant: () => switchTab("assistant"),
-  };
-  const PORTFOLIO_TABS = new Set<TabId>(["workspace", "portfolio", "murderboard"]);
-  const utilitySection: NavSection = {
-    id: "tools", label: "Tools",
-    leaves: UTILITY_NAV.map((n) => ({
-      label: n.label, desc: n.desc,
-      onClick: utilityGo[n.id] ?? (() => {}),
-      active: n.id === "workspace" ? PORTFOLIO_TABS.has(tab) : tab === (n.id as TabId),
-    })),
-  };
-
   return (
-    <div style={{ minHeight: "100vh", background: T.bg, display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: C.bg }}>
 
-      {/* The public marketing homepage (home tab) uses its own dark public header
-          from HomeTab. The authenticated app chrome (TopNav: search / alerts /
-          account) renders on every real app tab, never on the marketing page.
-          TopNav itself is unchanged. */}
-      {tab !== "home" && tab !== "dashboard" && (
-      <TopNav
-        sections={sections}
-        utilitySection={utilitySection}
-        activeSection={SECTION_OF[tab] ?? null}
-        onBrand={() => switchTab("home")}
-        onAbout={scrollToAbout}
+      {/* Public marketing homepage — its own chrome (signed-out visitors only). */}
+      {tab === "home" && <HomeTab />}
+
+      {/* ONE shared signed-in shell around EVERY authenticated route (sidebar +
+          top nav + search / notifications / profile). No authenticated route uses
+          the old floating TopNav, and the ALCA Wealth logo returns to the signed-in
+          Overview — never the Public Homepage. */}
+      {tab !== "home" && authMode !== "none" && (
+      <SignedInShell
+        activeTab={tab}
+        go={(d) => switchTab(d as TabId)}
         onSearch={() => goIdeas("find")}
+        onNotifications={() => switchTab("alerts")}
         onSettings={() => setSettingsOpen(true)}
-        authMode={authMode}
-        authUser={authUser}
-        authWorkspace={authWorkspace}
         accountName={accountName}
-        unreadCount={unreadAlerts}
-        onAlerts={() => switchTab("alerts")}
+        unread={unreadAlerts ?? 0}
+        attention={unreadAlerts ?? 0}
         onLogout={onLogout}
-        canBack={canBack}
-        canForward={canForward}
-        goBack={goBack}
-        goForward={goForward}
-      />
-      )}
-
-      {/* Content - lazy-mounted, hidden when inactive (state persists).
-          Home and the command center run full-bleed dark; every other tab gets
-          nav clearance + a faint teal wash falling from under the floating nav. */}
-      <main style={{ flex: 1, minWidth: 0,
-        padding: tab === "home" || tab === "dashboard" ? "0 32px 0" : "96px 32px 48px",
-        background: tab === "home" || tab === "dashboard" ? "transparent"
-          : "linear-gradient(180deg, rgba(14,116,144,0.045) 0%, rgba(14,116,144,0) 380px)" }}>
+      >
 
         {/* Shared Discover navigation — one consistent system across the whole
             Discover workspace: Overview | Find Funds | Compare | Analyze | Watchlist.
@@ -352,23 +254,11 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
           </div>
         )}
 
-        <div style={{ display: tab === "home" ? "block" : "none" }}>
-          <HomeTab />
-        </div>
-        {/* Advisor Overview is authenticated-only — never mounted for signed-out
-            visitors (keeps the public homepage free of private API calls). */}
-        {authMode !== "none" && (
+        {/* Advisor Overview (authenticated-only; the shell gate above already
+            excludes signed-out visitors, keeping the public homepage API-free). */}
         <div style={{ display: tab === "dashboard" ? "block" : "none" }}>
-          <DashboardTab
-            go={(d) => switchTab(d as TabId)}
-            onAnalyze={goAnalyze}
-            onSearch={() => goIdeas("find")}
-            onNotifications={() => switchTab("alerts")}
-            onSettings={() => setSettingsOpen(true)}
-            userEmail={authUser ?? null}
-            accountName={accountName} />
+          <DashboardTab go={(d) => switchTab(d as TabId)} onAnalyze={goAnalyze} userEmail={authUser ?? null} />
         </div>
-        )}
         {/* Firm Funds — primary destination shell (real data model added later) */}
         {mounted.has("firmfunds") && (
           <div style={{ display: tab === "firmfunds" ? "block" : "none" }}>
@@ -471,7 +361,8 @@ export default function AppShell({ authMode, authUser, authWorkspace, initialTab
         {ROADMAP.filter((r) => r.id === tab && r.id !== "alerts").map((r) => (
           <ComingSoonTab key={r.id} spec={r} />
         ))}
-      </main>
+      </SignedInShell>
+      )}
 
       {/* Settings drawer */}
       <SettingsDrawer open={settingsOpen} onClose={() => setSettingsOpen(false)}

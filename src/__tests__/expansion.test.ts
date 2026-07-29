@@ -170,10 +170,10 @@ describe("dynamic universe migration + route wiring", () => {
 
   test("Expansion Operations Center is reachable from the nav and mounts", () => {
     const shell = read("src/components/AppShell.tsx");
-    // The "Expansion" label lives in the shared nav model (secondary Tools menu);
-    // the shell wires it to its tab and mounts the component.
+    // The "Expansion" label lives in the shared nav model (sidebar Tools group);
+    // the unified shell wires it to its tab and mounts the component.
     expect(read("src/components/navModel.ts")).toContain('"Expansion"');
-    expect(shell).toContain('switchTab("expansion")');
+    expect(read("src/components/SignedInShell.tsx")).toContain("UTILITY_NAV");
     expect(shell).toContain("ExpansionTab");
     const tab = read("src/components/ExpansionTab.tsx");
     expect(tab).toContain("/api/expansion/import");
